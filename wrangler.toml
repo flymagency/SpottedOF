@@ -1,0 +1,9 @@
+name = "spottedof-worker"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+[vars]
+AIRTABLE_BASE_ID = "appLemJayGiYhfsI1"
+
+# AIRTABLE_TOKEN doit être ajouté comme secret :
+# wrangler secret put AIRTABLE_TOKEN

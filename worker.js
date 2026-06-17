@@ -1,0 +1,196 @@
+// SpottedOF — Cloudflare Worker
+// Endpoints:
+//   POST /score-profiles  — reçoit profils Phantombuster, score + push Airtable
+//   GET  /prospects       — liste les prospects depuis Airtable
+//   GET  /stats           — stats globales
+
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+};
+
+function json(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { 'Content-Type': 'application/json', ...CORS },
+  });
+}
+
+// ─── SCORING ────────────────────────────────────────────────────────────────
+// Score sur 100 — pondération :
+//   Followers        : 30 pts
+//   Engagement rate  : 25 pts
+//   OF link in bio   : 20 pts
+//   Mots-clés bio    : 15 pts
+//   Ratio f/f        : 10 pts
+
+const OF_KEYWORDS = ['onlyfans', 'only fans', 'of link', 'of 🔥', '🔞', 'fans.ly', 'fansly'];
+const COLLAB_KEYWORDS = ['collab', 'promo', 'partnership', 'partenariat', 'booking', 'dm open', 'dm for', 'contact'];
+
+function scoreProfile(profile) {
+  let score = 0;
+  const bio = (profile.biography || profile.bio || '').toLowerCase();
+  const followers = profile.followersCount || profile.followers || 0;
+  const following = profile.followingCount || profile.following || 1;
+  const engagement = profile.engagementRate || profile.engagement || 0;
+
+  // 1. Followers (30 pts) — sweet spot 5k–500k
+  if (followers >= 5000 && followers < 500000) score += 30;
+  else if (followers >= 1000 && followers < 5000) score += 18;
+  else if (followers >= 500000) score += 15;
+  else score += 5;
+
+  // 2. Engagement rate (25 pts)
+  if (engagement >= 6) score += 25;
+  else if (engagement >= 4) score += 20;
+  else if (engagement >= 2.5) score += 14;
+  else if (engagement >= 1) score += 7;
+  else score += 2;
+
+  // 3. OF link détecté dans la bio (20 pts)
+  const hasOfLink = OF_KEYWORDS.some(kw => bio.includes(kw));
+  if (hasOfLink) score += 20;
+
+  // 4. Mots-clés collab/promo dans la bio (15 pts)
+  const collabCount = COLLAB_KEYWORDS.filter(kw => bio.includes(kw)).length;
+  if (collabCount >= 2) score += 15;
+  else if (collabCount === 1) score += 8;
+
+  // 5. Ratio followers/following (10 pts) — ratio > 2 = créatrice établie
+  const ratio = followers / following;
+  if (ratio >= 5) score += 10;
+  else if (ratio >= 2) score += 7;
+  else if (ratio >= 1) score += 4;
+
+  return Math.min(score, 100);
+}
+
+// ─── AIRTABLE ────────────────────────────────────────────────────────────────
+async function airtableRequest(env, method, path, body = null) {
+  const url = `https://api.airtable.com/v0/${env.AIRTABLE_BASE_ID}/${path}`;
+  const opts = {
+    method,
+    headers: {
+      'Authorization': `Bearer ${env.AIRTABLE_TOKEN}`,
+      'Content-Type': 'application/json',
+    },
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(url, opts);
+  return res.json();
+}
+
+async function saveProspects(env, profiles, scanSource) {
+  // Airtable accepte max 10 records par requête
+  const records = profiles.map(p => {
+    const score = scoreProfile(p);
+    const bio = p.biography || p.bio || '';
+    const hasOf = OF_KEYWORDS.some(kw => bio.toLowerCase().includes(kw));
+
+    return {
+      fields: {
+        handle: p.username ? `@${p.username}` : (p.handle || ''),
+        name: p.fullName || p.name || '',
+        platform: p.platform || 'ig',
+        followers: p.followersCount || p.followers || 0,
+        engagement: p.engagementRate || p.engagement || 0,
+        niche: p.niche || '',
+        bio: bio,
+        has_of: hasOf,
+        of_link: hasOf,
+        score: score,
+        status: 'nouveau',
+        scan_source: scanSource || '',
+        user_id: p.userId || '',
+      }
+    };
+  });
+
+  const results = [];
+  for (let i = 0; i < records.length; i += 10) {
+    const chunk = records.slice(i, i + 10);
+    const res = await airtableRequest(env, 'POST', 'Prospects', { records: chunk });
+    results.push(...(res.records || []));
+  }
+  return results;
+}
+
+async function getProspects(env, params) {
+  const minScore = params.get('min_score') || '0';
+  const platform = params.get('platform') || '';
+  const status = params.get('status') || '';
+
+  let formula = `{score} >= ${minScore}`;
+  if (platform) formula = `AND(${formula}, {platform} = "${platform}")`;
+  if (status) formula = `AND(${formula}, {status} = "${status}")`;
+
+  const qs = new URLSearchParams({
+    filterByFormula: formula,
+    sort: JSON.stringify([{ field: 'score', direction: 'desc' }]),
+    maxRecords: '200',
+  });
+
+  const res = await airtableRequest(env, 'GET', `Prospects?${qs}`);
+  return (res.records || []).map(r => ({ id: r.id, ...r.fields }));
+}
+
+// ─── ROUTER ──────────────────────────────────────────────────────────────────
+export default {
+  async fetch(request, env) {
+    if (request.method === 'OPTIONS') {
+      return new Response(null, { headers: CORS });
+    }
+
+    const url = new URL(request.url);
+    const path = url.pathname;
+
+    // POST /score-profiles
+    // Body: { profiles: [...], scan_source: "@handle" }
+    if (request.method === 'POST' && path === '/score-profiles') {
+      let body;
+      try { body = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
+
+      const profiles = body.profiles || body;
+      if (!Array.isArray(profiles)) return json({ error: 'profiles doit être un tableau' }, 400);
+
+      // Filtrer par score minimum (défaut 50)
+      const minScore = body.min_score || 50;
+      const scored = profiles
+        .map(p => ({ ...p, score: scoreProfile(p) }))
+        .filter(p => p.score >= minScore)
+        .sort((a, b) => b.score - a.score);
+
+      const saved = await saveProspects(env, scored, body.scan_source || '');
+
+      return json({
+        success: true,
+        total_received: profiles.length,
+        saved: saved.length,
+        filtered_out: profiles.length - scored.length,
+        message: `${saved.length} prospects sauvegardés (score ≥ ${minScore}%)`,
+      });
+    }
+
+    // GET /prospects
+    if (request.method === 'GET' && path === '/prospects') {
+      const prospects = await getProspects(env, url.searchParams);
+      return json({ prospects, count: prospects.length });
+    }
+
+    // GET /stats
+    if (request.method === 'GET' && path === '/stats') {
+      const all = await getProspects(env, new URLSearchParams('min_score=0'));
+      const withOf = all.filter(p => p.has_of);
+      const avgScore = all.length ? Math.round(all.reduce((s, p) => s + (p.score || 0), 0) / all.length) : 0;
+      return json({
+        total: all.length,
+        with_of: withOf.length,
+        to_convert: all.length - withOf.length,
+        avg_score: avgScore,
+      });
+    }
+
+    return json({ error: 'Route introuvable', routes: ['POST /score-profiles', 'GET /prospects', 'GET /stats'] }, 404);
+  }
+};
