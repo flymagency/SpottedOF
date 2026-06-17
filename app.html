@@ -72,7 +72,9 @@
     .prospect-row:hover { background: var(--surface2); }
 
     .profile-cell { display: flex; align-items: center; gap: 12px; }
-    .avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--surface2); border: 2px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; color: var(--muted); }
+    .avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--surface2); border: 2px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; color: var(--muted); overflow: hidden; }
+    .avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+    .modal-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
     .profile-handle { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .profile-name { font-size: 11px; color: var(--muted); margin-top: 2px; }
     .platform-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 4px; }
@@ -136,6 +138,25 @@
     .range-row { display: flex; align-items: center; gap: 12px; }
     .range-input { flex: 1; accent-color: var(--accent); }
     .range-val { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--accent); min-width: 40px; text-align: right; }
+
+    /* VIEW TOGGLE */
+    .view-toggle { display: flex; gap: 2px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 4px; }
+    .view-btn { width: 30px; height: 30px; border-radius: 7px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: none; background: none; color: var(--muted); transition: all 0.2s; }
+    .view-btn.active { background: var(--accent); color: white; }
+    .view-btn:hover:not(.active) { color: var(--text); }
+
+    /* GRID VIEW */
+    .grid-view { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; padding: 20px; }
+    .prospect-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 16px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.2s; position: relative; }
+    .prospect-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .card-avatar { width: 72px; height: 72px; border-radius: 50%; margin: 0 auto 12px; background: var(--surface); border: 3px solid var(--border); overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 800; color: var(--muted); }
+    .card-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .card-handle { font-size: 13px; font-weight: 800; margin-bottom: 2px; }
+    .card-name { font-size: 11px; color: var(--muted); margin-bottom: 10px; }
+    .card-score { font-family: 'Space Mono', monospace; font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+    .card-stats { display: flex; gap: 8px; justify-content: center; margin-bottom: 10px; }
+    .card-stat { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); background: var(--surface); border-radius: 6px; padding: 3px 8px; }
+    .card-platform { position: absolute; top: 12px; right: 12px; width: 8px; height: 8px; border-radius: 50%; }
 
     .toast { position: fixed; bottom: 24px; right: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 18px; font-size: 13px; z-index: 200; transform: translateY(80px); opacity: 0; transition: all 0.3s; }
     .toast.show { transform: translateY(0); opacity: 1; }
@@ -221,6 +242,14 @@
       <option value="followers">Followers ↓</option>
       <option value="engagement">Engagement ↓</option>
     </select>
+    <div class="view-toggle">
+      <button class="view-btn active" onclick="setView('list',this)" title="Liste">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      </button>
+      <button class="view-btn" onclick="setView('grid',this)" title="Cartes">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      </button>
+    </div>
   </div>
 
   <div class="table-wrap">
@@ -307,10 +336,29 @@ let activeTab = 'all';
 let activePlatforms = new Set();
 let sortBy = 'score';
 let loading = false;
+let currentView = 'list';
+
+function setView(view, btn) {
+  currentView = view;
+  document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const tableHead = document.querySelector('.table-head');
+  if (tableHead) tableHead.style.display = view === 'grid' ? 'none' : '';
+  renderProspects();
+}
 
 function fmt(n) { return n>=1e6?(n/1e6).toFixed(1)+'M':n>=1000?(n/1000).toFixed(0)+'K':String(n||0); }
 function sc(s) { return s>=80?'hi':s>=65?'md':'lo'; }
-function avatar(handle) { return (handle||'?').replace('@','')[0].toUpperCase(); }
+function avatarLetter(handle) { return (handle||'?').replace('@','')[0].toUpperCase(); }
+function avatarHTML(handle, platform, size=40) {
+  const username = (handle||'').replace('@','');
+  const fallback = avatarLetter(handle);
+  // unavatar.io supporte instagram, tiktok (tt→tiktok), threads
+  const platMap = { ig: 'instagram', tt: 'tiktok', th: 'threads' };
+  const plat = platMap[platform] || 'instagram';
+  const url = `https://unavatar.io/${plat}/${username}`;
+  return `<img src="${url}" alt="${fallback}" width="${size}" height="${size}" onerror="this.style.display='none';this.parentNode.dataset.letter='${fallback}'" style="border-radius:50%">`;
+}
 
 // ─── LOAD DATA ───────────────────────────────────────────────────────────────
 async function loadProspects() {
@@ -378,12 +426,33 @@ function renderProspects() {
       : `<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-title">Aucun résultat</div><div class="empty-sub">Modifiez vos filtres</div></div>`;
     return;
   }
+  if (currentView === 'grid') {
+    el.className = 'grid-view';
+    el.innerHTML = list.map(p => {
+      const cl = sc(p.score);
+      return `<div class="prospect-card" onclick="openProspect('${p.id}')">
+        <div class="card-platform dot-${p.platform}" style="background:${p.platform==='ig'?'var(--accent2)':p.platform==='tt'?'var(--green)':'var(--accent)'}"></div>
+        <div class="card-avatar">${avatarHTML(p.handle, p.platform, 72)}</div>
+        <div class="card-handle">${p.handle}</div>
+        <div class="card-name">${p.name}</div>
+        <div class="card-score s-${cl}">${p.score}%</div>
+        <div class="card-stats">
+          <span class="card-stat">${fmt(p.followers)} followers</span>
+          <span class="card-stat" style="color:var(--yellow)">${p.engagement}% eng.</span>
+        </div>
+        ${p.hasOf?'<span class="badge badge-of">OF actif</span>':'<span class="badge badge-convert">À convertir</span>'}
+      </div>`;
+    }).join('');
+    return;
+  }
+
+  el.className = '';
   el.innerHTML = list.map(p => {
     const cl = sc(p.score);
     const sv = savedSet.has(p.id);
     return `<div class="prospect-row" onclick="openProspect('${p.id}')">
       <div class="profile-cell">
-        <div class="avatar">${avatar(p.handle)}</div>
+        <div class="avatar">${avatarHTML(p.handle, p.platform)}</div>
         <div>
           <div class="profile-handle"><span class="platform-dot dot-${p.platform}"></span>${p.handle}</div>
           <div class="profile-name">${p.name}</div>
@@ -434,7 +503,7 @@ function openProspect(id) {
   const cl = sc(p.score);
   document.getElementById('modalBody').innerHTML = `
     <div class="modal-profile">
-      <div class="modal-avatar">${avatar(p.handle)}</div>
+      <div class="modal-avatar">${avatarHTML(p.handle, p.platform, 60)}</div>
       <div>
         <div class="modal-handle">${p.handle}</div>
         <div class="modal-meta">${p.name} · ${p.niche} · <span class="platform-dot dot-${p.platform}" style="margin-left:4px"></span>${p.platform.toUpperCase()}</div>
