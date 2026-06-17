@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SpottedOF — Prospect Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0f; --surface: #111118; --surface2: #1a1a24; --border: #2a2a3a;
+      --accent: #7c5cfc; --accent2: #fc5c7c; --green: #2dfc8e; --yellow: #fcdc2d;
+      --pink: #fc5cdc; --text: #e8e8f0; --muted: #6b6b88;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif; min-height: 100vh; }
+    body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(rgba(124,92,252,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(124,92,252,0.03) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; z-index: 0; }
+
+    .container { max-width: 1280px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+    /* HEADER */
+    header { padding: 28px 0 20px; border-bottom: 1px solid var(--border); margin-bottom: 36px; }
+    .header-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .logo { display: flex; align-items: center; gap: 12px; }
+    .logo-icon { width: 40px; height: 40px; background: linear-gradient(135deg, var(--accent), var(--pink)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+    .logo-text { font-size: 22px; font-weight: 800; }
+    .logo-text span { color: var(--pink); }
+    .logo-badge { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 2px 8px; }
+    .header-right { display: flex; align-items: center; gap: 10px; }
+    .btn { padding: 8px 16px; font-size: 12px; border-radius: 10px; font-weight: 700; font-family: 'Syne', sans-serif; cursor: pointer; border: none; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary:hover { background: #9b7ffd; }
+    .btn-ghost { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--text); }
+
+    /* STATS ROW */
+    .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px 24px; }
+    .stat-label { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+    .stat-value { font-size: 28px; font-weight: 800; line-height: 1; }
+    .stat-sub { font-size: 11px; color: var(--muted); margin-top: 6px; }
+    .stat-card.accent { border-color: rgba(124,92,252,0.4); background: linear-gradient(135deg, rgba(124,92,252,0.08), var(--surface)); }
+    .stat-card.green { border-color: rgba(45,252,142,0.3); }
+    .stat-card.pink { border-color: rgba(252,92,220,0.3); }
+
+    /* FILTERS */
+    .filters-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+    .search-wrap { position: relative; flex: 1; min-width: 220px; max-width: 320px; }
+    .search-wrap svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+    .search-input { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 9px 12px 9px 36px; color: var(--text); font-family: 'Syne', sans-serif; font-size: 13px; outline: none; transition: border-color 0.2s; }
+    .search-input:focus { border-color: var(--accent); }
+    .search-input::placeholder { color: var(--muted); }
+    .filter-tabs { display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 4px; }
+    .filter-tab { padding: 6px 14px; border-radius: 7px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; color: var(--muted); border: none; background: none; font-family: 'Syne', sans-serif; }
+    .filter-tab.active { background: var(--accent); color: white; }
+    .filter-tab:hover:not(.active) { color: var(--text); }
+    .sort-select { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 9px 12px; color: var(--text); font-family: 'Space Mono', monospace; font-size: 11px; outline: none; cursor: pointer; }
+    .sort-select option { background: var(--surface2); }
+    .filter-platform { display: flex; gap: 4px; }
+    .plat-btn { padding: 7px 12px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--muted); font-family: 'Space Mono', monospace; transition: all 0.2s; }
+    .plat-btn.active-ig { border-color: rgba(252,92,124,0.5); color: var(--accent2); background: rgba(252,92,124,0.08); }
+    .plat-btn.active-tt { border-color: rgba(45,252,142,0.5); color: var(--green); background: rgba(45,252,142,0.08); }
+    .plat-btn.active-th { border-color: rgba(124,92,252,0.5); color: var(--accent); background: rgba(124,92,252,0.08); }
+
+    /* TABLE */
+    .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; overflow: hidden; }
+    .table-head { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 120px; padding: 12px 20px; border-bottom: 1px solid var(--border); background: var(--surface2); }
+    .th { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; display: flex; align-items: center; gap: 4px; cursor: pointer; user-select: none; }
+    .th:hover { color: var(--text); }
+
+    .prospect-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 120px; padding: 14px 20px; border-bottom: 1px solid var(--border); align-items: center; transition: background 0.15s; cursor: pointer; }
+    .prospect-row:last-child { border-bottom: none; }
+    .prospect-row:hover { background: var(--surface2); }
+
+    .profile-cell { display: flex; align-items: center; gap: 12px; }
+    .avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--surface2); border: 2px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; color: var(--muted); }
+    .profile-handle { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .profile-name { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .platform-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+    .dot-ig { background: var(--accent2); }
+    .dot-tt { background: var(--green); }
+    .dot-th { background: var(--accent); }
+
+    .cell { font-size: 13px; }
+    .cell-mono { font-family: 'Space Mono', monospace; font-size: 11px; }
+
+    .score-wrap { display: flex; align-items: center; gap: 8px; }
+    .score-bar { flex: 1; height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; max-width: 48px; }
+    .score-fill { height: 100%; border-radius: 2px; }
+    .score-num { font-family: 'Space Mono', monospace; font-size: 12px; font-weight: 700; min-width: 36px; }
+    .s-hi { color: var(--green); } .sf-hi { background: var(--green); }
+    .s-md { color: var(--yellow); } .sf-md { background: var(--yellow); }
+    .s-lo { color: var(--accent2); } .sf-lo { background: var(--accent2); }
+
+    .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 100px; font-size: 10px; font-family: 'Space Mono', monospace; font-weight: 700; }
+    .badge-of { background: rgba(252,92,220,0.12); color: var(--pink); border: 1px solid rgba(252,92,220,0.3); }
+    .badge-convert { background: rgba(252,220,45,0.12); color: var(--yellow); border: 1px solid rgba(252,220,45,0.3); }
+
+    .actions-cell { display: flex; gap: 6px; justify-content: flex-end; }
+    .icon-btn { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); transition: all 0.2s; }
+    .icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .icon-btn.saved { border-color: rgba(252,220,45,0.4); color: var(--yellow); background: rgba(252,220,45,0.08); }
+
+    .empty-state { text-align: center; padding: 80px 24px; }
+    .empty-icon { font-size: 52px; margin-bottom: 16px; }
+    .empty-title { font-size: 18px; font-weight: 800; margin-bottom: 8px; }
+    .empty-sub { font-size: 13px; color: var(--muted); }
+
+    /* MODALS */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 100; display: none; align-items: center; justify-content: center; padding: 24px; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 24px; width: 100%; max-width: 540px; overflow: hidden; }
+    .modal-header { padding: 22px 28px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .modal-title { font-size: 16px; font-weight: 800; }
+    .modal-close { width: 30px; height: 30px; border-radius: 8px; background: var(--surface2); border: 1px solid var(--border); color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; font-size: 14px; }
+    .modal-close:hover { border-color: var(--accent2); color: var(--accent2); }
+    .modal-body { padding: 24px 28px; }
+    .modal-footer { padding: 0 28px 24px; display: flex; gap: 10px; }
+
+    .modal-profile { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+    .modal-avatar { width: 60px; height: 60px; border-radius: 50%; background: var(--surface2); border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700; color: var(--muted); flex-shrink: 0; }
+    .modal-handle { font-size: 17px; font-weight: 800; }
+    .modal-meta { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .modal-bio { font-size: 13px; color: var(--muted); line-height: 1.6; background: var(--surface2); border-radius: 12px; padding: 14px 16px; margin-bottom: 20px; }
+    .score-breakdown { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 4px; }
+    .score-item { background: var(--surface2); border-radius: 10px; padding: 12px 14px; }
+    .score-item-label { font-size: 10px; font-family: 'Space Mono', monospace; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+    .score-item-val { font-size: 15px; font-weight: 800; }
+
+    .scan-form { display: flex; flex-direction: column; gap: 18px; }
+    .form-label { font-size: 11px; font-family: 'Space Mono', monospace; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; display: block; }
+    .form-input { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 11px 14px; color: var(--text); font-family: 'Syne', sans-serif; font-size: 13px; outline: none; transition: border-color 0.2s; }
+    .form-input:focus { border-color: var(--accent); }
+    .platform-pick { display: flex; gap: 8px; }
+    .plat-pick-btn { flex: 1; padding: 10px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); font-family: 'Space Mono', monospace; font-size: 11px; cursor: pointer; text-align: center; transition: all 0.2s; }
+    .plat-pick-btn.sel { border-color: var(--accent); color: var(--accent); background: rgba(124,92,252,0.1); }
+    .range-row { display: flex; align-items: center; gap: 12px; }
+    .range-input { flex: 1; accent-color: var(--accent); }
+    .range-val { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--accent); min-width: 40px; text-align: right; }
+
+    .toast { position: fixed; bottom: 24px; right: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 18px; font-size: 13px; z-index: 200; transform: translateY(80px); opacity: 0; transition: all 0.3s; }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.success { border-color: rgba(45,252,142,0.4); color: var(--green); }
+    .toast.error { border-color: rgba(252,92,124,0.4); color: var(--accent2); }
+
+    @media (max-width: 900px) {
+      .stats-row { grid-template-columns: 1fr 1fr; }
+      .table-head, .prospect-row { grid-template-columns: 2fr 1fr 1fr 100px; }
+      .th:nth-child(3),.th:nth-child(4),.th:nth-child(5),
+      .prospect-row>*:nth-child(3),.prospect-row>*:nth-child(4),.prospect-row>*:nth-child(5) { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-icon">🎯</div>
+        <div>
+          <div class="logo-text">Spotted<span>OF</span></div>
+          <div class="logo-badge">PROSPECT SCANNER</div>
+        </div>
+      </div>
+      <div class="header-right">
+        <button class="btn btn-ghost" onclick="openScanModal()">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          Nouveau scan
+        </button>
+        <button class="btn btn-primary" onclick="openScanModal()">+ Lancer un scan</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="stats-row">
+    <div class="stat-card accent">
+      <div class="stat-label">Prospects scrapés</div>
+      <div class="stat-value">247</div>
+      <div class="stat-sub">depuis 3 scans</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Score moyen</div>
+      <div class="stat-value" style="color:var(--yellow)">71<span style="font-size:16px;color:var(--muted)">%</span></div>
+      <div class="stat-sub">seuil actuel : 60%</div>
+    </div>
+    <div class="stat-card pink">
+      <div class="stat-label">Déjà sur OF</div>
+      <div class="stat-value" style="color:var(--pink)">38</div>
+      <div class="stat-sub">15% des profils</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-label">À convertir</div>
+      <div class="stat-value" style="color:var(--green)">209</div>
+      <div class="stat-sub">haut potentiel</div>
+    </div>
+  </div>
+
+  <div class="filters-bar">
+    <div class="search-wrap">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" class="search-input" placeholder="Rechercher un handle..." id="searchInput" oninput="renderProspects()">
+    </div>
+    <div class="filter-tabs">
+      <button class="filter-tab active" onclick="setTab(this,'all')">Tous</button>
+      <button class="filter-tab" onclick="setTab(this,'of')">Déjà OF</button>
+      <button class="filter-tab" onclick="setTab(this,'convert')">À convertir</button>
+      <button class="filter-tab" onclick="setTab(this,'saved')">Sauvegardés</button>
+    </div>
+    <div class="filter-platform">
+      <button class="plat-btn" onclick="togglePlatform(this,'ig')">IG</button>
+      <button class="plat-btn" onclick="togglePlatform(this,'tt')">TT</button>
+      <button class="plat-btn" onclick="togglePlatform(this,'th')">TH</button>
+    </div>
+    <select class="sort-select" onchange="sortBy=this.value;renderProspects()">
+      <option value="score">Score ↓</option>
+      <option value="followers">Followers ↓</option>
+      <option value="engagement">Engagement ↓</option>
+    </select>
+  </div>
+
+  <div class="table-wrap">
+    <div class="table-head">
+      <div class="th">Profil</div>
+      <div class="th">Followers</div>
+      <div class="th">Engagement</div>
+      <div class="th">Niche</div>
+      <div class="th">Statut OF</div>
+      <div class="th">Score</div>
+      <div class="th" style="cursor:default;justify-content:flex-end">Actions</div>
+    </div>
+    <div id="prospectList"></div>
+  </div>
+</div>
+
+<!-- MODAL PROSPECT -->
+<div class="modal-overlay" id="prospectModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Profil prospect</div>
+      <button class="modal-close" onclick="closeModal('prospectModal')">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" style="flex:1">Contacter</button>
+      <button class="btn btn-ghost" onclick="closeModal('prospectModal')">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL SCAN -->
+<div class="modal-overlay" id="scanModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Lancer un scan Phantombuster</div>
+      <button class="modal-close" onclick="closeModal('scanModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="scan-form">
+        <div>
+          <label class="form-label">Compte de référence (handle)</label>
+          <input class="form-input" id="refHandle" placeholder="@handle_exemple">
+        </div>
+        <div>
+          <label class="form-label">Plateforme</label>
+          <div class="platform-pick">
+            <button class="plat-pick-btn sel" onclick="pickPlatform(this)">Instagram</button>
+            <button class="plat-pick-btn" onclick="pickPlatform(this)">TikTok</button>
+            <button class="plat-pick-btn" onclick="pickPlatform(this)">Threads</button>
+          </div>
+        </div>
+        <div>
+          <label class="form-label">Nombre de profils à scanner</label>
+          <div class="range-row">
+            <input type="range" class="range-input" min="50" max="1000" value="200" step="50" oninput="document.getElementById('countVal').textContent=this.value">
+            <span class="range-val" id="countVal">200</span>
+          </div>
+        </div>
+        <div>
+          <label class="form-label">Score minimum</label>
+          <div class="range-row">
+            <input type="range" class="range-input" min="30" max="90" value="60" step="5" oninput="document.getElementById('scoreVal').textContent=this.value+'%'">
+            <span class="range-val" id="scoreVal">60%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" style="flex:1" onclick="launchScan()">Lancer le scan</button>
+      <button class="btn btn-ghost" onclick="closeModal('scanModal')">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const DATA = [
+  { id:1, handle:'@sophiemrtn', name:'Sophie Martin', platform:'ig', followers:48200, engagement:4.2, niche:'Fitness', hasOf:false, ofLink:false, score:92, bio:'🏋️ Coach fitness certifiée | Collab DM | Paris 🇫🇷', avatar:'S' },
+  { id:2, handle:'@layla.vibe', name:'Layla Vibe', platform:'ig', followers:127000, engagement:2.8, niche:'Lifestyle', hasOf:true, ofLink:true, score:88, bio:'✨ lifestyle & content | OF link in bio | collab@layla.com', avatar:'L' },
+  { id:3, handle:'@emmafit_', name:'Emma F.', platform:'tt', followers:312000, engagement:6.1, niche:'Fitness', hasOf:false, ofLink:false, score:85, bio:'Fitness motivation 💪 | Partenariats DM', avatar:'E' },
+  { id:4, handle:'@noura.aesthetic', name:'Noura K.', platform:'ig', followers:23500, engagement:7.4, niche:'Beauty', hasOf:false, ofLink:false, score:81, bio:'Beauty & aesthetic 🌸 | Open to collabs | Lyon', avatar:'N' },
+  { id:5, handle:'@jess.threads', name:'Jessica', platform:'th', followers:18900, engagement:5.2, niche:'Mode', hasOf:true, ofLink:true, score:79, bio:'Fashion | OF 🔥 | Promo ok | DM open', avatar:'J' },
+  { id:6, handle:'@clara.dream', name:'Clara D.', platform:'ig', followers:89400, engagement:3.1, niche:'Travel', hasOf:false, ofLink:false, score:74, bio:'Travel content | Bordeaux 🍷 | Collab ok', avatar:'C' },
+  { id:7, handle:'@lena.vibes', name:'Léna V.', platform:'tt', followers:540000, engagement:2.3, niche:'Dance', hasOf:false, ofLink:false, score:71, bio:'Dance & vibes | Bookings : lena@mgmt.fr', avatar:'L' },
+  { id:8, handle:'@mia.content', name:'Mia C.', platform:'ig', followers:11200, engagement:9.8, niche:'Fitness', hasOf:true, ofLink:true, score:68, bio:'Fitness & lifestyle 🔥 | OF link 👇 | Paris', avatar:'M' },
+  { id:9, handle:'@ana.looks', name:'Ana Looks', platform:'th', followers:7800, engagement:6.3, niche:'Beauty', hasOf:false, ofLink:false, score:63, bio:'Makeup artist | Collab DM | Marseille', avatar:'A' },
+  { id:10, handle:'@zara.fit', name:'Zara Fit', platform:'ig', followers:34100, engagement:4.7, niche:'Fitness', hasOf:false, ofLink:false, score:61, bio:'Fitness lifestyle 💪 | Open to brand deals', avatar:'Z' },
+];
+
+let savedSet = new Set([2, 5]);
+let activeTab = 'all';
+let activePlatforms = new Set();
+let sortBy = 'score';
+
+function fmt(n) { return n>=1e6?(n/1e6).toFixed(1)+'M':n>=1000?(n/1000).toFixed(0)+'K':n; }
+function sc(s) { return s>=80?'hi':s>=65?'md':'lo'; }
+
+function renderProspects() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  let list = DATA.filter(p => {
+    if (q && !p.handle.includes(q) && !p.name.toLowerCase().includes(q)) return false;
+    if (activeTab==='of' && !p.hasOf) return false;
+    if (activeTab==='convert' && p.hasOf) return false;
+    if (activeTab==='saved' && !savedSet.has(p.id)) return false;
+    if (activePlatforms.size>0 && !activePlatforms.has(p.platform)) return false;
+    return true;
+  }).sort((a,b) => b[sortBy]-a[sortBy]);
+
+  const el = document.getElementById('prospectList');
+  if (!list.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-title">Aucun prospect</div><div class="empty-sub">Modifiez vos filtres ou lancez un nouveau scan</div></div>`;
+    return;
+  }
+  el.innerHTML = list.map(p => {
+    const cl = sc(p.score);
+    const sv = savedSet.has(p.id);
+    return `<div class="prospect-row" onclick="openProspect(${p.id})">
+      <div class="profile-cell">
+        <div class="avatar">${p.avatar}</div>
+        <div>
+          <div class="profile-handle"><span class="platform-dot dot-${p.platform}"></span>${p.handle}</div>
+          <div class="profile-name">${p.name}</div>
+        </div>
+      </div>
+      <div class="cell cell-mono">${fmt(p.followers)}</div>
+      <div class="cell cell-mono" style="color:var(--yellow)">${p.engagement}%</div>
+      <div class="cell" style="font-size:12px;color:var(--muted)">${p.niche}</div>
+      <div class="cell">${p.hasOf?'<span class="badge badge-of">OF actif</span>':'<span class="badge badge-convert">À convertir</span>'}</div>
+      <div class="cell">
+        <div class="score-wrap">
+          <div class="score-bar"><div class="score-fill sf-${cl}" style="width:${p.score}%"></div></div>
+          <span class="score-num s-${cl}">${p.score}%</span>
+        </div>
+      </div>
+      <div class="actions-cell" onclick="event.stopPropagation()">
+        <div class="icon-btn ${sv?'saved':''}" onclick="toggleSave(${p.id},this)" title="Sauvegarder">
+          <svg width="13" height="13" fill="${sv?'currentColor':'none'}" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div class="icon-btn" onclick="openProspect(${p.id})" title="Détail">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function setTab(el, tab) {
+  document.querySelectorAll('.filter-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active'); activeTab=tab; renderProspects();
+}
+
+function togglePlatform(el, plat) {
+  if (activePlatforms.has(plat)) { activePlatforms.delete(plat); el.className='plat-btn'; }
+  else { activePlatforms.add(plat); el.className=`plat-btn active-${plat}`; }
+  renderProspects();
+}
+
+function toggleSave(id, el) {
+  if (savedSet.has(id)) { savedSet.delete(id); el.classList.remove('saved'); el.querySelector('svg').setAttribute('fill','none'); showToast('Retiré des sauvegardés','error'); }
+  else { savedSet.add(id); el.classList.add('saved'); el.querySelector('svg').setAttribute('fill','currentColor'); showToast('Profil sauvegardé ✓','success'); }
+  if (activeTab==='saved') renderProspects();
+}
+
+function openProspect(id) {
+  const p = DATA.find(x=>x.id===id);
+  const cl = sc(p.score);
+  document.getElementById('modalBody').innerHTML = `
+    <div class="modal-profile">
+      <div class="modal-avatar">${p.avatar}</div>
+      <div>
+        <div class="modal-handle">${p.handle}</div>
+        <div class="modal-meta">${p.name} · ${p.niche} · <span class="platform-dot dot-${p.platform}" style="margin-left:4px"></span>${p.platform.toUpperCase()}</div>
+        <div style="margin-top:8px">${p.hasOf?'<span class="badge badge-of">OF actif</span>':'<span class="badge badge-convert">À convertir</span>'}</div>
+      </div>
+    </div>
+    <div class="modal-bio">${p.bio}</div>
+    <div class="score-breakdown">
+      <div class="score-item"><div class="score-item-label">Score global</div><div class="score-item-val s-${cl}">${p.score}%</div></div>
+      <div class="score-item"><div class="score-item-label">Followers</div><div class="score-item-val">${fmt(p.followers)}</div></div>
+      <div class="score-item"><div class="score-item-label">Engagement</div><div class="score-item-val" style="color:var(--yellow)">${p.engagement}%</div></div>
+      <div class="score-item"><div class="score-item-label">Lien OF détecté</div><div class="score-item-val" style="color:${p.ofLink?'var(--pink)':'var(--muted)'}">${p.ofLink?'Oui ✓':'Non'}</div></div>
+    </div>`;
+  document.getElementById('prospectModal').classList.add('open');
+}
+
+function openScanModal() { document.getElementById('scanModal').classList.add('open'); }
+function pickPlatform(el) { document.querySelectorAll('.plat-pick-btn').forEach(b=>b.classList.remove('sel')); el.classList.add('sel'); }
+function launchScan() {
+  const h = document.getElementById('refHandle').value.trim();
+  if (!h) { showToast('Entrez un handle de référence','error'); return; }
+  closeModal('scanModal'); showToast('Scan lancé — résultats dans quelques minutes ⚡','success');
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent=msg; t.className=`toast ${type} show`;
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+document.querySelectorAll('.modal-overlay').forEach(el=>el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('open')}));
+renderProspects();
+</script>
+</body>
+</html>
