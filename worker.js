@@ -127,7 +127,8 @@ async function getProspects(env, params) {
 
   const qs = new URLSearchParams({
     filterByFormula: formula,
-    sort: JSON.stringify([{ field: 'score', direction: 'desc' }]),
+    'sort[0][field]': 'score',
+    'sort[0][direction]': 'desc',
     maxRecords: '200',
   });
 
