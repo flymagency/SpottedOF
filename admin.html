@@ -42,15 +42,15 @@
     /* CLIENTS TABLE */
     .section-title { font-size: 16px; font-weight: 800; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
     .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; overflow: hidden; margin-bottom: 32px; }
-    .table-head { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 120px; padding: 12px 20px; border-bottom: 1px solid var(--border); background: var(--surface2); }
+    .table-head { display: grid; grid-template-columns: 2.2fr 1fr 1fr 80px 100px 1fr 44px; padding: 10px 20px; border-bottom: 1px solid var(--border); background: var(--surface2); gap: 12px; }
     .th { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
-    .client-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 120px; padding: 14px 20px; border-bottom: 1px solid var(--border); align-items: center; transition: background 0.15s; }
+    .client-row { display: grid; grid-template-columns: 2.2fr 1fr 1fr 80px 100px 1fr 44px; padding: 14px 20px; border-bottom: 1px solid var(--border); align-items: center; transition: background 0.15s; gap: 12px; }
     .client-row:last-child { border-bottom: none; }
-    .client-row:hover { background: var(--surface2); }
+    .client-row:hover { background: rgba(124,92,252,0.04); }
     .cell { font-size: 13px; }
     .cell-mono { font-family: 'Space Mono', monospace; font-size: 11px; }
-    .client-email { font-size: 13px; font-weight: 700; }
-    .client-agency { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .client-email { font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 400; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+    .client-agency { font-size: 12px; font-weight: 600; color: var(--muted); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
     .badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 100px; font-size: 10px; font-family: 'Space Mono', monospace; font-weight: 700; }
     .badge-admin { background: rgba(252,220,45,0.12); color: var(--yellow); border: 1px solid rgba(252,220,45,0.3); }
@@ -91,9 +91,9 @@
 
     @media (max-width: 900px) {
       .stats-row { grid-template-columns: 1fr 1fr; }
-      .table-head, .client-row { grid-template-columns: 2fr 1fr 1fr 80px; }
-      .th:nth-child(3),.th:nth-child(4),.th:nth-child(5),
-      .client-row>*:nth-child(3),.client-row>*:nth-child(4),.client-row>*:nth-child(5) { display: none; }
+      .table-head, .client-row { grid-template-columns: 2fr 1fr 1fr 44px; gap: 12px; }
+      .th:nth-child(4),.th:nth-child(5),.th:nth-child(6),
+      .client-row>*:nth-child(4),.client-row>*:nth-child(5),.client-row>*:nth-child(6) { display: none; }
     }
   </style>
 </head>
@@ -156,7 +156,7 @@
       <div class="th">Prospects</div>
       <div class="th">Inscription</div>
       <div class="th">Notes</div>
-      <div class="th" style="text-align:right">Actions</div>
+      <div class="th"></div>
     </div>
     <div id="clientList"></div>
   </div>
@@ -267,17 +267,17 @@ function renderClients() {
   }
   el.innerHTML = clients.map(c => `
     <div class="client-row">
-      <div>
-        <div class="client-email">${c.email || '—'}</div>
+      <div style="min-width:0">
+        <div class="client-email" title="${c.email || ''}">${c.email || '—'}</div>
         <div class="client-agency">${c.agency_name || '—'}</div>
       </div>
       <div class="cell">${planBadge(c.plan)}</div>
       <div class="cell">
         <span class="badge ${c.paid ? 'badge-paid' : 'badge-unpaid'}">${c.paid ? 'Payé ✓' : 'Impayé'}</span>
       </div>
-      <div class="cell cell-mono">${c.prospects_count || 0}</div>
-      <div class="cell cell-mono" style="font-size:10px">${dateFmt(c.created_at)}</div>
-      <div class="cell" style="font-size:11px;color:var(--muted)">${c.notes || '—'}</div>
+      <div class="cell-mono" style="font-size:12px;font-weight:700;color:var(--text)">${c.prospects_count || 0}</div>
+      <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted)">${dateFmt(c.created_at)}</div>
+      <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.notes || '—'}</div>
       <div class="actions-cell">
         <div class="icon-btn" onclick="editClient('${c.id}')" title="Modifier">
           <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
