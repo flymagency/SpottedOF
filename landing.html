@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SpottedOF — Trouvez les meilleures modèles pour votre agence OFM</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0f; --surface: #111118; --surface2: #1a1a24; --border: #2a2a3a;
+      --accent: #7c5cfc; --accent2: #fc5c7c; --green: #2dfc8e; --yellow: #fcdc2d;
+      --pink: #fc5cdc; --text: #e8e8f0; --muted: #6b6b88;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif; overflow-x: hidden; }
+
+    /* GRID BG */
+    body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(rgba(124,92,252,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(124,92,252,0.03) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; z-index: 0; }
+
+    .container { max-width: 1120px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+    /* NAV */
+    nav { padding: 20px 0; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: rgba(10,10,15,0.85); backdrop-filter: blur(12px); z-index: 100; }
+    .nav-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); }
+    .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, var(--accent), var(--pink)); border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 17px; }
+    .logo-text { font-size: 20px; font-weight: 800; }
+    .logo-text span { color: var(--pink); }
+    .nav-links { display: flex; align-items: center; gap: 28px; }
+    .nav-links a { font-size: 13px; color: var(--muted); text-decoration: none; font-weight: 600; transition: color 0.2s; }
+    .nav-links a:hover { color: var(--text); }
+    .nav-ctas { display: flex; align-items: center; gap: 10px; }
+    .btn { padding: 9px 20px; font-size: 13px; border-radius: 10px; font-weight: 700; font-family: 'Syne', sans-serif; cursor: pointer; border: none; transition: all 0.2s; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-ghost { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--text); }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary:hover { background: #9b7ffd; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(124,92,252,0.35); }
+    .btn-lg { padding: 14px 32px; font-size: 15px; border-radius: 12px; }
+    .btn-outline { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* HERO */
+    .hero { padding: 96px 0 80px; text-align: center; }
+    .hero-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(124,92,252,0.1); border: 1px solid rgba(124,92,252,0.3); border-radius: 100px; padding: 6px 16px; font-size: 12px; font-family: 'Space Mono', monospace; color: var(--accent); margin-bottom: 28px; }
+    .hero-badge-dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+    .hero h1 { font-size: clamp(36px, 6vw, 68px); font-weight: 800; line-height: 1.08; margin-bottom: 24px; letter-spacing: -0.02em; }
+    .hero h1 .grad { background: linear-gradient(135deg, var(--accent), var(--pink)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .hero-sub { font-size: 18px; color: var(--muted); max-width: 560px; margin: 0 auto 40px; line-height: 1.6; font-weight: 400; }
+    .hero-ctas { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; }
+    .hero-note { font-size: 12px; color: var(--muted); margin-top: 16px; font-family: 'Space Mono', monospace; }
+
+    /* DASHBOARD PREVIEW */
+    .preview-wrap { margin: 64px 0; position: relative; }
+    .preview-glow { position: absolute; inset: -40px; background: radial-gradient(ellipse at 50% 50%, rgba(124,92,252,0.15), transparent 70%); pointer-events: none; }
+    .preview-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 20px; overflow: hidden; }
+    .preview-bar { display: flex; gap: 6px; margin-bottom: 16px; }
+    .preview-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .preview-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .preview-stat { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+    .preview-stat-label { font-family: 'Space Mono', monospace; font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .preview-stat-val { font-size: 22px; font-weight: 800; }
+    .preview-rows { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+    .preview-row { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; display: flex; align-items: center; gap: 12px; }
+    .preview-avatar { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; }
+    .preview-name { font-size: 12px; font-weight: 700; }
+    .preview-handle { font-size: 10px; color: var(--muted); font-family: 'Space Mono', monospace; }
+    .preview-score { margin-left: auto; font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700; }
+    .preview-bar-score { height: 4px; border-radius: 2px; margin-top: 6px; }
+
+    /* HOW IT WORKS */
+    .section { padding: 80px 0; }
+    .section-label { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 12px; }
+    .section-title { font-size: clamp(24px, 4vw, 40px); font-weight: 800; margin-bottom: 16px; letter-spacing: -0.01em; }
+    .section-sub { font-size: 15px; color: var(--muted); max-width: 480px; line-height: 1.6; }
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 48px; }
+    .step { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 28px; position: relative; transition: border-color 0.2s; }
+    .step:hover { border-color: rgba(124,92,252,0.4); }
+    .step-num { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--accent); font-weight: 700; margin-bottom: 16px; }
+    .step-icon { font-size: 28px; margin-bottom: 14px; }
+    .step-title { font-size: 16px; font-weight: 800; margin-bottom: 8px; }
+    .step-desc { font-size: 13px; color: var(--muted); line-height: 1.6; }
+    .step-connector { display: none; }
+
+    /* FEATURES */
+    .features { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 48px; }
+    .feature { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; display: flex; gap: 16px; align-items: flex-start; transition: border-color 0.2s; }
+    .feature:hover { border-color: rgba(124,92,252,0.3); }
+    .feature-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+    .feature-title { font-size: 14px; font-weight: 800; margin-bottom: 6px; }
+    .feature-desc { font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+    /* SCORING */
+    .scoring-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: center; margin-top: 48px; }
+    .score-bars { display: flex; flex-direction: column; gap: 14px; }
+    .score-bar-item { display: flex; flex-direction: column; gap: 6px; }
+    .score-bar-top { display: flex; justify-content: space-between; align-items: center; }
+    .score-bar-label { font-size: 12px; font-weight: 700; }
+    .score-bar-pts { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--accent); font-weight: 700; }
+    .score-bar-track { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+    .score-bar-fill { height: 100%; border-radius: 3px; transition: width 0.8s ease; }
+
+    /* PRICING */
+    .pricing-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 48px; }
+    .plan-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 28px 24px; position: relative; display: flex; flex-direction: column; transition: all 0.2s; }
+    .plan-card:hover { transform: translateY(-4px); }
+    .plan-card.popular { border-color: var(--accent); background: linear-gradient(135deg, rgba(124,92,252,0.06), var(--surface)); }
+    .popular-tag { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--accent); color: white; font-size: 10px; font-family: 'Space Mono', monospace; font-weight: 700; padding: 4px 14px; border-radius: 100px; white-space: nowrap; }
+    .plan-name { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+    .plan-price { font-size: 36px; font-weight: 800; margin: 14px 0 4px; line-height: 1; }
+    .plan-price sup { font-size: 18px; vertical-align: super; font-weight: 700; }
+    .plan-price sub { font-size: 13px; color: var(--muted); font-weight: 400; vertical-align: baseline; }
+    .plan-desc { font-size: 12px; color: var(--muted); margin-bottom: 20px; line-height: 1.5; }
+    .plan-features { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; flex: 1; }
+    .plan-features li { font-size: 12px; display: flex; align-items: flex-start; gap: 8px; line-height: 1.4; }
+    .plan-features li .check { color: var(--green); flex-shrink: 0; margin-top: 1px; }
+    .plan-features li .lock { color: var(--muted); flex-shrink: 0; margin-top: 1px; }
+    .plan-features li.disabled { color: var(--muted); }
+    .plan-btn { width: 100%; padding: 12px; border-radius: 10px; font-size: 13px; font-weight: 700; font-family: 'Syne', sans-serif; cursor: pointer; border: none; text-align: center; text-decoration: none; display: block; transition: all 0.2s; }
+    .plan-btn-primary { background: var(--accent); color: white; }
+    .plan-btn-primary:hover { background: #9b7ffd; }
+    .plan-btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+    .plan-btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* FAQ */
+    .faq { display: flex; flex-direction: column; gap: 12px; margin-top: 48px; max-width: 720px; margin-left: auto; margin-right: auto; }
+    .faq-item { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+    .faq-q { padding: 18px 20px; font-size: 14px; font-weight: 700; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 12px; user-select: none; }
+    .faq-q:hover { color: var(--accent); }
+    .faq-arrow { color: var(--muted); transition: transform 0.2s; flex-shrink: 0; }
+    .faq-item.open .faq-arrow { transform: rotate(180deg); }
+    .faq-a { padding: 0 20px; max-height: 0; overflow: hidden; transition: all 0.3s; font-size: 13px; color: var(--muted); line-height: 1.7; }
+    .faq-item.open .faq-a { padding: 0 20px 18px; max-height: 200px; }
+
+    /* CTA FINAL */
+    .cta-section { padding: 80px 0; text-align: center; }
+    .cta-card { background: linear-gradient(135deg, rgba(124,92,252,0.12), rgba(252,92,220,0.08)); border: 1px solid rgba(124,92,252,0.3); border-radius: 28px; padding: 64px 40px; }
+    .cta-card h2 { font-size: clamp(28px, 4vw, 44px); font-weight: 800; margin-bottom: 16px; }
+    .cta-card p { font-size: 15px; color: var(--muted); margin-bottom: 36px; }
+
+    /* FOOTER */
+    footer { border-top: 1px solid var(--border); padding: 32px 0; }
+    .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    .footer-copy { font-size: 12px; color: var(--muted); font-family: 'Space Mono', monospace; }
+    .footer-links { display: flex; gap: 20px; }
+    .footer-links a { font-size: 12px; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+    .footer-links a:hover { color: var(--text); }
+
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+      .steps { grid-template-columns: 1fr; }
+      .features { grid-template-columns: 1fr; }
+      .scoring-grid { grid-template-columns: 1fr; }
+      .pricing-grid { grid-template-columns: 1fr 1fr; }
+      .preview-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 500px) {
+      .pricing-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="container">
+    <div class="nav-inner">
+      <a href="landing.html" class="logo">
+        <div class="logo-icon">🎯</div>
+        <div class="logo-text">Spotted<span>OF</span></div>
+      </a>
+      <div class="nav-links">
+        <a href="#how">Comment ça marche</a>
+        <a href="#features">Fonctionnalités</a>
+        <a href="#pricing">Tarifs</a>
+        <a href="#faq">FAQ</a>
+      </div>
+      <div class="nav-ctas">
+        <a href="login.html" class="btn btn-ghost">Connexion</a>
+        <a href="login.html#register" class="btn btn-primary">Essai gratuit</a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-badge">
+      <span class="hero-badge-dot"></span>
+      Outil N°1 pour les agences OFM
+    </div>
+    <h1>Trouve les meilleures<br>modèles en <span class="grad">30 secondes</span></h1>
+    <p class="hero-sub">SpottedOF scanne et score automatiquement tes prospects Instagram, TikTok et Threads pour que tu contactes uniquement les profils à fort potentiel.</p>
+    <div class="hero-ctas">
+      <a href="login.html" class="btn btn-primary btn-lg">Commencer gratuitement →</a>
+      <a href="#how" class="btn btn-outline btn-lg">Voir comment ça marche</a>
+    </div>
+    <p class="hero-note">✓ Gratuit jusqu'à 50 prospects &nbsp;·&nbsp; ✓ Aucune carte bancaire requise</p>
+  </div>
+</section>
+
+<!-- DASHBOARD PREVIEW -->
+<div class="container">
+  <div class="preview-wrap">
+    <div class="preview-glow"></div>
+    <div class="preview-card">
+      <div class="preview-bar">
+        <div class="preview-dot" style="background:#ff5f57"></div>
+        <div class="preview-dot" style="background:#febc2e"></div>
+        <div class="preview-dot" style="background:#28c840"></div>
+      </div>
+      <div class="preview-grid">
+        <div class="preview-stat" style="border-color:rgba(124,92,252,0.3)">
+          <div class="preview-stat-label">Total scannés</div>
+          <div class="preview-stat-val" style="color:var(--accent)">247</div>
+        </div>
+        <div class="preview-stat" style="border-color:rgba(45,252,142,0.3)">
+          <div class="preview-stat-label">Avec OF</div>
+          <div class="preview-stat-val" style="color:var(--green)">89</div>
+        </div>
+        <div class="preview-stat" style="border-color:rgba(252,92,220,0.3)">
+          <div class="preview-stat-label">Score moyen</div>
+          <div class="preview-stat-val" style="color:var(--pink)">68%</div>
+        </div>
+      </div>
+      <div class="preview-rows">
+        <div class="preview-row">
+          <div class="preview-avatar" style="background:linear-gradient(135deg,#7c5cfc,#fc5cdc)">S</div>
+          <div>
+            <div class="preview-name">Sofia Martinez</div>
+            <div class="preview-handle">@sofiamtz · Instagram</div>
+            <div class="preview-bar-score" style="width:92%;background:linear-gradient(90deg,var(--green),#2dfc8e);margin-top:5px"></div>
+          </div>
+          <div class="preview-score" style="color:var(--green)">92%</div>
+        </div>
+        <div class="preview-row">
+          <div class="preview-avatar" style="background:linear-gradient(135deg,#fc5c7c,#fcdc2d)">L</div>
+          <div>
+            <div class="preview-name">Luna Rose</div>
+            <div class="preview-handle">@lunarose · TikTok</div>
+            <div class="preview-bar-score" style="width:78%;background:linear-gradient(90deg,var(--accent),var(--pink));margin-top:5px"></div>
+          </div>
+          <div class="preview-score" style="color:var(--accent)">78%</div>
+        </div>
+        <div class="preview-row">
+          <div class="preview-avatar" style="background:linear-gradient(135deg,#fcdc2d,#2dfc8e)">A</div>
+          <div>
+            <div class="preview-name">Alexa Kim</div>
+            <div class="preview-handle">@alexakim · Threads</div>
+            <div class="preview-bar-score" style="width:64%;background:linear-gradient(90deg,var(--yellow),#fc5c7c);margin-top:5px"></div>
+          </div>
+          <div class="preview-score" style="color:var(--yellow)">64%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<section class="section" id="how">
+  <div class="container">
+    <div class="section-label">Comment ça marche</div>
+    <div class="section-title">3 étapes pour trouver<br>tes meilleures recrues</div>
+    <p class="section-sub">Arrête de perdre des heures à analyser des profils manuellement. SpottedOF fait le travail à ta place.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">01 —</div>
+        <div class="step-icon">📥</div>
+        <div class="step-title">Importe tes prospects</div>
+        <div class="step-desc">Télécharge notre template CSV, remplis les handles Instagram, TikTok ou Threads de tes prospects, et importe le fichier en un clic.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">02 —</div>
+        <div class="step-icon">🤖</div>
+        <div class="step-title">L'algo score chaque profil</div>
+        <div class="step-desc">Notre algorithme analyse automatiquement les followers, l'engagement, la présence OF, les keywords dans la bio et le ratio abonnés/abonnements.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">03 —</div>
+        <div class="step-icon">💬</div>
+        <div class="step-title">Contacte les meilleurs</div>
+        <div class="step-desc">Les profils sont classés du meilleur au moins bon. Utilise nos templates de DM multilingues (FR/EN/ES/PT/IT) pour approcher les recrues idéales.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="section" id="features" style="padding-top:0">
+  <div class="container">
+    <div class="section-label">Fonctionnalités</div>
+    <div class="section-title">Tout ce dont tu as besoin<br>pour recruter efficacement</div>
+    <div class="features">
+      <div class="feature">
+        <div class="feature-icon" style="background:rgba(124,92,252,0.12)">🎯</div>
+        <div>
+          <div class="feature-title">Score automatique 0–100%</div>
+          <div class="feature-desc">Chaque profil reçoit un score basé sur 5 critères : followers, engagement, lien OF, keywords de collaboration et ratio. Plus besoin d'analyser manuellement.</div>
+        </div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon" style="background:rgba(45,252,142,0.12)">📊</div>
+        <div>
+          <div class="feature-title">Dashboard visuel</div>
+          <div class="feature-desc">Vue grille ou liste, filtres par plateforme, onglets (Tous / Avec OF / À convertir / Sauvegardés). Retrouve n'importe quel prospect en 2 secondes.</div>
+        </div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon" style="background:rgba(252,92,220,0.12)">💬</div>
+        <div>
+          <div class="feature-title">Templates DM multilingues</div>
+          <div class="feature-desc">5 langues (FR, EN, ES, PT, IT), 4 styles (Direct, Soft, Agence, Custom). Personnalisés avec le prénom de la modèle. Copie en un clic.</div>
+        </div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon" style="background:rgba(252,220,45,0.12)">🔍</div>
+        <div>
+          <div class="feature-title">Cross-platform finder</div>
+          <div class="feature-desc">Tu as le TikTok d'une modèle ? SpottedOF t'aide à retrouver son Instagram, Threads et ses autres réseaux en un clic.</div>
+        </div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon" style="background:rgba(252,92,124,0.12)">📥</div>
+        <div>
+          <div class="feature-title">Import CSV simple</div>
+          <div class="feature-desc">Télécharge le template, remplis les handles, importe. Pas besoin d'API, pas de scraper payant. 100% manuel et 100% gratuit.</div>
+        </div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon" style="background:rgba(124,92,252,0.12)">📋</div>
+        <div>
+          <div class="feature-title">Historique de contact</div>
+          <div class="feature-desc">Marque les profils comme contactés, évite les doublons, suis tes relances. Tout l'historique est sauvegardé pour chaque compte.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SCORING -->
+<section class="section" style="padding-top:0">
+  <div class="container">
+    <div class="scoring-grid">
+      <div>
+        <div class="section-label">L'algorithme</div>
+        <div class="section-title" style="font-size:clamp(22px,3.5vw,34px)">Comment on calcule<br>le score ?</div>
+        <p class="section-sub" style="margin-top:12px">Notre algo analyse 5 critères clés pour donner un score de 0 à 100% à chaque profil. Plus le score est élevé, plus la modèle a de potentiel pour ton agence.</p>
+      </div>
+      <div class="score-bars">
+        <div class="score-bar-item">
+          <div class="score-bar-top">
+            <span class="score-bar-label">👥 Nombre de followers</span>
+            <span class="score-bar-pts">30 pts</span>
+          </div>
+          <div class="score-bar-track">
+            <div class="score-bar-fill" style="width:100%;background:linear-gradient(90deg,var(--accent),var(--pink))"></div>
+          </div>
+        </div>
+        <div class="score-bar-item">
+          <div class="score-bar-top">
+            <span class="score-bar-label">❤️ Taux d'engagement</span>
+            <span class="score-bar-pts">25 pts</span>
+          </div>
+          <div class="score-bar-track">
+            <div class="score-bar-fill" style="width:83%;background:linear-gradient(90deg,var(--pink),var(--accent2))"></div>
+          </div>
+        </div>
+        <div class="score-bar-item">
+          <div class="score-bar-top">
+            <span class="score-bar-label">🔞 Lien OF dans la bio</span>
+            <span class="score-bar-pts">20 pts</span>
+          </div>
+          <div class="score-bar-track">
+            <div class="score-bar-fill" style="width:67%;background:linear-gradient(90deg,var(--green),var(--accent))"></div>
+          </div>
+        </div>
+        <div class="score-bar-item">
+          <div class="score-bar-top">
+            <span class="score-bar-label">🤝 Keywords collab</span>
+            <span class="score-bar-pts">15 pts</span>
+          </div>
+          <div class="score-bar-track">
+            <div class="score-bar-fill" style="width:50%;background:linear-gradient(90deg,var(--yellow),var(--green))"></div>
+          </div>
+        </div>
+        <div class="score-bar-item">
+          <div class="score-bar-top">
+            <span class="score-bar-label">📊 Ratio abonnés/abonnements</span>
+            <span class="score-bar-pts">10 pts</span>
+          </div>
+          <div class="score-bar-track">
+            <div class="score-bar-fill" style="width:33%;background:linear-gradient(90deg,var(--accent2),var(--pink))"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="section" id="pricing">
+  <div class="container">
+    <div style="text-align:center;margin-bottom:0">
+      <div class="section-label" style="display:inline-block">Tarifs</div>
+      <div class="section-title" style="margin-top:8px">Simple, transparent, sans surprise</div>
+      <p class="section-sub" style="margin:12px auto 0">Commence gratuitement. Upgrade quand tu en as besoin.</p>
+    </div>
+    <div class="pricing-grid">
+
+      <!-- FREE -->
+      <div class="plan-card">
+        <div class="plan-name" style="color:var(--muted)">Free</div>
+        <div class="plan-price">0<sub>€/mois</sub></div>
+        <div class="plan-desc">Pour tester et se faire une idée</div>
+        <ul class="plan-features">
+          <li><span class="check">✓</span> Jusqu'à 50 prospects</li>
+          <li><span class="check">✓</span> Score automatique</li>
+          <li><span class="check">✓</span> Dashboard complet</li>
+          <li><span class="check">✓</span> Templates DM (FR)</li>
+          <li class="disabled"><span class="lock">🔒</span> Export CSV</li>
+          <li class="disabled"><span class="lock">🔒</span> Multi-langues DM</li>
+          <li class="disabled"><span class="lock">🔒</span> Statistiques</li>
+        </ul>
+        <a href="login.html" class="plan-btn plan-btn-ghost">Commencer gratuitement</a>
+      </div>
+
+      <!-- STARTER -->
+      <div class="plan-card">
+        <div class="plan-name" style="color:var(--accent)">Starter</div>
+        <div class="plan-price" style="color:var(--accent)"><sup>€</sup>29<sub>/mois</sub></div>
+        <div class="plan-desc">Pour les agences qui démarrent</div>
+        <ul class="plan-features">
+          <li><span class="check">✓</span> Jusqu'à 200 prospects</li>
+          <li><span class="check">✓</span> Score automatique</li>
+          <li><span class="check">✓</span> Dashboard complet</li>
+          <li><span class="check">✓</span> Templates DM 5 langues</li>
+          <li><span class="check">✓</span> Export CSV</li>
+          <li class="disabled"><span class="lock">🔒</span> Statistiques avancées</li>
+          <li class="disabled"><span class="lock">🔒</span> Support prioritaire</li>
+        </ul>
+        <a href="login.html" class="plan-btn plan-btn-ghost">Choisir Starter</a>
+      </div>
+
+      <!-- PRO -->
+      <div class="plan-card popular">
+        <div class="popular-tag">⚡ LE PLUS POPULAIRE</div>
+        <div class="plan-name" style="color:var(--green)">Pro</div>
+        <div class="plan-price" style="color:var(--green)"><sup>€</sup>59<sub>/mois</sub></div>
+        <div class="plan-desc">Pour les agences qui scalent</div>
+        <ul class="plan-features">
+          <li><span class="check">✓</span> Prospects illimités</li>
+          <li><span class="check">✓</span> Score automatique</li>
+          <li><span class="check">✓</span> Dashboard complet</li>
+          <li><span class="check">✓</span> Templates DM 5 langues</li>
+          <li><span class="check">✓</span> Export CSV</li>
+          <li><span class="check">✓</span> Statistiques avancées</li>
+          <li><span class="check">✓</span> Notes sur les prospects</li>
+        </ul>
+        <a href="login.html" class="plan-btn plan-btn-primary">Choisir Pro</a>
+      </div>
+
+      <!-- AGENCY -->
+      <div class="plan-card">
+        <div class="plan-name" style="color:var(--pink)">Agency</div>
+        <div class="plan-price" style="color:var(--pink)"><sup>€</sup>99<sub>/mois</sub></div>
+        <div class="plan-desc">Pour les grandes agences OFM</div>
+        <ul class="plan-features">
+          <li><span class="check">✓</span> Prospects illimités</li>
+          <li><span class="check">✓</span> Tout le plan Pro</li>
+          <li><span class="check">✓</span> Multi-utilisateurs</li>
+          <li><span class="check">✓</span> Support prioritaire 24/7</li>
+          <li><span class="check">✓</span> Onboarding personnalisé</li>
+          <li><span class="check">✓</span> Accès anticipé aux nouvelles features</li>
+          <li><span class="check">✓</span> Facturation sur devis</li>
+        </ul>
+        <a href="login.html" class="plan-btn plan-btn-ghost">Choisir Agency</a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="section" id="faq" style="padding-top:0">
+  <div class="container">
+    <div style="text-align:center;margin-bottom:0">
+      <div class="section-label" style="display:inline-block">FAQ</div>
+      <div class="section-title" style="margin-top:8px">Questions fréquentes</div>
+    </div>
+    <div class="faq">
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          C'est quoi exactement SpottedOF ?
+          <svg class="faq-arrow" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="faq-a">SpottedOF est un outil SaaS conçu spécifiquement pour les agences OFM (OnlyFans Management). Il permet d'importer des profils de modèles (Instagram, TikTok, Threads), de les scorer automatiquement selon leur potentiel, et de les contacter avec des templates DM professionnels.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          Comment fonctionne l'import de prospects ?
+          <svg class="faq-arrow" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="faq-a">Tu télécharges notre template CSV depuis le dashboard, tu remplis les colonnes (handle, plateforme, followers, engagement, bio...) et tu importes le fichier. L'algo score chaque profil automatiquement en quelques secondes. Pas besoin de scraper ni de payer des outils tiers.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          Est-ce que c'est vraiment gratuit au départ ?
+          <svg class="faq-arrow" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="faq-a">Oui, totalement. Le plan Free te permet d'importer jusqu'à 50 prospects, de les scorer et d'utiliser les templates DM en français. Aucune carte bancaire requise. Tu upgrades seulement quand tu en as besoin.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          Comment est calculé le score d'un profil ?
+          <svg class="faq-arrow" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="faq-a">Le score (0–100%) est basé sur 5 critères : le nombre de followers (30 pts), le taux d'engagement (25 pts), la présence d'un lien OnlyFans dans la bio (20 pts), les keywords de collaboration (15 pts) et le ratio abonnés/abonnements (10 pts).</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          Puis-je annuler à tout moment ?
+          <svg class="faq-arrow" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="faq-a">Oui, sans engagement ni frais de résiliation. Tu peux annuler ou downgrader ton plan à tout moment depuis ton espace client. Ton accès reste actif jusqu'à la fin de la période en cours.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA FINAL -->
+<section class="cta-section">
+  <div class="container">
+    <div class="cta-card">
+      <h2>Prêt à recruter<br>les meilleures modèles ?</h2>
+      <p>Rejoins les agences OFM qui utilisent SpottedOF pour trouver leurs meilleures recrues.</p>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+        <a href="login.html" class="btn btn-primary btn-lg">Créer mon compte gratuit →</a>
+        <a href="#pricing" class="btn btn-outline btn-lg">Voir les tarifs</a>
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin-top:20px;font-family:'Space Mono',monospace">✓ Gratuit pour commencer &nbsp;·&nbsp; ✓ Sans carte bancaire &nbsp;·&nbsp; ✓ Upgrade à tout moment</p>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div class="logo">
+        <div class="logo-icon" style="width:28px;height:28px;font-size:13px">🎯</div>
+        <div class="logo-text" style="font-size:16px">Spotted<span>OF</span></div>
+      </div>
+      <div class="footer-copy">© 2026 SpottedOF by FlyMagency</div>
+      <div class="footer-links">
+        <a href="login.html">Connexion</a>
+        <a href="login.html">Inscription</a>
+        <a href="#pricing">Tarifs</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+function toggleFaq(el) {
+  const item = el.parentElement;
+  item.classList.toggle('open');
+}
+</script>
+</body>
+</html>

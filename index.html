@@ -5,7 +5,7 @@
 <script>
   const sb = supabase.createClient('https://nsvrkogwmzrbjrtbphpb.supabase.co','sb_publishable_x7QwXgNepnb6t_2LCMniqw_zIEZ2LnR');
   sb.auth.getSession().then(({data}) => {
-    window.location.href = data.session ? 'app.html' : 'login.html';
+    window.location.href = data.session ? 'app.html' : 'landing.html';
   });
 </script>
 </head><body></body></html>
