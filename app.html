@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SpottedOF — Prospect Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
       --bg: #0a0a0f; --surface: #111118; --surface2: #1a1a24; --border: #2a2a3a;
@@ -193,6 +194,8 @@
           Importer CSV
         </button>
         <input type="file" id="csvInput" accept=".csv" style="display:none" onchange="importCSV(this)">
+        <span id="userEmail" style="font-family:'Space Mono',monospace;font-size:11px;color:var(--muted)"></span>
+        <button class="btn btn-ghost" onclick="signOut()">Déconnexion</button>
         <button class="btn btn-primary" onclick="openScanModal()">+ Infos scan</button>
       </div>
     </div>
@@ -332,6 +335,18 @@
 
 <script>
 const WORKER = 'https://spottedof-worker.businessflymagency.workers.dev';
+const SUPABASE_URL = 'https://nsvrkogwmzrbjrtbphpb.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_x7QwXgNepnb6t_2LCMniqw_zIEZ2LnR';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// Auth check
+let currentUser = null;
+sb.auth.getSession().then(({ data }) => {
+  if (!data.session) { window.location.href = 'login.html'; return; }
+  currentUser = data.session.user;
+  document.getElementById('userEmail').textContent = currentUser.email;
+  loadProspects();
+});
 
 let DATA = [];
 let savedSet = new Set();
@@ -632,8 +647,12 @@ function showToast(msg, type='success') {
 }
 document.querySelectorAll('.modal-overlay').forEach(el=>el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('open')}));
 
-// Init
-loadProspects();
+async function signOut() {
+  await sb.auth.signOut();
+  window.location.href = 'login.html';
+}
+
+// Init — chargement déclenché par auth check ci-dessus
 </script>
 </body>
 </html>

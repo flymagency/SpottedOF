@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SpottedOF — Connexion</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg: #0a0a0f; --surface: #111118; --surface2: #1a1a24; --border: #2a2a3a;
+      --accent: #7c5cfc; --accent2: #fc5c7c; --green: #2dfc8e; --yellow: #fcdc2d;
+      --pink: #fc5cdc; --text: #e8e8f0; --muted: #6b6b88;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+    body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(rgba(124,92,252,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(124,92,252,0.03) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; }
+
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 24px; padding: 48px; width: 100%; max-width: 420px; position: relative; z-index: 1; }
+
+    .logo { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; }
+    .logo-icon { width: 44px; height: 44px; background: linear-gradient(135deg, var(--accent), var(--pink)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+    .logo-text { font-size: 26px; font-weight: 800; }
+    .logo-text span { color: var(--pink); }
+
+    .tab-row { display: flex; gap: 4px; background: var(--surface2); border-radius: 12px; padding: 4px; margin-bottom: 28px; }
+    .tab { flex: 1; padding: 9px; border-radius: 9px; font-size: 13px; font-weight: 700; cursor: pointer; border: none; background: none; color: var(--muted); font-family: 'Syne', sans-serif; transition: all 0.2s; text-align: center; }
+    .tab.active { background: var(--accent); color: white; }
+
+    .form-group { margin-bottom: 16px; }
+    .form-label { font-size: 11px; color: var(--muted); font-family: 'Space Mono', monospace; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; display: block; }
+    .form-input { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 13px 16px; color: var(--text); font-family: 'Syne', sans-serif; font-size: 14px; outline: none; transition: border-color 0.2s; }
+    .form-input:focus { border-color: var(--accent); }
+
+    .btn { width: 100%; padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 700; font-family: 'Syne', sans-serif; cursor: pointer; border: none; transition: all 0.2s; margin-top: 8px; }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary:hover { background: #9b7ffd; }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .alert { border-radius: 10px; padding: 12px 16px; font-size: 13px; margin-bottom: 16px; display: none; }
+    .alert-error { background: rgba(252,92,124,0.1); border: 1px solid rgba(252,92,124,0.3); color: var(--accent2); }
+    .alert-success { background: rgba(45,252,142,0.1); border: 1px solid rgba(45,252,142,0.3); color: var(--green); }
+
+    .divider { text-align: center; margin: 20px 0; font-size: 12px; color: var(--muted); font-family: 'Space Mono', monospace; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <div class="logo-icon">🎯</div>
+    <div class="logo-text">Spotted<span>OF</span></div>
+  </div>
+
+  <div class="tab-row">
+    <button class="tab active" onclick="setMode('login',this)">Connexion</button>
+    <button class="tab" onclick="setMode('register',this)">Inscription</button>
+  </div>
+
+  <div id="alertError" class="alert alert-error"></div>
+  <div id="alertSuccess" class="alert alert-success"></div>
+
+  <div class="form-group">
+    <label class="form-label">Email</label>
+    <input type="email" class="form-input" id="email" placeholder="ton@email.com">
+  </div>
+  <div class="form-group" id="groupPassword">
+    <label class="form-label">Mot de passe</label>
+    <input type="password" class="form-input" id="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')submit()">
+  </div>
+  <div class="form-group" id="groupAgency" style="display:none">
+    <label class="form-label">Nom de ton agence</label>
+    <input type="text" class="form-input" id="agency" placeholder="FlyMagency">
+  </div>
+
+  <button class="btn btn-primary" id="submitBtn" onclick="submit()">Se connecter</button>
+
+  <div class="divider" id="forgotWrap">
+    <a href="#" onclick="forgotPassword()" style="color:var(--muted);text-decoration:none">Mot de passe oublié ?</a>
+  </div>
+</div>
+
+<script>
+  const SUPABASE_URL = 'https://nsvrkogwmzrbjrtbphpb.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_x7QwXgNepnb6t_2LCMniqw_zIEZ2LnR';
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  let mode = 'login';
+
+  // Déjà connecté ?
+  sb.auth.getSession().then(({ data }) => {
+    if (data.session) window.location.href = 'app.html';
+  });
+
+  function setMode(m, btn) {
+    mode = m;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('groupAgency').style.display = m === 'register' ? 'block' : 'none';
+    document.getElementById('forgotWrap').style.display = m === 'login' ? 'block' : 'none';
+    document.getElementById('submitBtn').textContent = m === 'login' ? 'Se connecter' : "Créer mon compte";
+    hideAlerts();
+  }
+
+  async function submit() {
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const btn = document.getElementById('submitBtn');
+    hideAlerts();
+
+    if (!email || !password) { showError('Remplis tous les champs'); return; }
+
+    btn.disabled = true;
+    btn.textContent = '...';
+
+    if (mode === 'login') {
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) { showError(error.message); btn.disabled = false; btn.textContent = 'Se connecter'; return; }
+      window.location.href = 'app.html';
+    } else {
+      const agency = document.getElementById('agency').value.trim();
+      const { data, error } = await sb.auth.signUp({
+        email, password,
+        options: { data: { agency_name: agency || email.split('@')[0] } }
+      });
+      if (error) { showError(error.message); btn.disabled = false; btn.textContent = 'Créer mon compte'; return; }
+      showSuccess('Compte créé ! Vérifie ton email pour confirmer. 📧');
+      btn.disabled = false;
+      btn.textContent = 'Créer mon compte';
+    }
+  }
+
+  async function forgotPassword() {
+    const email = document.getElementById('email').value.trim();
+    if (!email) { showError('Entre ton email d\'abord'); return; }
+    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + '/login.html' });
+    if (error) showError(error.message);
+    else showSuccess('Email de réinitialisation envoyé ! 📧');
+  }
+
+  function showError(msg) { const el = document.getElementById('alertError'); el.textContent = msg; el.style.display = 'block'; }
+  function showSuccess(msg) { const el = document.getElementById('alertSuccess'); el.textContent = msg; el.style.display = 'block'; }
+  function hideAlerts() { document.getElementById('alertError').style.display = 'none'; document.getElementById('alertSuccess').style.display = 'none'; }
+</script>
+</body>
+</html>
