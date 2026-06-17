@@ -294,31 +294,71 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const DATA = [
-  { id:1, handle:'@sophiemrtn', name:'Sophie Martin', platform:'ig', followers:48200, engagement:4.2, niche:'Fitness', hasOf:false, ofLink:false, score:92, bio:'🏋️ Coach fitness certifiée | Collab DM | Paris 🇫🇷', avatar:'S' },
-  { id:2, handle:'@layla.vibe', name:'Layla Vibe', platform:'ig', followers:127000, engagement:2.8, niche:'Lifestyle', hasOf:true, ofLink:true, score:88, bio:'✨ lifestyle & content | OF link in bio | collab@layla.com', avatar:'L' },
-  { id:3, handle:'@emmafit_', name:'Emma F.', platform:'tt', followers:312000, engagement:6.1, niche:'Fitness', hasOf:false, ofLink:false, score:85, bio:'Fitness motivation 💪 | Partenariats DM', avatar:'E' },
-  { id:4, handle:'@noura.aesthetic', name:'Noura K.', platform:'ig', followers:23500, engagement:7.4, niche:'Beauty', hasOf:false, ofLink:false, score:81, bio:'Beauty & aesthetic 🌸 | Open to collabs | Lyon', avatar:'N' },
-  { id:5, handle:'@jess.threads', name:'Jessica', platform:'th', followers:18900, engagement:5.2, niche:'Mode', hasOf:true, ofLink:true, score:79, bio:'Fashion | OF 🔥 | Promo ok | DM open', avatar:'J' },
-  { id:6, handle:'@clara.dream', name:'Clara D.', platform:'ig', followers:89400, engagement:3.1, niche:'Travel', hasOf:false, ofLink:false, score:74, bio:'Travel content | Bordeaux 🍷 | Collab ok', avatar:'C' },
-  { id:7, handle:'@lena.vibes', name:'Léna V.', platform:'tt', followers:540000, engagement:2.3, niche:'Dance', hasOf:false, ofLink:false, score:71, bio:'Dance & vibes | Bookings : lena@mgmt.fr', avatar:'L' },
-  { id:8, handle:'@mia.content', name:'Mia C.', platform:'ig', followers:11200, engagement:9.8, niche:'Fitness', hasOf:true, ofLink:true, score:68, bio:'Fitness & lifestyle 🔥 | OF link 👇 | Paris', avatar:'M' },
-  { id:9, handle:'@ana.looks', name:'Ana Looks', platform:'th', followers:7800, engagement:6.3, niche:'Beauty', hasOf:false, ofLink:false, score:63, bio:'Makeup artist | Collab DM | Marseille', avatar:'A' },
-  { id:10, handle:'@zara.fit', name:'Zara Fit', platform:'ig', followers:34100, engagement:4.7, niche:'Fitness', hasOf:false, ofLink:false, score:61, bio:'Fitness lifestyle 💪 | Open to brand deals', avatar:'Z' },
-];
+const WORKER = 'https://spottedof-worker.businessflymagency.workers.dev';
 
-let savedSet = new Set([2, 5]);
+let DATA = [];
+let savedSet = new Set();
 let activeTab = 'all';
 let activePlatforms = new Set();
 let sortBy = 'score';
+let loading = false;
 
-function fmt(n) { return n>=1e6?(n/1e6).toFixed(1)+'M':n>=1000?(n/1000).toFixed(0)+'K':n; }
+function fmt(n) { return n>=1e6?(n/1e6).toFixed(1)+'M':n>=1000?(n/1000).toFixed(0)+'K':String(n||0); }
 function sc(s) { return s>=80?'hi':s>=65?'md':'lo'; }
+function avatar(handle) { return (handle||'?').replace('@','')[0].toUpperCase(); }
 
+// ─── LOAD DATA ───────────────────────────────────────────────────────────────
+async function loadProspects() {
+  loading = true;
+  document.getElementById('prospectList').innerHTML = `<div class="empty-state"><div class="empty-icon" style="font-size:32px;animation:spin 1s linear infinite">⚡</div><div class="empty-title">Chargement...</div></div>`;
+
+  try {
+    const params = new URLSearchParams({ min_score: '0' });
+    if (activePlatforms.size === 1) params.set('platform', [...activePlatforms][0]);
+
+    const res = await fetch(`${WORKER}/prospects?${params}`);
+    const json = await res.json();
+    DATA = (json.prospects || []).map(p => ({
+      id: p.id,
+      handle: p.handle || '',
+      name: p.name || '',
+      platform: p.platform || 'ig',
+      followers: p.followers || 0,
+      engagement: p.engagement || 0,
+      niche: p.niche || '',
+      bio: p.bio || '',
+      hasOf: p.has_of || false,
+      ofLink: p.of_link || false,
+      score: p.score || 0,
+      status: p.status || 'nouveau',
+    }));
+    await loadStats();
+  } catch(e) {
+    DATA = [];
+    document.getElementById('prospectList').innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">Erreur de connexion</div><div class="empty-sub">Vérifiez votre connexion internet</div></div>`;
+  }
+  loading = false;
+  renderProspects();
+}
+
+async function loadStats() {
+  try {
+    const res = await fetch(`${WORKER}/stats`);
+    const s = await res.json();
+    document.querySelector('.stats-row .stat-card:nth-child(1) .stat-value').textContent = s.total;
+    document.querySelector('.stats-row .stat-card:nth-child(1) .stat-sub').textContent = `${DATA.length} chargés`;
+    document.querySelector('.stats-row .stat-card:nth-child(2) .stat-value').innerHTML = `${s.avg_score}<span style="font-size:16px;color:var(--muted)">%</span>`;
+    document.querySelector('.stats-row .stat-card:nth-child(3) .stat-value').textContent = s.with_of;
+    document.querySelector('.stats-row .stat-card:nth-child(3) .stat-sub').textContent = `${s.total ? Math.round(s.with_of/s.total*100) : 0}% des profils`;
+    document.querySelector('.stats-row .stat-card:nth-child(4) .stat-value').textContent = s.to_convert;
+  } catch(e) {}
+}
+
+// ─── RENDER ──────────────────────────────────────────────────────────────────
 function renderProspects() {
   const q = document.getElementById('searchInput').value.toLowerCase();
   let list = DATA.filter(p => {
-    if (q && !p.handle.includes(q) && !p.name.toLowerCase().includes(q)) return false;
+    if (q && !p.handle.toLowerCase().includes(q) && !p.name.toLowerCase().includes(q)) return false;
     if (activeTab==='of' && !p.hasOf) return false;
     if (activeTab==='convert' && p.hasOf) return false;
     if (activeTab==='saved' && !savedSet.has(p.id)) return false;
@@ -328,15 +368,17 @@ function renderProspects() {
 
   const el = document.getElementById('prospectList');
   if (!list.length) {
-    el.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-title">Aucun prospect</div><div class="empty-sub">Modifiez vos filtres ou lancez un nouveau scan</div></div>`;
+    el.innerHTML = DATA.length === 0
+      ? `<div class="empty-state"><div class="empty-icon">🎯</div><div class="empty-title">Aucun prospect encore</div><div class="empty-sub">Lance un scan Phantombuster pour commencer</div></div>`
+      : `<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-title">Aucun résultat</div><div class="empty-sub">Modifiez vos filtres</div></div>`;
     return;
   }
   el.innerHTML = list.map(p => {
     const cl = sc(p.score);
     const sv = savedSet.has(p.id);
-    return `<div class="prospect-row" onclick="openProspect(${p.id})">
+    return `<div class="prospect-row" onclick="openProspect('${p.id}')">
       <div class="profile-cell">
-        <div class="avatar">${p.avatar}</div>
+        <div class="avatar">${avatar(p.handle)}</div>
         <div>
           <div class="profile-handle"><span class="platform-dot dot-${p.platform}"></span>${p.handle}</div>
           <div class="profile-name">${p.name}</div>
@@ -353,10 +395,10 @@ function renderProspects() {
         </div>
       </div>
       <div class="actions-cell" onclick="event.stopPropagation()">
-        <div class="icon-btn ${sv?'saved':''}" onclick="toggleSave(${p.id},this)" title="Sauvegarder">
+        <div class="icon-btn ${sv?'saved':''}" onclick="toggleSave('${p.id}',this)" title="Sauvegarder">
           <svg width="13" height="13" fill="${sv?'currentColor':'none'}" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
         </div>
-        <div class="icon-btn" onclick="openProspect(${p.id})" title="Détail">
+        <div class="icon-btn" onclick="openProspect('${p.id}')" title="Détail">
           <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
         </div>
       </div>
@@ -372,7 +414,7 @@ function setTab(el, tab) {
 function togglePlatform(el, plat) {
   if (activePlatforms.has(plat)) { activePlatforms.delete(plat); el.className='plat-btn'; }
   else { activePlatforms.add(plat); el.className=`plat-btn active-${plat}`; }
-  renderProspects();
+  loadProspects();
 }
 
 function toggleSave(id, el) {
@@ -383,17 +425,18 @@ function toggleSave(id, el) {
 
 function openProspect(id) {
   const p = DATA.find(x=>x.id===id);
+  if (!p) return;
   const cl = sc(p.score);
   document.getElementById('modalBody').innerHTML = `
     <div class="modal-profile">
-      <div class="modal-avatar">${p.avatar}</div>
+      <div class="modal-avatar">${avatar(p.handle)}</div>
       <div>
         <div class="modal-handle">${p.handle}</div>
         <div class="modal-meta">${p.name} · ${p.niche} · <span class="platform-dot dot-${p.platform}" style="margin-left:4px"></span>${p.platform.toUpperCase()}</div>
         <div style="margin-top:8px">${p.hasOf?'<span class="badge badge-of">OF actif</span>':'<span class="badge badge-convert">À convertir</span>'}</div>
       </div>
     </div>
-    <div class="modal-bio">${p.bio}</div>
+    <div class="modal-bio">${p.bio || '<em style="color:var(--muted)">Pas de bio disponible</em>'}</div>
     <div class="score-breakdown">
       <div class="score-item"><div class="score-item-label">Score global</div><div class="score-item-val s-${cl}">${p.score}%</div></div>
       <div class="score-item"><div class="score-item-label">Followers</div><div class="score-item-val">${fmt(p.followers)}</div></div>
@@ -405,11 +448,14 @@ function openProspect(id) {
 
 function openScanModal() { document.getElementById('scanModal').classList.add('open'); }
 function pickPlatform(el) { document.querySelectorAll('.plat-pick-btn').forEach(b=>b.classList.remove('sel')); el.classList.add('sel'); }
-function launchScan() {
+
+async function launchScan() {
   const h = document.getElementById('refHandle').value.trim();
   if (!h) { showToast('Entrez un handle de référence','error'); return; }
-  closeModal('scanModal'); showToast('Scan lancé — résultats dans quelques minutes ⚡','success');
+  closeModal('scanModal');
+  showToast('Scan lancé — résultats dans quelques minutes ⚡','success');
 }
+
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 function showToast(msg, type='success') {
   const t = document.getElementById('toast');
@@ -417,7 +463,9 @@ function showToast(msg, type='success') {
   setTimeout(()=>t.classList.remove('show'),3000);
 }
 document.querySelectorAll('.modal-overlay').forEach(el=>el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('open')}));
-renderProspects();
+
+// Init
+loadProspects();
 </script>
 </body>
 </html>
