@@ -64,11 +64,11 @@
 
     /* TABLE */
     .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; overflow: hidden; }
-    .table-head { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 120px; padding: 12px 20px; border-bottom: 1px solid var(--border); background: var(--surface2); }
+    .table-head { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1fr 120px; padding: 12px 20px; border-bottom: 1px solid var(--border); background: var(--surface2); }
     .th { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; display: flex; align-items: center; gap: 4px; cursor: pointer; user-select: none; }
     .th:hover { color: var(--text); }
 
-    .prospect-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 120px; padding: 14px 20px; border-bottom: 1px solid var(--border); align-items: center; transition: background 0.15s; cursor: pointer; }
+    .prospect-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1fr 120px; padding: 14px 20px; border-bottom: 1px solid var(--border); align-items: center; transition: background 0.15s; cursor: pointer; }
     .prospect-row:last-child { border-bottom: none; }
     .prospect-row:hover { background: var(--surface2); }
 
@@ -99,6 +99,8 @@
     .badge-convert { background: rgba(252,220,45,0.12); color: var(--yellow); border: 1px solid rgba(252,220,45,0.3); }
 
     .actions-cell { display: flex; gap: 6px; justify-content: flex-end; }
+    .note-cell { cursor: pointer; padding: 4px 6px; border-radius: 6px; transition: background 0.15s; }
+    .note-cell:hover { background: var(--surface2); }
     .icon-btn { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); transition: all 0.2s; }
     .icon-btn:hover { border-color: var(--accent); color: var(--accent); }
     .icon-btn.saved { border-color: rgba(252,220,45,0.4); color: var(--yellow); background: rgba(252,220,45,0.08); }
@@ -236,6 +238,7 @@
       <button class="filter-tab" onclick="setTab(this,'of')">Déjà OF</button>
       <button class="filter-tab" onclick="setTab(this,'convert')">À convertir</button>
       <button class="filter-tab" onclick="setTab(this,'saved')">Sauvegardés</button>
+      <button class="filter-tab" onclick="setTab(this,'pipeline')">Pipeline</button>
     </div>
     <div class="filter-platform">
       <button class="plat-btn" onclick="togglePlatform(this,'ig')">IG</button>
@@ -246,6 +249,12 @@
       <option value="score">Score ↓</option>
       <option value="followers">Followers ↓</option>
       <option value="engagement">Engagement ↓</option>
+    </select>
+    <select class="sort-select" id="scoreFilter" onchange="renderProspects()" style="min-width:110px">
+      <option value="0">Score: Tous</option>
+      <option value="70">Score: 70%+</option>
+      <option value="50">Score: 50%+</option>
+      <option value="30">Score: 30%+</option>
     </select>
     <div class="view-toggle">
       <button class="view-btn active" onclick="setView('list',this)" title="Liste">
@@ -263,8 +272,9 @@
       <div class="th">Followers</div>
       <div class="th">Engagement</div>
       <div class="th">Niche</div>
-      <div class="th">Statut OF</div>
+      <div class="th">Statut</div>
       <div class="th">Score</div>
+      <div class="th">Note</div>
       <div class="th" style="cursor:default;justify-content:flex-end">Actions</div>
     </div>
     <div id="prospectList"></div>
@@ -442,6 +452,7 @@ async function loadProspects() {
       ofLink: p.of_link || false,
       score: p.score || 0,
       status: p.status || 'nouveau',
+      note: p.note || '',
     }));
     await loadStats();
   } catch(e) {
@@ -466,14 +477,20 @@ async function loadStats() {
 }
 
 // ─── RENDER ──────────────────────────────────────────────────────────────────
+const PIPELINE_STATUSES = ['contactée', 'en discussion', 'signée', 'refus'];
+
 function renderProspects() {
   const q = document.getElementById('searchInput').value.toLowerCase();
+  const minScore = parseInt(document.getElementById('scoreFilter')?.value || '0');
   let list = DATA.filter(p => {
-    if (q && !p.handle.toLowerCase().includes(q) && !p.name.toLowerCase().includes(q)) return false;
+    // Recherche globale : handle + nom + niche + bio
+    if (q && !p.handle.toLowerCase().includes(q) && !p.name.toLowerCase().includes(q) && !(p.niche||'').toLowerCase().includes(q) && !(p.bio||'').toLowerCase().includes(q)) return false;
     if (activeTab==='of' && !p.hasOf) return false;
     if (activeTab==='convert' && p.hasOf) return false;
     if (activeTab==='saved' && !savedSet.has(p.id)) return false;
+    if (activeTab==='pipeline' && !PIPELINE_STATUSES.includes((p.status||'').toLowerCase())) return false;
     if (activePlatforms.size>0 && !activePlatforms.has(p.platform)) return false;
+    if (p.score < minScore) return false;
     return true;
   }).sort((a,b) => b[sortBy]-a[sortBy]);
 
@@ -519,14 +536,22 @@ function renderProspects() {
       <div class="cell cell-mono">${fmt(p.followers)}</div>
       <div class="cell cell-mono" style="color:var(--yellow)">${p.engagement}%</div>
       <div class="cell" style="font-size:12px;color:var(--muted)">${p.niche}</div>
-      <div class="cell">${p.hasOf?'<span class="badge badge-of">OF actif</span>':'<span class="badge badge-convert">À convertir</span>'}</div>
+      <div class="cell">${statusBadge(p)}</div>
       <div class="cell">
         <div class="score-wrap">
           <div class="score-bar"><div class="score-fill sf-${cl}" style="width:${p.score}%"></div></div>
           <span class="score-num s-${cl}">${p.score}%</span>
         </div>
       </div>
+      <div class="cell" onclick="event.stopPropagation()" style="min-width:0">
+        <div class="note-cell" onclick="openNoteModal('${p.id}','${(p.note||'').replace(/'/g,"\\'")}')">
+          ${p.note ? `<span style="font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;max-width:120px" title="${p.note}">${p.note}</span>` : `<span style="font-size:11px;color:var(--border)">+ Note</span>`}
+        </div>
+      </div>
       <div class="actions-cell" onclick="event.stopPropagation()">
+        <div class="icon-btn" onclick="openPipelineModal('${p.id}','${(p.status||'').toLowerCase()}')" title="Changer statut">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        </div>
         <div class="icon-btn ${sv?'saved':''}" onclick="toggleSave('${p.id}',this)" title="Sauvegarder">
           <svg width="13" height="13" fill="${sv?'currentColor':'none'}" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
         </div>
@@ -698,6 +723,91 @@ function showToast(msg, type='success') {
   setTimeout(()=>t.classList.remove('show'),3000);
 }
 document.querySelectorAll('.modal-overlay').forEach(el=>el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('open')}));
+
+/* ─── STATUS BADGE ─── */
+function statusBadge(p) {
+  const s = (p.status || '').toLowerCase();
+  if (s === 'contactée') return '<span class="badge" style="background:rgba(252,220,45,0.12);color:#fcdc2d;border:1px solid rgba(252,220,45,0.3)">Contactée</span>';
+  if (s === 'en discussion') return '<span class="badge" style="background:rgba(124,92,252,0.12);color:#7c5cfc;border:1px solid rgba(124,92,252,0.3)">En discussion</span>';
+  if (s === 'signée') return '<span class="badge" style="background:rgba(45,252,142,0.12);color:#2dfc8e;border:1px solid rgba(45,252,142,0.3)">✓ Signée</span>';
+  if (s === 'refus') return '<span class="badge" style="background:rgba(252,92,124,0.12);color:#fc5c7c;border:1px solid rgba(252,92,124,0.3)">Refus</span>';
+  if (p.hasOf) return '<span class="badge badge-of">OF actif</span>';
+  return '<span class="badge badge-convert">À convertir</span>';
+}
+
+/* ─── NOTES ─── */
+function openNoteModal(id, currentNote) {
+  const existing = document.getElementById('noteModal');
+  if (existing) existing.remove();
+  const modal = document.createElement('div');
+  modal.id = 'noteModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:center;justify-content:center;padding:24px';
+  modal.innerHTML = `
+    <div style="background:#111118;border:1px solid #2a2a3a;border-radius:20px;padding:28px;max-width:400px;width:100%">
+      <div style="font-size:15px;font-weight:700;margin-bottom:16px">📝 Note interne</div>
+      <textarea id="noteInput" style="width:100%;background:#1a1a24;border:1px solid #2a2a3a;border-radius:10px;padding:12px;color:#e8e8f0;font-family:'Syne',sans-serif;font-size:13px;resize:vertical;min-height:100px;outline:none" placeholder="Ajoute tes remarques sur ce profil...">${currentNote}</textarea>
+      <div style="display:flex;gap:10px;margin-top:14px">
+        <button onclick="saveNote('${id}')" style="flex:1;background:#7c5cfc;color:white;border:none;padding:11px;border-radius:10px;font-size:14px;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer">Enregistrer</button>
+        <button onclick="document.getElementById('noteModal').remove()" style="background:#1a1a24;color:#6b6b88;border:1px solid #2a2a3a;padding:11px 16px;border-radius:10px;font-size:14px;font-family:'Syne',sans-serif;cursor:pointer">Annuler</button>
+      </div>
+    </div>`;
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
+  document.getElementById('noteInput').focus();
+}
+
+async function saveNote(id) {
+  const note = document.getElementById('noteInput').value.trim();
+  try {
+    await fetch(`${WORKER}/update-note`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({id, note}) });
+    const p = DATA.find(x => x.id === id);
+    if (p) p.note = note;
+    document.getElementById('noteModal').remove();
+    renderProspects();
+    showToast('Note enregistrée ✓', 'success');
+  } catch(e) { showToast('Erreur sauvegarde note', 'error'); }
+}
+
+/* ─── PIPELINE STATUT ─── */
+function openPipelineModal(id, currentStatus) {
+  const existing = document.getElementById('pipelineModal');
+  if (existing) existing.remove();
+  const statuses = [
+    { value: 'contactée',     label: 'Contactée',     color: '#fcdc2d' },
+    { value: 'en discussion', label: 'En discussion', color: '#7c5cfc' },
+    { value: 'signée',        label: '✓ Signée',      color: '#2dfc8e' },
+    { value: 'refus',         label: 'Refus',         color: '#fc5c7c' },
+  ];
+  const modal = document.createElement('div');
+  modal.id = 'pipelineModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:center;justify-content:center;padding:24px';
+  modal.innerHTML = `
+    <div style="background:#111118;border:1px solid #2a2a3a;border-radius:20px;padding:28px;max-width:360px;width:100%">
+      <div style="font-size:15px;font-weight:700;margin-bottom:16px">🔄 Changer le statut</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        ${statuses.map(s => `
+          <button onclick="updatePipelineStatus('${id}','${s.value}')" style="background:${currentStatus===s.value?'rgba(124,92,252,0.15)':'#1a1a24'};border:1px solid ${currentStatus===s.value?'rgba(124,92,252,0.5)':'#2a2a3a'};color:${s.color};padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer;text-align:left">
+            ${s.label}
+          </button>`).join('')}
+        <button onclick="updatePipelineStatus('${id}','nouveau')" style="background:#1a1a24;border:1px solid #2a2a3a;color:#6b6b88;padding:10px 16px;border-radius:10px;font-size:12px;font-family:'Syne',sans-serif;cursor:pointer;text-align:left">↩ Réinitialiser</button>
+      </div>
+      <button onclick="document.getElementById('pipelineModal').remove()" style="width:100%;background:none;border:none;color:#6b6b88;margin-top:12px;font-size:13px;cursor:pointer;font-family:'Syne',sans-serif">Annuler</button>
+    </div>`;
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
+
+async function updatePipelineStatus(id, status) {
+  try {
+    await fetch(`${WORKER}/update-status`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({id, status}) });
+    const p = DATA.find(x => x.id === id);
+    if (p) p.status = status;
+    const m = document.getElementById('pipelineModal');
+    if (m) m.remove();
+    renderProspects();
+    showToast(`Statut mis à jour → ${status}`, 'success');
+  } catch(e) { showToast('Erreur mise à jour statut', 'error'); }
+}
 
 async function signOut() {
   await sb.auth.signOut();

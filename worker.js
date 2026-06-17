@@ -25,8 +25,17 @@ function json(data, status = 200) {
 //   Mots-clés bio    : 15 pts
 //   Ratio f/f        : 10 pts
 
-const OF_KEYWORDS = ['onlyfans', 'only fans', 'of link', 'of 🔥', '🔞', 'fans.ly', 'fansly'];
-const COLLAB_KEYWORDS = ['collab', 'promo', 'partnership', 'partenariat', 'booking', 'dm open', 'dm for', 'contact'];
+const OF_KEYWORDS = ['onlyfans', 'only fans', 'of link', 'of 🔥', '🔞', 'fans.ly', 'fansly', 'mym.fans', 'mym content'];
+const COLLAB_KEYWORDS = ['collab', 'promo', 'partnership', 'partenariat', 'booking', 'dm open', 'dm for', 'contact', 'business', 'manager'];
+
+// Niches à fort potentiel OFM — bonus/malus
+const NICHE_SCORES = {
+  fitness:    +8,  lifestyle: +6,  beauty:   +6,
+  fashion:    +5,  travel:    +4,  wellness: +5,
+  dance:      +7,  cosplay:   +8,  gaming:   +3,
+  food:       -5,  sport:     +3,  comedy:   -3,
+  music:      +2,  art:       +1,  pets:     -8,
+};
 
 function scoreProfile(profile) {
   let score = 0;
@@ -34,19 +43,21 @@ function scoreProfile(profile) {
   const followers = profile.followersCount || profile.followers || 0;
   const following = profile.followingCount || profile.following || 1;
   const engagement = profile.engagementRate || profile.engagement || 0;
+  const niche = (profile.niche || '').toLowerCase();
 
-  // 1. Followers (30 pts) — sweet spot 5k–500k
-  if (followers >= 5000 && followers < 500000) score += 30;
-  else if (followers >= 1000 && followers < 5000) score += 18;
-  else if (followers >= 500000) score += 15;
-  else score += 5;
+  // 1. Followers (30 pts) — sweet spot 10k–300k
+  if (followers >= 10000 && followers < 300000) score += 30;
+  else if (followers >= 5000 && followers < 10000) score += 22;
+  else if (followers >= 1000 && followers < 5000) score += 14;
+  else if (followers >= 300000) score += 12; // trop grosse = prix élevé
+  else score += 4;
 
   // 2. Engagement rate (25 pts)
   if (engagement >= 6) score += 25;
   else if (engagement >= 4) score += 20;
-  else if (engagement >= 2.5) score += 14;
-  else if (engagement >= 1) score += 7;
-  else score += 2;
+  else if (engagement >= 2.5) score += 13;
+  else if (engagement >= 1) score += 6;
+  else score += 1;
 
   // 3. OF link détecté dans la bio (20 pts)
   const hasOfLink = OF_KEYWORDS.some(kw => bio.includes(kw));
@@ -57,13 +68,19 @@ function scoreProfile(profile) {
   if (collabCount >= 2) score += 15;
   else if (collabCount === 1) score += 8;
 
-  // 5. Ratio followers/following (10 pts) — ratio > 2 = créatrice établie
+  // 5. Ratio followers/following (10 pts) — ratio > 3 = créatrice établie
   const ratio = followers / following;
   if (ratio >= 5) score += 10;
-  else if (ratio >= 2) score += 7;
-  else if (ratio >= 1) score += 4;
+  else if (ratio >= 3) score += 7;
+  else if (ratio >= 1.5) score += 4;
+  else score += 1;
 
-  return Math.min(score, 100);
+  // 6. Bonus/malus niche (+8 à -8 pts)
+  for (const [key, bonus] of Object.entries(NICHE_SCORES)) {
+    if (niche.includes(key)) { score += bonus; break; }
+  }
+
+  return Math.min(Math.max(score, 0), 100);
 }
 
 // ─── AIRTABLE ────────────────────────────────────────────────────────────────
@@ -200,6 +217,16 @@ export default {
       if (!id || !status) return json({ error: 'id et status requis' }, 400);
       const res = await airtableRequest(env, 'PATCH', `Prospects/${id}`, { fields: { status } });
       return json({ success: true, id: res.id, status });
+    }
+
+    // POST /update-note
+    if (request.method === 'POST' && path === '/update-note') {
+      let body;
+      try { body = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
+      const { id, note } = body;
+      if (!id) return json({ error: 'id requis' }, 400);
+      const res = await airtableRequest(env, 'PATCH', `Prospects/${id}`, { fields: { note: note || '' } });
+      return json({ success: true, id: res.id });
     }
 
     return json({ error: 'Route introuvable', routes: ['POST /score-profiles', 'GET /prospects', 'GET /stats', 'POST /update-status'] }, 404);
