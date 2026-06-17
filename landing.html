@@ -420,7 +420,7 @@
       <div class="plan-card">
         <div class="plan-name" style="color:var(--accent)">Starter</div>
         <div class="plan-price" style="color:var(--accent)">
-          <span id="price-starter"><sup>€</sup>50<sub>/mois</sub></span>
+          <span id="price-starter"><sup>€</sup>70<sub>/mois</sub></span>
         </div>
         <div class="plan-desc" id="desc-starter">Pour les agences qui démarrent</div>
         <ul class="plan-features">
@@ -487,14 +487,14 @@ function setBilling(mode) {
   document.getElementById('toggleAnnual').style.color = isAnnual ? 'white' : 'var(--muted)';
 
   if (isAnnual) {
-    document.getElementById('price-starter').innerHTML = '<sup>€</sup>50<sub>/mois</sub>';
+    document.getElementById('price-starter').innerHTML = '<sup>€</sup>70<sub>/mois</sub>';
     document.getElementById('price-pro').innerHTML = '<sup>€</sup>800<sub>/an <s style="color:var(--muted);font-size:12px">1200€</s></sub>';
     document.getElementById('price-agency').innerHTML = '<sup>€</sup>1600<sub>/an <s style="color:var(--muted);font-size:12px">2400€</s></sub>';
     document.getElementById('desc-starter').textContent = 'Mensuel uniquement';
     document.getElementById('desc-pro').textContent = 'Économise 400€ — 2 mois offerts';
     document.getElementById('desc-agency').textContent = 'Économise 800€ — 2 mois offerts';
   } else {
-    document.getElementById('price-starter').innerHTML = '<sup>€</sup>50<sub>/mois</sub>';
+    document.getElementById('price-starter').innerHTML = '<sup>€</sup>70<sub>/mois</sub>';
     document.getElementById('price-pro').innerHTML = '<sup>€</sup>100<sub>/mois</sub>';
     document.getElementById('price-agency').innerHTML = '<sup>€</sup>200<sub>/mois</sub>';
     document.getElementById('desc-starter').textContent = 'Pour les agences qui démarrent';
