@@ -135,7 +135,7 @@
   async function forgotPassword() {
     const email = document.getElementById('email').value.trim();
     if (!email) { showError('Entre ton email d\'abord'); return; }
-    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + '/login.html' });
+    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: 'https://flymagency.github.io/SpottedOF/reset-password.html' });
     if (error) showError(error.message);
     else showSuccess('Email de réinitialisation envoyé ! 📧');
   }
