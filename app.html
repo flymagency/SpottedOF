@@ -706,20 +706,26 @@ async function signOut() {
 
 /* ─── FEATURE GATING ─── */
 function showUpgradeBanner() {
-  if (document.getElementById('upgradeBanner')) return;
-  const banner = document.createElement('div');
-  banner.id = 'upgradeBanner';
-  banner.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#111118;border:1px solid rgba(124,92,252,0.5);border-radius:16px;padding:16px 24px;display:flex;align-items:center;gap:16px;z-index:999;box-shadow:0 8px 32px rgba(0,0,0,0.5);white-space:nowrap';
-  banner.innerHTML = `
-    <span style="font-size:20px">🔒</span>
-    <div>
-      <div style="font-size:13px;font-weight:700;margin-bottom:2px">Accès restreint</div>
-      <div style="font-size:11px;color:#6b6b88;font-family:'Space Mono',monospace">Ton plan n'est pas encore actif</div>
+  if (document.getElementById('upgradeOverlay')) return;
+  const overlay = document.createElement('div');
+  overlay.id = 'upgradeOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(10,10,15,0.92);backdrop-filter:blur(8px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px';
+  overlay.innerHTML = `
+    <div style="background:#111118;border:1px solid #2a2a3a;border-radius:24px;padding:48px 40px;max-width:460px;width:100%;text-align:center;position:relative">
+      <div style="font-size:52px;margin-bottom:20px">🔒</div>
+      <div style="font-size:22px;font-weight:700;margin-bottom:10px">Accès restreint</div>
+      <div style="font-size:14px;color:#6b6b88;margin-bottom:32px;line-height:1.7">
+        Ton compte n'a pas encore de plan actif.<br>
+        Choisis un plan pour accéder à SpottedOF et commencer à recruter les meilleures modèles.
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <a href="register.html" style="background:#7c5cfc;color:white;padding:14px 24px;border-radius:12px;font-size:15px;font-weight:700;font-family:'Syne',sans-serif;text-decoration:none;display:block">Choisir mon plan →</a>
+        <button onclick="sb.auth.signOut().then(()=>window.location.href='login.html')" style="background:#1a1a24;color:#6b6b88;border:1px solid #2a2a3a;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;font-family:'Syne',sans-serif;cursor:pointer">Se déconnecter</button>
+      </div>
+      <div style="margin-top:20px;font-size:11px;color:#6b6b88;font-family:'Space Mono',monospace">Tu as déjà payé ? Contacte-nous : businessflymagency@gmail.com</div>
     </div>
-    <a href="register.html" style="background:#7c5cfc;color:white;border:none;padding:9px 18px;border-radius:10px;font-size:13px;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer;text-decoration:none;white-space:nowrap">Choisir un plan →</a>
-    <button onclick="document.getElementById('upgradeBanner').remove()" style="background:none;border:none;color:#6b6b88;cursor:pointer;font-size:18px;padding:0 4px">✕</button>
   `;
-  document.body.appendChild(banner);
+  document.body.appendChild(overlay);
 }
 
 function showLimitModal(limit) {
