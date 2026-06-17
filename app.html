@@ -163,11 +163,16 @@
         </div>
       </div>
       <div class="header-right">
-        <button class="btn btn-ghost" onclick="openScanModal()">
-          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          Nouveau scan
+        <button class="btn btn-ghost" onclick="downloadTemplate()">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Modèle CSV
         </button>
-        <button class="btn btn-primary" onclick="openScanModal()">+ Lancer un scan</button>
+        <button class="btn btn-ghost" onclick="document.getElementById('csvInput').click()">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Importer CSV
+        </button>
+        <input type="file" id="csvInput" accept=".csv" style="display:none" onchange="importCSV(this)">
+        <button class="btn btn-primary" onclick="openScanModal()">+ Infos scan</button>
       </div>
     </div>
   </header>
@@ -444,6 +449,82 @@ function openProspect(id) {
       <div class="score-item"><div class="score-item-label">Lien OF détecté</div><div class="score-item-val" style="color:${p.ofLink?'var(--pink)':'var(--muted)'}">${p.ofLink?'Oui ✓':'Non'}</div></div>
     </div>`;
   document.getElementById('prospectModal').classList.add('open');
+}
+
+// ─── CSV IMPORT ──────────────────────────────────────────────────────────────
+function downloadTemplate() {
+  const csv = [
+    'handle,name,platform,followers,engagement,niche,bio',
+    '@exemple_compte,Prénom Nom,ig,25000,4.5,Fitness,Coach fitness 💪 | Collab DM | Paris',
+    '@autre_compte,Autre Nom,tt,80000,6.2,Beauty,Makeup & beauty | OF link in bio 🔥',
+    '@threads_compte,Nom Threads,th,12000,3.8,Lifestyle,Lifestyle & mode | Open to collabs',
+  ].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'spottedof-modele.csv';
+  a.click();
+  showToast('Modèle CSV téléchargé ✓', 'success');
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+  return lines.slice(1).filter(l => l.trim()).map(line => {
+    // Handle commas inside quotes
+    const cols = [];
+    let cur = '', inQ = false;
+    for (const c of line) {
+      if (c === '"') inQ = !inQ;
+      else if (c === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+      else cur += c;
+    }
+    cols.push(cur.trim());
+    const obj = {};
+    headers.forEach((h, i) => obj[h] = cols[i] || '');
+    return obj;
+  });
+}
+
+async function importCSV(input) {
+  const file = input.files[0];
+  if (!file) return;
+  input.value = '';
+
+  const text = await file.text();
+  let rows;
+  try { rows = parseCSV(text); } catch(e) {
+    showToast('Fichier CSV invalide', 'error'); return;
+  }
+
+  if (!rows.length) { showToast('Aucune ligne trouvée dans le CSV', 'error'); return; }
+
+  showToast(`Import en cours — ${rows.length} profils...`, 'success');
+
+  // Convertir en format attendu par le Worker
+  const profiles = rows.map(r => ({
+    username: (r.handle || '').replace('@', ''),
+    handle: r.handle || '',
+    fullName: r.name || '',
+    platform: r.platform || 'ig',
+    followersCount: parseInt(r.followers) || 0,
+    engagementRate: parseFloat(r.engagement) || 0,
+    niche: r.niche || '',
+    biography: r.bio || '',
+  }));
+
+  try {
+    const res = await fetch(`${WORKER}/score-profiles`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ profiles, scan_source: 'csv-import', min_score: 0 }),
+    });
+    const json = await res.json();
+    showToast(`✓ ${json.saved} prospects importés et scorés !`, 'success');
+    setTimeout(() => loadProspects(), 1500);
+  } catch(e) {
+    showToast('Erreur lors de l\'import', 'error');
+  }
 }
 
 function openScanModal() { document.getElementById('scanModal').classList.add('open'); }
