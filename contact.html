@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SpottedOF — Contacter</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0f; --surface: #111118; --surface2: #1a1a24; --border: #2a2a3a;
+      --accent: #7c5cfc; --accent2: #fc5c7c; --green: #2dfc8e; --yellow: #fcdc2d;
+      --pink: #fc5cdc; --text: #e8e8f0; --muted: #6b6b88;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif; min-height: 100vh; }
+    body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(rgba(124,92,252,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(124,92,252,0.03) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; z-index: 0; }
+    .container { max-width: 960px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+    header { padding: 24px 0 20px; border-bottom: 1px solid var(--border); margin-bottom: 32px; }
+    .header-inner { display: flex; align-items: center; justify-content: space-between; }
+    .logo { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--text); }
+    .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, var(--accent), var(--pink)); border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 17px; }
+    .logo-text { font-size: 20px; font-weight: 800; }
+    .logo-text span { color: var(--pink); }
+    .btn { padding: 8px 16px; font-size: 12px; border-radius: 10px; font-weight: 700; font-family: 'Syne', sans-serif; cursor: pointer; border: none; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-ghost { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); text-decoration: none; }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--text); }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary:hover { background: #9b7ffd; }
+    .btn-green { background: rgba(45,252,142,0.15); color: var(--green); border: 1px solid rgba(45,252,142,0.3); }
+    .btn-green:hover { background: rgba(45,252,142,0.25); }
+    .btn-pink { background: rgba(252,92,220,0.15); color: var(--pink); border: 1px solid rgba(252,92,220,0.3); }
+
+    /* LAYOUT */
+    .page-grid { display: grid; grid-template-columns: 300px 1fr; gap: 24px; align-items: start; }
+
+    /* LEFT — PROFIL */
+    .profile-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; overflow: hidden; position: sticky; top: 24px; }
+    .profile-cover { height: 60px; background: linear-gradient(135deg, var(--accent), var(--pink)); }
+    .profile-body { padding: 0 20px 20px; }
+    .profile-avatar-wrap { margin-top: -30px; margin-bottom: 12px; }
+    .profile-avatar { width: 60px; height: 60px; border-radius: 50%; border: 3px solid var(--surface); background: var(--surface2); overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 800; color: var(--muted); }
+    .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .profile-handle { font-size: 16px; font-weight: 800; margin-bottom: 2px; }
+    .profile-name { font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+    .profile-bio { font-size: 12px; color: var(--muted); line-height: 1.6; background: var(--surface2); border-radius: 10px; padding: 10px 12px; margin-bottom: 14px; }
+    .profile-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+    .pstat { background: var(--surface2); border-radius: 10px; padding: 10px; text-align: center; }
+    .pstat-val { font-family: 'Space Mono', monospace; font-size: 14px; font-weight: 700; }
+    .pstat-label { font-size: 10px; color: var(--muted); margin-top: 2px; }
+    .score-big { text-align: center; background: var(--surface2); border-radius: 10px; padding: 12px; margin-bottom: 14px; }
+    .score-big-val { font-family: 'Space Mono', monospace; font-size: 28px; font-weight: 700; }
+    .score-big-label { font-size: 10px; color: var(--muted); font-family: 'Space Mono', monospace; }
+    .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 100px; font-size: 10px; font-family: 'Space Mono', monospace; font-weight: 700; }
+    .badge-of { background: rgba(252,92,220,0.12); color: var(--pink); border: 1px solid rgba(252,92,220,0.3); }
+    .badge-convert { background: rgba(252,220,45,0.12); color: var(--yellow); border: 1px solid rgba(252,220,45,0.3); }
+    .badge-contacted { background: rgba(45,252,142,0.12); color: var(--green); border: 1px solid rgba(45,252,142,0.3); }
+
+    /* CROSS-PLATFORM FINDER */
+    .finder-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 14px; }
+    .finder-title { font-size: 10px; font-family: 'Space Mono', monospace; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+    .platform-link { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); text-decoration: none; color: var(--text); font-size: 12px; font-weight: 700; margin-bottom: 6px; transition: all 0.2s; cursor: pointer; }
+    .platform-link:last-child { margin-bottom: 0; }
+    .platform-link:hover { border-color: var(--accent); }
+    .platform-link.found { border-color: rgba(45,252,142,0.4); }
+    .platform-link.not-found { opacity: 0.4; cursor: default; }
+    .plat-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .plat-dot.ig { background: var(--accent2); }
+    .plat-dot.tt { background: var(--green); }
+    .plat-dot.th { background: var(--accent); }
+    .plat-status { margin-left: auto; font-size: 10px; font-family: 'Space Mono', monospace; }
+
+    /* RIGHT — CONTACT */
+    .contact-panel { display: flex; flex-direction: column; gap: 20px; }
+    .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 24px; }
+    .panel-title { font-size: 14px; font-weight: 800; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .panel-title svg { color: var(--accent); }
+
+    /* COMPTE EXPÉDITEUR */
+    .accounts-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+    .account-chip { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 100px; border: 2px solid var(--border); background: var(--surface2); cursor: pointer; transition: all 0.2s; font-size: 12px; font-weight: 700; }
+    .account-chip.active { border-color: var(--accent); background: rgba(124,92,252,0.1); color: var(--accent); }
+    .account-chip:hover:not(.active) { border-color: var(--muted); }
+    .add-account { display: flex; gap: 8px; margin-top: 8px; }
+    .form-input-sm { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; color: var(--text); font-family: 'Syne', sans-serif; font-size: 12px; outline: none; transition: border-color 0.2s; }
+    .form-input-sm:focus { border-color: var(--accent); }
+    .plat-select { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; color: var(--text); font-family: 'Space Mono', monospace; font-size: 11px; outline: none; cursor: pointer; }
+
+    /* TEMPLATES */
+    .lang-row { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+    .lang-btn { padding: 5px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); font-family: 'Space Mono', monospace; font-size: 11px; cursor: pointer; transition: all 0.2s; }
+    .lang-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(124,92,252,0.1); }
+    .template-tabs { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+    .tmpl-btn { padding: 5px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: 'Syne', sans-serif; }
+    .tmpl-btn.active { border-color: var(--pink); color: var(--pink); background: rgba(252,92,220,0.08); }
+    .message-area { width: 100%; min-height: 140px; background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; color: var(--text); font-family: 'Syne', sans-serif; font-size: 13px; line-height: 1.7; outline: none; resize: vertical; transition: border-color 0.2s; }
+    .message-area:focus { border-color: var(--accent); }
+    .msg-actions { display: flex; gap: 10px; margin-top: 12px; align-items: center; }
+    .char-count { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); margin-left: auto; }
+
+    /* HISTORIQUE */
+    .history-empty { text-align: center; padding: 24px; color: var(--muted); font-size: 13px; }
+    .history-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .history-item:last-child { border-bottom: none; }
+    .history-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); margin-top: 5px; flex-shrink: 0; }
+    .history-text { font-size: 12px; line-height: 1.5; }
+    .history-meta { font-size: 10px; color: var(--muted); font-family: 'Space Mono', monospace; margin-top: 2px; }
+
+    .toast { position: fixed; bottom: 24px; right: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 18px; font-size: 13px; z-index: 200; transform: translateY(80px); opacity: 0; transition: all 0.3s; }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.success { border-color: rgba(45,252,142,0.4); color: var(--green); }
+    .toast.error { border-color: rgba(252,92,124,0.4); color: var(--accent2); }
+
+    @media (max-width: 700px) {
+      .page-grid { grid-template-columns: 1fr; }
+      .profile-panel { position: static; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="header-inner">
+      <a href="app.html" class="logo">
+        <div class="logo-icon">🎯</div>
+        <div class="logo-text">Spotted<span>OF</span></div>
+      </a>
+      <a href="app.html" class="btn btn-ghost">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
+        Retour
+      </a>
+    </div>
+  </header>
+
+  <div class="page-grid">
+    <!-- GAUCHE : profil -->
+    <div class="profile-panel">
+      <div class="profile-cover"></div>
+      <div class="profile-body">
+        <div class="profile-avatar-wrap">
+          <div class="profile-avatar" id="profileAvatar">?</div>
+        </div>
+        <div class="profile-handle" id="profileHandle">—</div>
+        <div class="profile-name" id="profileName">—</div>
+        <div class="profile-bio" id="profileBio">—</div>
+        <div class="profile-stats">
+          <div class="pstat">
+            <div class="pstat-val" id="statFollowers">—</div>
+            <div class="pstat-label">Followers</div>
+          </div>
+          <div class="pstat">
+            <div class="pstat-val" id="statEngagement" style="color:var(--yellow)">—</div>
+            <div class="pstat-label">Engagement</div>
+          </div>
+        </div>
+        <div class="score-big">
+          <div class="score-big-val" id="scoreVal">—</div>
+          <div class="score-big-label">SCORE MATCHING</div>
+        </div>
+        <div id="ofBadge"></div>
+
+        <!-- CROSS-PLATFORM FINDER -->
+        <div class="finder-box" style="margin-top:14px">
+          <div class="finder-title">🔍 Trouver sur d'autres plateformes</div>
+          <div id="platformLinks"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DROITE : contact -->
+    <div class="contact-panel">
+
+      <!-- COMPTE EXPÉDITEUR -->
+      <div class="panel">
+        <div class="panel-title">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Compte expéditeur
+        </div>
+        <div class="accounts-grid" id="accountsGrid"></div>
+        <div class="add-account">
+          <select class="plat-select" id="newAccPlat">
+            <option value="ig">IG</option>
+            <option value="tt">TT</option>
+            <option value="th">TH</option>
+          </select>
+          <input class="form-input-sm" id="newAccHandle" placeholder="@mon_compte_instagram">
+          <button class="btn btn-ghost" onclick="addAccount()" style="white-space:nowrap">+ Ajouter</button>
+        </div>
+      </div>
+
+      <!-- MESSAGE DM -->
+      <div class="panel">
+        <div class="panel-title">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Message DM
+        </div>
+
+        <div class="lang-row">
+          <button class="lang-btn active" onclick="setLang('fr',this)">🇫🇷 FR</button>
+          <button class="lang-btn" onclick="setLang('en',this)">🇬🇧 EN</button>
+          <button class="lang-btn" onclick="setLang('es',this)">🇪🇸 ES</button>
+          <button class="lang-btn" onclick="setLang('pt',this)">🇧🇷 PT</button>
+          <button class="lang-btn" onclick="setLang('it',this)">🇮🇹 IT</button>
+        </div>
+
+        <div class="template-tabs">
+          <button class="tmpl-btn active" onclick="setTemplate('direct',this)">Direct</button>
+          <button class="tmpl-btn" onclick="setTemplate('soft',this)">Soft</button>
+          <button class="tmpl-btn" onclick="setTemplate('agency',this)">Agence</button>
+          <button class="tmpl-btn" onclick="setTemplate('custom',this)">✏️ Custom</button>
+        </div>
+
+        <textarea class="message-area" id="messageArea" oninput="updateCharCount()" placeholder="Sélectionne un template ci-dessus..."></textarea>
+        <div class="msg-actions">
+          <button class="btn btn-primary" onclick="copyMessage()">
+            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copier le message
+          </button>
+          <button class="btn btn-green" onclick="markContacted()">
+            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            Marquer contactée
+          </button>
+          <span class="char-count" id="charCount">0 / 500</span>
+        </div>
+      </div>
+
+      <!-- HISTORIQUE -->
+      <div class="panel">
+        <div class="panel-title">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Historique
+        </div>
+        <div id="historyList"><div class="history-empty">Aucun contact encore</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const WORKER = 'https://spottedof-worker.businessflymagency.workers.dev';
+let prospect = null;
+let currentLang = 'fr';
+let currentTemplate = 'direct';
+let selectedAccount = null;
+
+// ─── DM TEMPLATES ────────────────────────────────────────────────────────────
+const TEMPLATES = {
+  fr: {
+    direct: `Bonjour [prénom] 👋\n\nJ'ai découvert ton profil et je suis vraiment impressionné(e) par ton contenu. Je travaille avec une agence spécialisée et je pense qu'on pourrait faire quelque chose d'exceptionnel ensemble.\n\nTu serais ouverte à en discuter ? 🙂`,
+    soft: `Coucou [prénom] ✨\n\nTon contenu est vraiment top ! J'aimerais te parler d'une opportunité qui pourrait t'intéresser.\n\nTu es disponible pour qu'on en parle ? 😊`,
+    agency: `Bonjour [prénom],\n\nJe me permets de te contacter car ton profil correspond exactement à ce que nous recherchons. Notre agence accompagne des créatrices comme toi à développer leur présence et leurs revenus en ligne.\n\nSerais-tu intéressée par une présentation de notre programme ? 🚀`,
+    custom: '',
+  },
+  en: {
+    direct: `Hey [name] 👋\n\nI came across your profile and I'm really impressed by your content. I work with a specialized agency and I think we could create something amazing together.\n\nWould you be open to chatting? 🙂`,
+    soft: `Hi [name] ✨\n\nLove your content! I'd love to tell you about an opportunity that might interest you.\n\nAre you available to chat? 😊`,
+    agency: `Hello [name],\n\nI'm reaching out because your profile is exactly what we're looking for. Our agency works with creators like you to grow their online presence and income.\n\nWould you be interested in learning more about our program? 🚀`,
+    custom: '',
+  },
+  es: {
+    direct: `¡Hola [nombre]! 👋\n\nVi tu perfil y me encanta tu contenido. Trabajo con una agencia especializada y creo que podríamos hacer algo increíble juntos.\n\n¿Estarías abierta a hablar? 🙂`,
+    soft: `¡Hola [nombre]! ✨\n\n¡Tu contenido es increíble! Me gustaría contarte sobre una oportunidad que podría interesarte.\n\n¿Tienes un momento para hablar? 😊`,
+    agency: `Hola [nombre],\n\nMe pongo en contacto contigo porque tu perfil es exactamente lo que buscamos. Nuestra agencia trabaja con creadoras como tú para desarrollar su presencia online.\n\n¿Te interesaría conocer más sobre nuestro programa? 🚀`,
+    custom: '',
+  },
+  pt: {
+    direct: `Oi [nome]! 👋\n\nEncontrei seu perfil e fiquei muito impressionado(a) com seu conteúdo. Trabalho com uma agência especializada e acho que poderíamos criar algo incrível juntos.\n\nVocê estaria aberta a conversar? 🙂`,
+    soft: `Oi [nome]! ✨\n\nAdorei seu conteúdo! Gostaria de te falar sobre uma oportunidade que pode te interessar.\n\nVocê tem um momento para conversar? 😊`,
+    agency: `Olá [nome],\n\nEstou entrando em contato porque seu perfil é exatamente o que procuramos. Nossa agência trabalha com criadoras como você para desenvolver sua presença online.\n\nVocê teria interesse em saber mais sobre nosso programa? 🚀`,
+    custom: '',
+  },
+  it: {
+    direct: `Ciao [nome]! 👋\n\nHo trovato il tuo profilo e sono davvero colpito(a) dai tuoi contenuti. Lavoro con un'agenzia specializzata e penso che potremmo fare qualcosa di straordinario insieme.\n\nSaresti disponibile a parlarne? 🙂`,
+    soft: `Ciao [nome]! ✨\n\nI tuoi contenuti sono fantastici! Mi piacerebbe parlarti di un'opportunità che potrebbe interessarti.\n\nHai un momento per parlare? 😊`,
+    agency: `Ciao [nome],\n\nTi contatto perché il tuo profilo è esattamente quello che stiamo cercando. La nostra agenzia lavora con creator come te per sviluppare la loro presenza online.\n\nSaresti interessata a saperne di più sul nostro programma? 🚀`,
+    custom: '',
+  },
+};
+
+// ─── COMPTES ─────────────────────────────────────────────────────────────────
+function loadAccounts() { return JSON.parse(localStorage.getItem('spottedof_accounts') || '[]'); }
+function saveAccounts(accs) { localStorage.setItem('spottedof_accounts', JSON.stringify(accs)); }
+
+function renderAccounts() {
+  const accs = loadAccounts();
+  const grid = document.getElementById('accountsGrid');
+  if (!accs.length) {
+    grid.innerHTML = `<div style="font-size:12px;color:var(--muted)">Ajoute tes comptes ci-dessous</div>`;
+    return;
+  }
+  grid.innerHTML = accs.map((a, i) => `
+    <div class="account-chip ${selectedAccount===i?'active':''}" onclick="selectAccount(${i})">
+      <span style="width:8px;height:8px;border-radius:50%;background:${a.plat==='ig'?'var(--accent2)':a.plat==='tt'?'var(--green)':'var(--accent)'};display:inline-block"></span>
+      ${a.handle}
+      <span onclick="event.stopPropagation();removeAccount(${i})" style="color:var(--muted);margin-left:2px;font-size:14px;line-height:1">×</span>
+    </div>`).join('');
+}
+
+function selectAccount(i) {
+  selectedAccount = i;
+  renderAccounts();
+}
+
+function addAccount() {
+  const h = document.getElementById('newAccHandle').value.trim();
+  const p = document.getElementById('newAccPlat').value;
+  if (!h) return;
+  const accs = loadAccounts();
+  accs.push({ handle: h.startsWith('@')?h:`@${h}`, plat: p });
+  saveAccounts(accs);
+  document.getElementById('newAccHandle').value = '';
+  if (selectedAccount === null) selectedAccount = accs.length - 1;
+  renderAccounts();
+  showToast('Compte ajouté ✓', 'success');
+}
+
+function removeAccount(i) {
+  const accs = loadAccounts();
+  accs.splice(i, 1);
+  saveAccounts(accs);
+  if (selectedAccount >= accs.length) selectedAccount = accs.length - 1;
+  renderAccounts();
+}
+
+// ─── TEMPLATES ───────────────────────────────────────────────────────────────
+function setLang(lang, btn) {
+  currentLang = lang;
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  updateMessage();
+}
+
+function setTemplate(tmpl, btn) {
+  currentTemplate = tmpl;
+  document.querySelectorAll('.tmpl-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (tmpl === 'custom') {
+    document.getElementById('messageArea').removeAttribute('readonly');
+  }
+  updateMessage();
+}
+
+function updateMessage() {
+  if (currentTemplate === 'custom') return;
+  const tmpl = TEMPLATES[currentLang]?.[currentTemplate] || '';
+  const firstName = (prospect?.name || '').split(' ')[0] || '[prénom]';
+  const msg = tmpl
+    .replace(/\[prénom\]/g, firstName)
+    .replace(/\[name\]/g, firstName)
+    .replace(/\[nombre\]/g, firstName)
+    .replace(/\[nome\]/g, firstName);
+  document.getElementById('messageArea').value = msg;
+  updateCharCount();
+}
+
+function updateCharCount() {
+  const len = document.getElementById('messageArea').value.length;
+  const el = document.getElementById('charCount');
+  el.textContent = `${len} / 500`;
+  el.style.color = len > 500 ? 'var(--accent2)' : 'var(--muted)';
+}
+
+function copyMessage() {
+  const msg = document.getElementById('messageArea').value;
+  if (!msg) { showToast('Aucun message à copier', 'error'); return; }
+  navigator.clipboard.writeText(msg).then(() => showToast('Message copié ✓', 'success'));
+}
+
+// ─── MARQUER CONTACTÉE ───────────────────────────────────────────────────────
+async function markContacted() {
+  if (!prospect?.id) return;
+  const accs = loadAccounts();
+  const acc = selectedAccount !== null ? accs[selectedAccount] : null;
+  const msg = document.getElementById('messageArea').value;
+
+  try {
+    await fetch(`${WORKER}/update-status`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: prospect.id, status: 'contacté' }),
+    });
+  } catch(e) {}
+
+  // Historique local
+  const history = JSON.parse(localStorage.getItem(`history_${prospect.id}`) || '[]');
+  history.unshift({
+    date: new Date().toLocaleDateString('fr-FR', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }),
+    account: acc ? `${acc.handle} (${acc.plat.toUpperCase()})` : 'Compte non sélectionné',
+    lang: currentLang.toUpperCase(),
+    template: currentTemplate,
+    preview: msg.substring(0, 80) + '...',
+  });
+  localStorage.setItem(`history_${prospect.id}`, JSON.stringify(history));
+  renderHistory();
+  showToast('Marquée comme contactée ✓', 'success');
+}
+
+function renderHistory() {
+  if (!prospect?.id) return;
+  const history = JSON.parse(localStorage.getItem(`history_${prospect.id}`) || '[]');
+  const el = document.getElementById('historyList');
+  if (!history.length) { el.innerHTML = '<div class="history-empty">Aucun contact encore</div>'; return; }
+  el.innerHTML = history.map(h => `
+    <div class="history-item">
+      <div class="history-dot"></div>
+      <div>
+        <div class="history-text">${h.preview}</div>
+        <div class="history-meta">${h.date} · ${h.account} · ${h.lang} · ${h.template}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ─── CROSS-PLATFORM FINDER ───────────────────────────────────────────────────
+function findPlatformLinks(p) {
+  const username = (p.handle || '').replace('@', '');
+  const bio = (p.bio || '').toLowerCase();
+  const platform = p.platform || 'ig';
+
+  // Cherche un @mention dans la bio pour d'autres plateformes
+  const mentionMatch = bio.match(/@([a-z0-9._]+)/g);
+  const altUsername = mentionMatch ? mentionMatch[0].replace('@','') : username;
+
+  const platforms = {
+    ig: { label: 'Instagram', url: `https://instagram.com/${altUsername}`, dot: 'ig' },
+    tt: { label: 'TikTok', url: `https://tiktok.com/@${altUsername}`, dot: 'tt' },
+    th: { label: 'Threads', url: `https://threads.net/@${altUsername}`, dot: 'th' },
+  };
+
+  const el = document.getElementById('platformLinks');
+  el.innerHTML = Object.entries(platforms).map(([key, plat]) => {
+    const isCurrent = key === platform;
+    return `<a class="platform-link ${isCurrent?'found':''}" href="${plat.url}" target="_blank">
+      <span class="plat-dot ${plat.dot}"></span>
+      <span>${plat.label}</span>
+      ${isCurrent
+        ? `<span class="plat-status" style="color:var(--green)">Profil source ✓</span>`
+        : `<span class="plat-status" style="color:var(--muted)">Rechercher →</span>`}
+    </a>`;
+  }).join('');
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+function fmt(n) { return n>=1e6?(n/1e6).toFixed(1)+'M':n>=1000?(n/1000).toFixed(0)+'K':String(n||0); }
+function sc(s) { return s>=80?'hi':s>=65?'md':'lo'; }
+function avatarLetter(h) { return (h||'?').replace('@','')[0].toUpperCase(); }
+
+function loadProspect() {
+  const params = new URLSearchParams(window.location.search);
+  const raw = params.get('p');
+  if (!raw) { window.location.href = 'app.html'; return; }
+
+  try { prospect = JSON.parse(decodeURIComponent(raw)); } catch(e) { window.location.href = 'app.html'; return; }
+
+  // Avatar
+  const letter = avatarLetter(prospect.handle);
+  const colors = ['7c5cfc','fc5c7c','2dfc8e','fcdc2d','fc5cdc','5cb8fc'];
+  const color = colors[letter.charCodeAt(0) % colors.length];
+  const avatarEl = document.getElementById('profileAvatar');
+  if (prospect.platform === 'th') {
+    avatarEl.innerHTML = `<img src="https://unavatar.io/threads/${prospect.handle.replace('@','')}" onerror="this.parentNode.textContent='${letter}'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+  } else {
+    avatarEl.innerHTML = `<img src="https://ui-avatars.com/api/?name=${letter}&background=${color}&color=fff&size=60&bold=true" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+  }
+
+  document.getElementById('profileHandle').textContent = prospect.handle || '—';
+  document.getElementById('profileName').textContent = prospect.name || '—';
+  document.getElementById('profileBio').textContent = prospect.bio || 'Pas de bio disponible';
+  document.getElementById('statFollowers').textContent = fmt(prospect.followers);
+  document.getElementById('statEngagement').textContent = `${prospect.engagement || 0}%`;
+
+  const s = prospect.score || 0;
+  const cl = sc(s);
+  const scoreEl = document.getElementById('scoreVal');
+  scoreEl.textContent = `${s}%`;
+  scoreEl.style.color = cl==='hi'?'var(--green)':cl==='md'?'var(--yellow)':'var(--accent2)';
+
+  document.getElementById('ofBadge').innerHTML = prospect.hasOf
+    ? '<span class="badge badge-of">OF actif</span>'
+    : '<span class="badge badge-convert">À convertir</span>';
+
+  document.title = `SpottedOF — ${prospect.handle}`;
+
+  findPlatformLinks(prospect);
+  updateMessage();
+  renderHistory();
+}
+
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = `toast ${type} show`;
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+renderAccounts();
+loadProspect();
+</script>
+</body>
+</html>

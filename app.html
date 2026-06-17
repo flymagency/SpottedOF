@@ -275,7 +275,10 @@
     </div>
     <div class="modal-body" id="modalBody"></div>
     <div class="modal-footer">
-      <button class="btn btn-primary" style="flex:1">Contacter</button>
+      <button class="btn btn-primary" style="flex:1" id="contactBtn" onclick="goToContact()">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Contacter
+      </button>
       <button class="btn btn-ghost" onclick="closeModal('prospectModal')">Fermer</button>
     </div>
   </div>
@@ -506,6 +509,7 @@ function toggleSave(id, el) {
 function openProspect(id) {
   const p = DATA.find(x=>x.id===id);
   if (!p) return;
+  currentProspect = p;
   const cl = sc(p.score);
   document.getElementById('modalBody').innerHTML = `
     <div class="modal-profile">
@@ -610,6 +614,14 @@ async function launchScan() {
   if (!h) { showToast('Entrez un handle de référence','error'); return; }
   closeModal('scanModal');
   showToast('Scan lancé — résultats dans quelques minutes ⚡','success');
+}
+
+let currentProspect = null;
+
+function goToContact() {
+  if (!currentProspect) return;
+  const data = encodeURIComponent(JSON.stringify(currentProspect));
+  window.location.href = `contact.html?p=${data}`;
 }
 
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }

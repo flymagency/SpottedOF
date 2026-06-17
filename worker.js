@@ -192,6 +192,16 @@ export default {
       });
     }
 
-    return json({ error: 'Route introuvable', routes: ['POST /score-profiles', 'GET /prospects', 'GET /stats'] }, 404);
+    // POST /update-status
+    if (request.method === 'POST' && path === '/update-status') {
+      let body;
+      try { body = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
+      const { id, status } = body;
+      if (!id || !status) return json({ error: 'id et status requis' }, 400);
+      const res = await airtableRequest(env, 'PATCH', `Prospects/${id}`, { fields: { status } });
+      return json({ success: true, id: res.id, status });
+    }
+
+    return json({ error: 'Route introuvable', routes: ['POST /score-profiles', 'GET /prospects', 'GET /stats', 'POST /update-status'] }, 404);
   }
 };
