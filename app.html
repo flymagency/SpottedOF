@@ -195,6 +195,7 @@
         </button>
         <input type="file" id="csvInput" accept=".csv" style="display:none" onchange="importCSV(this)">
         <span id="userEmail" style="font-family:'Space Mono',monospace;font-size:11px;color:var(--muted)"></span>
+        <span id="planBadge" style="display:none;font-family:'Space Mono',monospace;font-size:10px;font-weight:700;padding:3px 10px;border-radius:100px;"></span>
         <a id="adminLink" href="admin.html" style="display:none"><button class="btn btn-ghost">⚙️ Admin</button></a>
         <button class="btn btn-ghost" onclick="signOut()">Déconnexion</button>
         <button class="btn btn-primary" onclick="openScanModal()">+ Infos scan</button>
@@ -342,11 +343,42 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // Auth check
 let currentUser = null;
-sb.auth.getSession().then(({ data }) => {
+let userPlan = null;
+let userPaid = false;
+
+const PLAN_LIMITS = { starter: 200, pro: Infinity, agency: Infinity, admin: Infinity };
+const PLAN_COLORS = {
+  starter: { bg: 'rgba(124,92,252,0.15)', color: '#7c5cfc', border: 'rgba(124,92,252,0.4)' },
+  pro:     { bg: 'rgba(45,252,142,0.15)',  color: '#2dfc8e', border: 'rgba(45,252,142,0.4)' },
+  agency:  { bg: 'rgba(252,92,220,0.15)',  color: '#fc5cdc', border: 'rgba(252,92,220,0.4)' },
+  admin:   { bg: 'rgba(252,220,45,0.15)',  color: '#fcdc2d', border: 'rgba(252,220,45,0.4)' },
+};
+
+sb.auth.getSession().then(async ({ data }) => {
   if (!data.session) { window.location.href = 'login.html'; return; }
   currentUser = data.session.user;
   document.getElementById('userEmail').textContent = currentUser.email;
   if (currentUser.email === 'businessflymagency@gmail.com') document.getElementById('adminLink').style.display = 'inline';
+
+  // Charger le profil pour connaître le plan
+  const { data: profile } = await sb.from('profiles').select('plan, paid').eq('id', currentUser.id).single();
+  userPlan = profile?.plan || 'starter';
+  userPaid = profile?.paid || false;
+
+  // Badge plan dans le header
+  const badge = document.getElementById('planBadge');
+  const c = PLAN_COLORS[userPlan] || PLAN_COLORS.starter;
+  badge.textContent = userPlan.toUpperCase();
+  badge.style.background = c.bg;
+  badge.style.color = c.color;
+  badge.style.border = `1px solid ${c.border}`;
+  badge.style.display = 'inline';
+
+  // Si non payé ET pas admin → banner upgrade
+  if (!userPaid && userPlan !== 'admin') {
+    showUpgradeBanner();
+  }
+
   loadProspects();
 });
 
@@ -587,6 +619,11 @@ async function importCSV(input) {
   if (!file) return;
   input.value = '';
 
+  // Vérifier si non payé
+  if (!userPaid && userPlan !== 'admin') {
+    showUpgradeBanner(); return;
+  }
+
   const text = await file.text();
   let rows;
   try { rows = parseCSV(text); } catch(e) {
@@ -594,6 +631,19 @@ async function importCSV(input) {
   }
 
   if (!rows.length) { showToast('Aucune ligne trouvée dans le CSV', 'error'); return; }
+
+  // Vérifier la limite du plan
+  const limit = PLAN_LIMITS[userPlan] || 200;
+  const currentCount = DATA.length;
+  if (currentCount >= limit) {
+    showLimitModal(limit); return;
+  }
+  // Tronquer si dépassement partiel
+  const remaining = limit - currentCount;
+  if (rows.length > remaining && limit !== Infinity) {
+    rows = rows.slice(0, remaining);
+    showToast(`Plan Starter : seulement ${remaining} prospects restants (limite ${limit})`, 'error');
+  }
 
   showToast(`Import en cours — ${rows.length} profils...`, 'success');
 
@@ -652,6 +702,45 @@ document.querySelectorAll('.modal-overlay').forEach(el=>el.addEventListener('cli
 async function signOut() {
   await sb.auth.signOut();
   window.location.href = 'login.html';
+}
+
+/* ─── FEATURE GATING ─── */
+function showUpgradeBanner() {
+  if (document.getElementById('upgradeBanner')) return;
+  const banner = document.createElement('div');
+  banner.id = 'upgradeBanner';
+  banner.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#111118;border:1px solid rgba(124,92,252,0.5);border-radius:16px;padding:16px 24px;display:flex;align-items:center;gap:16px;z-index:999;box-shadow:0 8px 32px rgba(0,0,0,0.5);white-space:nowrap';
+  banner.innerHTML = `
+    <span style="font-size:20px">🔒</span>
+    <div>
+      <div style="font-size:13px;font-weight:700;margin-bottom:2px">Accès restreint</div>
+      <div style="font-size:11px;color:#6b6b88;font-family:'Space Mono',monospace">Ton plan n'est pas encore actif</div>
+    </div>
+    <a href="register.html" style="background:#7c5cfc;color:white;border:none;padding:9px 18px;border-radius:10px;font-size:13px;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer;text-decoration:none;white-space:nowrap">Choisir un plan →</a>
+    <button onclick="document.getElementById('upgradeBanner').remove()" style="background:none;border:none;color:#6b6b88;cursor:pointer;font-size:18px;padding:0 4px">✕</button>
+  `;
+  document.body.appendChild(banner);
+}
+
+function showLimitModal(limit) {
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:center;justify-content:center;padding:24px';
+  modal.innerHTML = `
+    <div style="background:#111118;border:1px solid #2a2a3a;border-radius:20px;padding:36px;max-width:400px;width:100%;text-align:center">
+      <div style="font-size:48px;margin-bottom:16px">🔒</div>
+      <div style="font-size:18px;font-weight:700;margin-bottom:8px">Limite atteinte</div>
+      <div style="font-size:13px;color:#6b6b88;margin-bottom:24px;line-height:1.6">
+        Tu as atteint la limite de <strong style="color:#e8e8f0">${limit} prospects</strong> du plan Starter.<br>
+        Passe au plan Pro pour des prospects illimités.
+      </div>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <a href="register.html" style="background:#7c5cfc;color:white;padding:11px 24px;border-radius:10px;font-size:14px;font-weight:700;font-family:'Syne',sans-serif;text-decoration:none">Passer au Pro →</a>
+        <button onclick="this.closest('[style*=fixed]').remove()" style="background:#1a1a24;color:#6b6b88;border:1px solid #2a2a3a;padding:11px 20px;border-radius:10px;font-size:14px;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer">Fermer</button>
+      </div>
+    </div>
+  `;
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
 }
 
 // Init — chargement déclenché par auth check ci-dessus
