@@ -353,11 +353,17 @@ function avatarLetter(handle) { return (handle||'?').replace('@','')[0].toUpperC
 function avatarHTML(handle, platform, size=40) {
   const username = (handle||'').replace('@','');
   const fallback = avatarLetter(handle);
-  // unavatar.io supporte instagram, tiktok (tt→tiktok), threads
-  const platMap = { ig: 'instagram', tt: 'tiktok', th: 'threads' };
-  const plat = platMap[platform] || 'instagram';
-  const url = `https://unavatar.io/${plat}/${username}`;
-  return `<img src="${url}" alt="${fallback}" width="${size}" height="${size}" onerror="this.style.display='none';this.parentNode.dataset.letter='${fallback}'" style="border-radius:50%">`;
+  const letter = fallback;
+  // Couleurs par lettre pour les avatars de fallback
+  const colors = ['7c5cfc','fc5c7c','2dfc8e','fcdc2d','fc5cdc','5cb8fc'];
+  const color = colors[letter.charCodeAt(0) % colors.length];
+  const fallbackUrl = `https://ui-avatars.com/api/?name=${letter}&background=${color}&color=fff&size=${size}&bold=true&font-size=0.5`;
+  // On essaie unavatar pour threads (ça marche bien), fallback coloré pour ig/tt
+  if (platform === 'th') {
+    return `<img src="https://unavatar.io/threads/${username}" alt="${letter}" width="${size}" height="${size}" onerror="this.src='${fallbackUrl}'" style="border-radius:50%;object-fit:cover">`;
+  }
+  // Pour IG et TT on utilise directement l'avatar coloré avec la lettre
+  return `<img src="${fallbackUrl}" alt="${letter}" width="${size}" height="${size}" style="border-radius:50%;object-fit:cover">`;
 }
 
 // ─── LOAD DATA ───────────────────────────────────────────────────────────────
