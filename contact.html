@@ -433,14 +433,27 @@ function findPlatformLinks(p) {
   const el = document.getElementById('platformLinks');
   el.innerHTML = Object.entries(platforms).map(([key, plat]) => {
     const isCurrent = key === platform;
-    return `<a class="platform-link ${isCurrent?'found':''}" href="${plat.url}" target="_blank">
+    return `<a id="platLink-${key}" class="platform-link ${isCurrent?'found':''}" href="${plat.url}" target="_blank">
       <span class="plat-dot ${plat.dot}"></span>
       <span>${plat.label}</span>
       ${isCurrent
         ? `<span class="plat-status" style="color:var(--green)">Profil source ✓</span>`
-        : `<span class="plat-status" style="color:var(--muted)">Rechercher →</span>`}
+        : `<span id="platStatus-${key}" class="plat-status" style="color:#fcdc2d">⏳ Ouverture...</span>`}
     </a>`;
   }).join('');
+
+  // Auto-ouvrir les plateformes non-source avec un délai
+  let delay = 800;
+  Object.entries(platforms).forEach(([key, plat]) => {
+    if (key !== platform) {
+      setTimeout(() => {
+        window.open(plat.url, '_blank');
+        const st = document.getElementById(`platStatus-${key}`);
+        if (st) st.innerHTML = `<span style="color:var(--green)">Ouvert ✓</span>`;
+      }, delay);
+      delay += 600; // décalage entre chaque ouverture pour éviter le blocage popup
+    }
+  });
 }
 
 // ─── INIT ────────────────────────────────────────────────────────────────────
