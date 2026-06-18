@@ -199,6 +199,17 @@
         <span id="userEmail" style="font-family:'Space Mono',monospace;font-size:11px;color:var(--muted)"></span>
         <span id="planBadge" style="display:none;font-family:'Space Mono',monospace;font-size:10px;font-weight:700;padding:3px 10px;border-radius:100px;"></span>
         <a href="plan.html"><button class="btn btn-ghost">Mon plan</button></a>
+        <!-- CLOCHE NOTIFICATIONS -->
+        <div style="position:relative">
+          <button id="notifBtn" onclick="toggleNotifPanel()" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;position:relative">
+            🔔
+            <span id="notifCount" style="display:none;position:absolute;top:-5px;right:-5px;background:#fc5c7c;color:white;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:50%;padding:0 3px;justify-content:center;align-items:center"></span>
+          </button>
+          <div id="notifPanel" style="display:none;position:absolute;right:0;top:42px;background:#111118;border:1px solid #2a2a3a;border-radius:16px;width:300px;z-index:999;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.5)">
+            <div style="padding:12px 16px;border-bottom:1px solid #2a2a3a;font-size:13px;font-weight:700">🔔 Notifications</div>
+            <div id="notifList" style="max-height:280px;overflow-y:auto"></div>
+          </div>
+        </div>
         <a id="adminLink" href="admin.html" style="display:none"><button class="btn btn-ghost">⚙️ Admin</button></a>
         <button class="btn btn-ghost" onclick="signOut()">Déconnexion</button>
         <button class="btn btn-primary" onclick="openScanModal()">+ Infos scan</button>
@@ -391,6 +402,7 @@ sb.auth.getSession().then(async ({ data }) => {
   }
 
   loadProspects();
+  loadNotifications();
 });
 
 let DATA = [];
@@ -1193,6 +1205,55 @@ async function signOut() {
   await sb.auth.signOut();
   window.location.href = 'login.html';
 }
+
+/* ─── NOTIFICATIONS ─── */
+async function loadNotifications() {
+  const { data: tickets } = await sb.from('tickets')
+    .select('*')
+    .eq('status', 'resolved')
+    .order('created_at', { ascending: false });
+
+  const list = document.getElementById('notifList');
+  const count = document.getElementById('notifCount');
+
+  if (!tickets || tickets.length === 0) {
+    list.innerHTML = `<div style="padding:20px;text-align:center;font-size:12px;color:#6b6b88">Aucune notification</div>`;
+    count.style.display = 'none';
+    return;
+  }
+
+  const CAT_LABELS = {
+    paiement:'💳 Paiement', compte:'🔐 Compte', bug:'🐛 Bug',
+    fonctionnalite:'✨ Fonctionnalité', upgrade:'⬆️ Upgrade', autre:'💬 Autre'
+  };
+
+  count.textContent = tickets.length;
+  count.style.cssText = 'display:flex;position:absolute;top:-5px;right:-5px;background:#fc5c7c;color:white;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:50%;padding:0 3px;justify-content:center;align-items:center';
+
+  list.innerHTML = tickets.map(t => {
+    const date = new Date(t.created_at).toLocaleDateString('fr-FR', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
+    return `<div style="padding:12px 16px;border-bottom:1px solid #1a1a24;display:flex;gap:10px;align-items:flex-start">
+      <div style="font-size:18px;flex-shrink:0">✅</div>
+      <div>
+        <div style="font-size:12px;font-weight:700;margin-bottom:2px">Ticket résolu</div>
+        <div style="font-size:11px;color:#6b6b88">${CAT_LABELS[t.category] || t.category}</div>
+        <div style="font-size:10px;color:#3a3a4a;font-family:'Space Mono',monospace;margin-top:3px">${date}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleNotifPanel() {
+  const panel = document.getElementById('notifPanel');
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+document.addEventListener('click', e => {
+  if (!document.getElementById('notifBtn')?.contains(e.target)) {
+    const p = document.getElementById('notifPanel');
+    if (p) p.style.display = 'none';
+  }
+});
 
 /* ─── FEATURE GATING ─── */
 function showUpgradeBanner() {
