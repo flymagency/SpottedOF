@@ -1073,7 +1073,7 @@ function changeLang(id, lang) {
 function sendViaMailto(email) {
   const subject = encodeURIComponent(document.getElementById('emailSubject').value);
   const body = encodeURIComponent(document.getElementById('emailBody').value);
-  window.open(`mailto:${email}?subject=${subject}&body=${body}`, '_blank');
+  window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
 }
 
 /* ─── EMAIL FINDER ─── */
