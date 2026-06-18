@@ -1039,13 +1039,16 @@ function openSendEmailModal(id) {
         <label style="font-size:10px;color:#6b6b88;font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:0.08em;display:block;margin-bottom:6px">Message</label>
         <textarea id="emailBody" rows="12" style="width:100%;background:#1a1a24;border:1px solid #2a2a3a;border-radius:10px;padding:11px 14px;color:#e8e8f0;font-family:'Syne',sans-serif;font-size:13px;outline:none;resize:vertical;line-height:1.6">${tpl.body}</textarea>
       </div>
-      <div style="display:flex;gap:10px">
-        <button onclick="sendViaMailto('${p.email}')" style="flex:1;background:#7c5cfc;color:white;border:none;padding:13px;border-radius:12px;font-size:14px;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer">
-          📨 Ouvrir dans ma boîte mail
+      <div style="display:flex;gap:8px">
+        <button onclick="sendViaMailto('${p.email}')" style="flex:1;background:#EA4335;color:white;border:none;padding:13px;border-radius:12px;font-size:13px;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer">
+          Gmail
         </button>
-        <button onclick="document.getElementById('sendEmailModal').remove()" style="background:#1a1a24;color:#6b6b88;border:1px solid #2a2a3a;padding:13px 18px;border-radius:12px;font-size:14px;font-family:'Syne',sans-serif;cursor:pointer">Annuler</button>
+        <button onclick="sendViaMailtoApp('${p.email}')" style="flex:1;background:#7c5cfc;color:white;border:none;padding:13px;border-radius:12px;font-size:13px;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer">
+          Outlook / Mail
+        </button>
+        <button onclick="document.getElementById('sendEmailModal').remove()" style="background:#1a1a24;color:#6b6b88;border:1px solid #2a2a3a;padding:13px 14px;border-radius:12px;font-size:13px;font-family:'Syne',sans-serif;cursor:pointer">✕</button>
       </div>
-      <div style="margin-top:10px;font-size:11px;color:#3a3a4a;text-align:center;font-family:'Space Mono',monospace">L'email s'ouvre dans ta boîte mail — tu vérifies et tu envoies</div>
+      <div style="margin-top:10px;font-size:11px;color:#3a3a4a;text-align:center;font-family:'Space Mono',monospace">Tu vérifies et tu envoies depuis ta boîte — l'email vient de toi</div>
     </div>`;
   modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
   document.body.appendChild(modal);
@@ -1071,6 +1074,14 @@ function changeLang(id, lang) {
 }
 
 function sendViaMailto(email) {
+  const subject = encodeURIComponent(document.getElementById('emailSubject').value);
+  const body = encodeURIComponent(document.getElementById('emailBody').value);
+  // Essai Gmail web d'abord (plus fiable), sinon mailto: classique
+  const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${subject}&body=${body}`;
+  window.open(gmailUrl, '_blank');
+}
+
+function sendViaMailtoApp(email) {
   const subject = encodeURIComponent(document.getElementById('emailSubject').value);
   const body = encodeURIComponent(document.getElementById('emailBody').value);
   window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
