@@ -251,7 +251,7 @@ sb.auth.getSession().then(async ({ data }) => {
   document.getElementById('headerEmail').textContent = user.email;
 
   const { data: profile } = await sb.from('profiles').select('*').eq('id', user.id).single();
-  const plan = profile?.plan || 'starter';
+  const plan = (profile?.plan || 'starter').toLowerCase();
   const paid = profile?.paid || false;
   const createdAt = profile?.created_at || user.created_at;
 

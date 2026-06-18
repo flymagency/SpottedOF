@@ -373,7 +373,7 @@ sb.auth.getSession().then(async ({ data }) => {
 
   // Charger le profil pour connaître le plan
   const { data: profile } = await sb.from('profiles').select('plan, paid').eq('id', currentUser.id).single();
-  userPlan = profile?.plan || 'starter';
+  userPlan = (profile?.plan || 'starter').toLowerCase();
   userPaid = profile?.paid || false;
 
   // Badge plan dans le header
