@@ -549,8 +549,8 @@ function renderProspects() {
       </div>
       <div class="cell" id="email-cell-${p.id}" onclick="event.stopPropagation()" style="min-width:0">
         ${p.email
-          ? `<span style="font-size:11px;color:#2dfc8e;font-family:'Space Mono',monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;cursor:pointer" onclick="copyEmail('${p.email}')" title="Cliquer pour copier">${p.email}</span>`
-          : `<span class="email-scanning-${p.id}" style="font-size:11px;color:#3a3a4a;font-family:'Space Mono',monospace">⏳ scan...</span>`}
+          ? emailFoundHTML(p.email, p.id)
+          : `<span style="font-size:11px;color:#3a3a4a;font-family:'Space Mono',monospace">⏳ scan...</span>`}
       </div>
       <div class="actions-cell" onclick="event.stopPropagation()">
         <div class="icon-btn" onclick="openPipelineModal('${p.id}','${(p.status||'').toLowerCase()}')" title="Changer statut">
@@ -846,20 +846,234 @@ async function processNextEmailScan() {
       p.email = data.emails[0];
       // Mettre à jour la cellule dans le DOM sans re-render tout le tableau
       const cell = document.getElementById(`email-cell-${id}`);
-      if (cell) {
-        cell.innerHTML = `<span style="font-size:11px;color:#2dfc8e;font-family:'Space Mono',monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;cursor:pointer" onclick="copyEmail('${p.email}')" title="Cliquer pour copier">${p.email}</span>`;
-      }
+      if (cell) cell.innerHTML = emailFoundHTML(p.email, id);
     } else {
-      // Rien trouvé → afficher tiret
       const cell = document.getElementById(`email-cell-${id}`);
-      if (cell) {
-        cell.innerHTML = `<span style="font-size:11px;color:#3a3a4a;font-family:'Space Mono',monospace">—</span>`;
-      }
+      if (cell) cell.innerHTML = `<span style="font-size:11px;color:#3a3a4a;font-family:'Space Mono',monospace">—</span>`;
     }
   } catch {}
 
-  // Pause de 800ms entre chaque scan pour ne pas surcharger
   setTimeout(processNextEmailScan, 800);
+}
+
+function emailFoundHTML(email, id) {
+  return `<div style="display:flex;align-items:center;gap:5px;min-width:0">
+    <span style="font-size:10px;color:#2dfc8e;font-family:'Space Mono',monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;cursor:pointer" onclick="copyEmail('${email}')" title="Copier">${email}</span>
+    <button onclick="openSendEmailModal('${id}')" style="flex-shrink:0;background:rgba(124,92,252,0.2);color:#7c5cfc;border:1px solid rgba(124,92,252,0.4);padding:3px 7px;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;font-family:'Syne',sans-serif;white-space:nowrap">✉ Envoyer</button>
+  </div>`;
+}
+
+/* ─── DÉTECTION DE LANGUE ─── */
+function detectLang(bio) {
+  const b = (bio || '').toLowerCase();
+  const scores = {
+    fr: 0, en: 0, es: 0, it: 0, de: 0, pt: 0
+  };
+  // Mots-clés fréquents par langue
+  const markers = {
+    fr: ['je ', 'mon ', 'ma ', 'les ', 'des ', 'pour ', 'avec ', 'sur ', 'dans ', 'une ', 'ici ', 'bonjour', 'salut', 'moi ', 'bienvenue', 'fan', 'créatrice', 'contenu'],
+    en: ['my ', 'the ', 'and ', 'for ', 'with ', 'your ', 'follow', 'link ', 'content', 'creator', 'welcome', 'fitness', 'lifestyle', 'business', 'model', 'here'],
+    es: ['mi ', 'me ', 'soy ', 'con ', 'para ', 'los ', 'las ', 'una ', 'hola', 'bienvenido', 'modelo', 'chica', 'latina', 'español', 'colombia', 'mexico'],
+    it: ['sono ', 'mia ', 'per ', 'con ', 'che ', 'ciao', 'benvenuto', 'ragazza', 'italiana', 'modella', 'foto', 'link in bio'],
+    de: ['ich ', 'mein ', 'mit ', 'und ', 'für ', 'hallo', 'willkommen', 'model', 'deutsch', 'bilder', 'mehr'],
+    pt: ['meu ', 'minha ', 'com ', 'para ', 'sou ', 'olá', 'bem-vindo', 'brasileira', 'brasil', 'conteúdo', 'fotos'],
+  };
+  // Caractères spéciaux
+  if (/[àâéèêëîïôùûüÿç]/i.test(b)) scores.fr += 3;
+  if (/[ñ¿¡]/i.test(b)) scores.es += 4;
+  if (/[ãõçê]/i.test(b)) scores.pt += 3;
+  if (/[äöüß]/i.test(b)) scores.de += 4;
+  if (/[àèéìîò]/i.test(b)) scores.it += 2;
+
+  for (const [lang, words] of Object.entries(markers)) {
+    words.forEach(w => { if (b.includes(w)) scores[lang]++; });
+  }
+  return Object.entries(scores).sort((a,b) => b[1]-a[1])[0][0];
+}
+
+/* ─── TEMPLATES EMAIL PAR LANGUE ─── */
+const EMAIL_TEMPLATES = {
+  fr: (name, niche, handle) => ({
+    subject: `Collaboration OnlyFans — ${name || handle}`,
+    body: `Bonjour ${name || ''},
+
+Je gère une agence spécialisée dans la gestion de comptes OnlyFans et j'ai découvert ton profil ${handle ? `(${handle}) ` : ''}— ton contenu ${niche ? `dans le domaine ${niche} ` : ''}m'a vraiment impressionné(e).
+
+Je t'écris pour te proposer une collaboration : nous accompagnons les créatrices à maximiser leurs revenus sur OnlyFans en prenant en charge la gestion complète du compte (marketing, abonnés, stratégie de contenu).
+
+Nos créatrices génèrent en moyenne +300% de revenus dans les 3 premiers mois.
+
+Est-ce que tu serais ouverte à un appel de 15 minutes cette semaine pour qu'on en discute ?
+
+Au plaisir d'échanger,
+[Ton prénom]
+[Nom de l'agence]`
+  }),
+  en: (name, niche, handle) => ({
+    subject: `OnlyFans Management Collaboration — ${name || handle}`,
+    body: `Hi ${name || ''},
+
+I came across your profile ${handle ? `(${handle}) ` : ''}and I'm really impressed by your ${niche ? `${niche} ` : ''}content.
+
+I run an agency specialized in OnlyFans management and I'd love to explore a collaboration with you. We handle everything — marketing, subscriber growth, content strategy — so you can focus on creating.
+
+Our creators see an average +300% revenue increase within the first 3 months.
+
+Would you be open to a quick 15-minute call this week to chat about it?
+
+Looking forward to hearing from you,
+[Your name]
+[Agency name]`
+  }),
+  es: (name, niche, handle) => ({
+    subject: `Colaboración OnlyFans — ${name || handle}`,
+    body: `Hola ${name || ''},
+
+Vi tu perfil ${handle ? `(${handle}) ` : ''}y me encantó tu contenido${niche ? ` de ${niche}` : ''}.
+
+Dirijo una agencia especializada en gestión de OnlyFans y me gustaría proponerte una colaboración. Nosotros nos encargamos de todo — marketing, crecimiento de suscriptores, estrategia de contenido — para que tú solo te concentres en crear.
+
+Nuestras creadoras ven un aumento promedio de +300% en ingresos en los primeros 3 meses.
+
+¿Estarías disponible para una llamada de 15 minutos esta semana?
+
+Un saludo,
+[Tu nombre]
+[Nombre de la agencia]`
+  }),
+  it: (name, niche, handle) => ({
+    subject: `Collaborazione OnlyFans — ${name || handle}`,
+    body: `Ciao ${name || ''},
+
+Ho visto il tuo profilo ${handle ? `(${handle}) ` : ''}e mi ha colpito molto il tuo contenuto${niche ? ` su ${niche}` : ''}.
+
+Gestisco un'agenzia specializzata nella gestione di OnlyFans e vorrei proporti una collaborazione. Ci occupiamo di tutto — marketing, crescita degli abbonati, strategia dei contenuti — così puoi concentrarti solo sulla creazione.
+
+Le nostre creator vedono in media un aumento del +300% dei guadagni nei primi 3 mesi.
+
+Saresti disponibile per una chiamata di 15 minuti questa settimana?
+
+A presto,
+[Il tuo nome]
+[Nome dell'agenzia]`
+  }),
+  de: (name, niche, handle) => ({
+    subject: `OnlyFans Zusammenarbeit — ${name || handle}`,
+    body: `Hallo ${name || ''},
+
+ich bin auf dein Profil ${handle ? `(${handle}) ` : ''}gestoßen und bin von deinem${niche ? ` ${niche}` : ''} Content sehr beeindruckt.
+
+Ich leite eine Agentur, die sich auf OnlyFans-Management spezialisiert hat, und möchte dir eine Zusammenarbeit vorschlagen. Wir kümmern uns um alles — Marketing, Abonnentenwachstum, Content-Strategie — damit du dich voll auf das Erstellen konzentrieren kannst.
+
+Unsere Creators verzeichnen in den ersten 3 Monaten durchschnittlich +300% Umsatzsteigerung.
+
+Hättest du diese Woche Zeit für ein 15-minütiges Gespräch?
+
+Mit freundlichen Grüßen,
+[Dein Name]
+[Name der Agentur]`
+  }),
+  pt: (name, niche, handle) => ({
+    subject: `Colaboração OnlyFans — ${name || handle}`,
+    body: `Olá ${name || ''},
+
+Vi o seu perfil ${handle ? `(${handle}) ` : ''}e fiquei muito impressionado(a) com o seu conteúdo${niche ? ` de ${niche}` : ''}.
+
+Tenho uma agência especializada em gestão de OnlyFans e gostaria de propor uma colaboração. Cuidamos de tudo — marketing, crescimento de assinantes, estratégia de conteúdo — para que você foque apenas na criação.
+
+Nossas criadoras têm um aumento médio de +300% de receita nos primeiros 3 meses.
+
+Você estaria disponível para uma chamada de 15 minutos essa semana?
+
+Até breve,
+[Seu nome]
+[Nome da agência]`
+  }),
+};
+
+const LANG_FLAGS = { fr:'🇫🇷', en:'🇬🇧', es:'🇪🇸', it:'🇮🇹', de:'🇩🇪', pt:'🇧🇷' };
+const LANG_NAMES = { fr:'Français', en:'English', es:'Español', it:'Italiano', de:'Deutsch', pt:'Português' };
+
+/* ─── MODAL ENVOI EMAIL ─── */
+function openSendEmailModal(id) {
+  const p = DATA.find(x => x.id === id);
+  if (!p || !p.email) { showToast('Aucun email disponible', 'error'); return; }
+
+  const lang = detectLang(p.bio);
+  const firstName = (p.name || '').split(' ')[0];
+  const tpl = (EMAIL_TEMPLATES[lang] || EMAIL_TEMPLATES.en)(firstName, p.niche, p.handle);
+
+  const existing = document.getElementById('sendEmailModal');
+  if (existing) existing.remove();
+  const modal = document.createElement('div');
+  modal.id = 'sendEmailModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML = `
+    <div style="background:#111118;border:1px solid #2a2a3a;border-radius:20px;padding:28px;max-width:520px;width:100%;max-height:90vh;overflow-y:auto">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <div>
+          <div style="font-size:15px;font-weight:700">✉️ Envoyer un email</div>
+          <div style="font-size:11px;color:#6b6b88;margin-top:3px;font-family:'Space Mono',monospace">${p.email}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div id="langBadge" style="background:#1a1a24;border:1px solid #2a2a3a;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer" title="Changer de langue" onclick="toggleLangPicker()">
+            ${LANG_FLAGS[lang]} ${LANG_NAMES[lang]}
+          </div>
+          <button onclick="document.getElementById('sendEmailModal').remove()" style="background:none;border:none;color:#6b6b88;font-size:18px;cursor:pointer;padding:4px">✕</button>
+        </div>
+      </div>
+
+      <!-- Sélecteur langue -->
+      <div id="langPicker" style="display:none;background:#1a1a24;border:1px solid #2a2a3a;border-radius:12px;padding:10px;margin-bottom:14px;display:flex;flex-wrap:wrap;gap:6px">
+        ${Object.entries(LANG_FLAGS).map(([l, flag]) => `
+          <button onclick="changeLang('${id}','${l}')" style="background:${l===lang?'rgba(124,92,252,0.2)':'transparent'};border:1px solid ${l===lang?'rgba(124,92,252,0.4)':'#2a2a3a'};color:${l===lang?'#7c5cfc':'#6b6b88'};padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Syne',sans-serif">
+            ${flag} ${LANG_NAMES[l]}
+          </button>`).join('')}
+      </div>
+
+      <div style="margin-bottom:14px">
+        <label style="font-size:10px;color:#6b6b88;font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:0.08em;display:block;margin-bottom:6px">Objet</label>
+        <input id="emailSubject" value="${tpl.subject.replace(/"/g,'&quot;')}" style="width:100%;background:#1a1a24;border:1px solid #2a2a3a;border-radius:10px;padding:11px 14px;color:#e8e8f0;font-family:'Syne',sans-serif;font-size:13px;outline:none">
+      </div>
+      <div style="margin-bottom:18px">
+        <label style="font-size:10px;color:#6b6b88;font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:0.08em;display:block;margin-bottom:6px">Message</label>
+        <textarea id="emailBody" rows="12" style="width:100%;background:#1a1a24;border:1px solid #2a2a3a;border-radius:10px;padding:11px 14px;color:#e8e8f0;font-family:'Syne',sans-serif;font-size:13px;outline:none;resize:vertical;line-height:1.6">${tpl.body}</textarea>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button onclick="sendViaMailto('${p.email}')" style="flex:1;background:#7c5cfc;color:white;border:none;padding:13px;border-radius:12px;font-size:14px;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer">
+          📨 Ouvrir dans ma boîte mail
+        </button>
+        <button onclick="document.getElementById('sendEmailModal').remove()" style="background:#1a1a24;color:#6b6b88;border:1px solid #2a2a3a;padding:13px 18px;border-radius:12px;font-size:14px;font-family:'Syne',sans-serif;cursor:pointer">Annuler</button>
+      </div>
+      <div style="margin-top:10px;font-size:11px;color:#3a3a4a;text-align:center;font-family:'Space Mono',monospace">L'email s'ouvre dans ta boîte mail — tu vérifies et tu envoies</div>
+    </div>`;
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
+  // Cacher le picker par défaut
+  document.getElementById('langPicker').style.display = 'none';
+}
+
+let _currentSendId = null;
+function toggleLangPicker() {
+  const p = document.getElementById('langPicker');
+  p.style.display = p.style.display === 'none' ? 'flex' : 'none';
+}
+
+function changeLang(id, lang) {
+  const p = DATA.find(x => x.id === id);
+  if (!p) return;
+  const firstName = (p.name || '').split(' ')[0];
+  const tpl = (EMAIL_TEMPLATES[lang] || EMAIL_TEMPLATES.en)(firstName, p.niche, p.handle);
+  document.getElementById('emailSubject').value = tpl.subject;
+  document.getElementById('emailBody').value = tpl.body;
+  document.getElementById('langBadge').innerHTML = `${LANG_FLAGS[lang]} ${LANG_NAMES[lang]}`;
+  document.getElementById('langPicker').style.display = 'none';
+}
+
+function sendViaMailto(email) {
+  const subject = encodeURIComponent(document.getElementById('emailSubject').value);
+  const body = encodeURIComponent(document.getElementById('emailBody').value);
+  window.open(`mailto:${email}?subject=${subject}&body=${body}`, '_blank');
 }
 
 /* ─── EMAIL FINDER ─── */
