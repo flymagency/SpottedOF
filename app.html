@@ -64,11 +64,11 @@
 
     /* TABLE */
     .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; overflow: hidden; }
-    .table-head { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1.4fr 1fr; padding: 12px 20px; border-bottom: 1px solid var(--border); background: var(--surface2); }
+    .table-head { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1.4fr 1.3fr; padding: 12px 20px; border-bottom: 1px solid var(--border); background: var(--surface2); }
     .th { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; display: flex; align-items: center; gap: 4px; cursor: pointer; user-select: none; }
     .th:hover { color: var(--text); }
 
-    .prospect-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1.4fr 1fr; padding: 14px 20px; border-bottom: 1px solid var(--border); align-items: center; transition: background 0.15s; cursor: pointer; }
+    .prospect-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1.4fr 1.3fr; padding: 14px 20px; border-bottom: 1px solid var(--border); align-items: center; transition: background 0.15s; cursor: pointer; }
     .prospect-row:last-child { border-bottom: none; }
     .prospect-row:hover { background: var(--surface2); }
 
@@ -573,6 +573,9 @@ function renderProspects() {
         </div>
         <div class="icon-btn ${sv?'saved':''}" onclick="toggleSave('${p.id}',this)" title="Sauvegarder">
           <svg width="13" height="13" fill="${sv?'currentColor':'none'}" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div class="icon-btn" onclick="openDMModal('${p.id}')" title="Générer DM Instagram" style="color:#fc5cdc;border-color:rgba(252,92,220,0.3)">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
         </div>
         <div class="icon-btn" onclick="openProspect('${p.id}')" title="Détail">
           <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -1199,6 +1202,141 @@ async function findEmail(id, bio) {
 
 function copyEmail(email) {
   navigator.clipboard.writeText(email).then(() => showToast('Email copié ! 📋', 'success'));
+}
+
+/* ─── DM INSTAGRAM GENERATOR ─── */
+const DM_TEMPLATES = {
+  fr: [
+    (name, niche, followers) => `Salut ${name} 👋\n\nJ'ai découvert ton profil et franchement ton contenu ${niche ? `${niche} ` : ''}est vraiment top !\n\nJe gère une agence OFM et j'aimerais qu'on discute d'une collaboration. Beaucoup de créatrices avec ton profil font x3 sur leurs revenus en quelques mois.\n\nTu serais dispo pour qu'on en parle ? 🙏`,
+    (name, niche, followers) => `Hey ${name} ! 🔥\n\nTon profil ${niche ? `dans la niche ${niche} ` : ''}m'a vraiment accroché, ${fmt(followers)} abonnés et un contenu de qualité — exactement le profil qu'on recherche.\n\nJe travaille avec des créatrices pour maximiser leurs revenus sur OnlyFans (gestion complète, stratégie, marketing).\n\nÇa t'intéresse qu'on échange rapidement ? 💬`,
+    (name, niche, followers) => `Coucou ${name} ✨\n\nJe suis tombé(e) sur ton compte et j'adore ce que tu fais ! Avec ${fmt(followers)} abonnés tu as vraiment le potentiel pour faire quelque chose d'énorme sur OF.\n\nMon agence accompagne des créatrices comme toi — on s'occupe de tout pendant que toi tu crées.\n\nUn DM pour en savoir plus ? 😊`,
+  ],
+  en: [
+    (name, niche, followers) => `Hey ${name} 👋\n\nI came across your profile and love your ${niche || 'content'} — ${fmt(followers)} followers and amazing quality!\n\nI run an OFM agency and I think you'd be a perfect fit. We help creators like you 3x their income on OnlyFans while handling everything on the business side.\n\nWould you be open to a quick chat? 🙏`,
+    (name, niche, followers) => `Hi ${name}! 🔥\n\nYour ${niche ? `${niche} ` : ''}content is exactly what we look for. I manage an OnlyFans agency and we've helped creators with your profile multiply their revenue in just a few months.\n\nInterested in hearing more? Drop me a reply! 💬`,
+    (name, niche, followers) => `Hey ${name} ✨\n\nJust discovered your page and honestly your content is fire 🔥\n\nI work with content creators to help them monetize on OnlyFans — full management, marketing, strategy. You bring the content, we handle the rest.\n\nWanna chat? 😊`,
+  ],
+  es: [
+    (name, niche, followers) => `¡Hola ${name}! 👋\n\nEncontré tu perfil y me encanta tu contenido${niche ? ` de ${niche}` : ''} — ¡${fmt(followers)} seguidores y una calidad increíble!\n\nDirijo una agencia OFM y creo que serías perfecta para trabajar juntos. Ayudamos a creadoras como tú a triplicar sus ingresos en OnlyFans.\n\n¿Te interesa que hablemos? 🙏`,
+    (name, niche, followers) => `¡Hey ${name}! 🔥\n\nTu perfil${niche ? ` de ${niche}` : ''} me llamó mucho la atención. Gestiono una agencia de OnlyFans y hemos ayudado a muchas creadoras con tu potencial a multiplicar sus ingresos.\n\n¿Te gustaría saber más? 💬`,
+  ],
+  it: [
+    (name, niche, followers) => `Ciao ${name}! 👋\n\nHo scoperto il tuo profilo e il tuo contenuto${niche ? ` su ${niche}` : ''} è fantastico — ${fmt(followers)} follower e una qualità incredibile!\n\nGestisco un'agenzia OFM e penso che saresti perfetta. Aiutiamo le creator a triplicare i loro guadagni su OnlyFans.\n\nTi va di parlarne? 🙏`,
+  ],
+  de: [
+    (name, niche, followers) => `Hey ${name}! 👋\n\nIch bin auf dein Profil gestoßen und liebe deinen${niche ? ` ${niche}` : ''} Content — ${fmt(followers)} Follower und top Qualität!\n\nIch leite eine OFM-Agentur und denke, du wärst perfekt. Wir helfen Creators wie dir, ihre Einnahmen auf OnlyFans zu verdreifachen.\n\nHättest du Lust auf ein kurzes Gespräch? 🙏`,
+  ],
+  pt: [
+    (name, niche, followers) => `Oi ${name}! 👋\n\nEncontrei o seu perfil e adorei o conteúdo${niche ? ` de ${niche}` : ''} — ${fmt(followers)} seguidores e uma qualidade incrível!\n\nGerencio uma agência OFM e acho que você seria perfeita. Ajudamos criadoras como você a triplicar a renda no OnlyFans.\n\nTopa conversar? 🙏`,
+  ],
+};
+
+function openDMModal(id) {
+  const p = DATA.find(x => x.id === id);
+  if (!p) return;
+
+  const lang = detectLang(p.bio);
+  const templates = DM_TEMPLATES[lang] || DM_TEMPLATES.en;
+  const firstName = (p.name || p.handle || '').replace('@','').split(' ')[0] || '';
+  let currentTplIdx = 0;
+
+  const existing = document.getElementById('dmModal');
+  if (existing) existing.remove();
+
+  function getMsg(idx) {
+    return (templates[idx] || templates[0])(firstName, p.niche, p.followers);
+  }
+
+  const modal = document.createElement('div');
+  modal.id = 'dmModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML = `
+    <div style="background:#111118;border:1px solid #2a2a3a;border-radius:20px;padding:28px;max-width:480px;width:100%">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div>
+          <div style="font-size:15px;font-weight:700">💬 DM Instagram</div>
+          <div style="font-size:11px;color:#6b6b88;margin-top:3px;font-family:'Space Mono',monospace">${p.handle} · ${LANG_FLAGS[lang] || '🌐'} ${LANG_NAMES[lang] || lang}</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div id="dmLangBadge" style="background:#1a1a24;border:1px solid #2a2a3a;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer" onclick="toggleDMLangPicker()">${LANG_FLAGS[lang] || '🌐'} ${LANG_NAMES[lang] || lang}</div>
+          <button onclick="document.getElementById('dmModal').remove()" style="background:none;border:none;color:#6b6b88;font-size:18px;cursor:pointer">✕</button>
+        </div>
+      </div>
+
+      <!-- Sélecteur langue -->
+      <div id="dmLangPicker" style="display:none;background:#1a1a24;border:1px solid #2a2a3a;border-radius:12px;padding:10px;margin-bottom:12px;flex-wrap:wrap;gap:6px">
+        ${Object.entries(LANG_FLAGS).map(([l, flag]) => `
+          <button onclick="changeDMLang('${id}','${l}')" style="background:${l===lang?'rgba(124,92,252,0.2)':'transparent'};border:1px solid ${l===lang?'rgba(124,92,252,0.4)':'#2a2a3a'};color:${l===lang?'#7c5cfc':'#6b6b88'};padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Syne',sans-serif">${flag} ${LANG_NAMES[l]}</button>`).join('')}
+      </div>
+
+      <!-- Variantes -->
+      ${templates.length > 1 ? `
+      <div style="display:flex;gap:6px;margin-bottom:12px">
+        ${templates.map((_, i) => `
+          <button id="dmVar${i}" onclick="switchDMVariant(${i})" style="background:${i===0?'rgba(252,92,220,0.2)':'#1a1a24'};border:1px solid ${i===0?'rgba(252,92,220,0.4)':'#2a2a3a'};color:${i===0?'#fc5cdc':'#6b6b88'};padding:5px 12px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Space Mono',monospace">V${i+1}</button>
+        `).join('')}
+        <span style="font-size:11px;color:#3a3a4a;align-self:center;font-family:'Space Mono',monospace;margin-left:4px">${templates.length} variantes</span>
+      </div>` : ''}
+
+      <textarea id="dmText" rows="9" style="width:100%;background:#1a1a24;border:1px solid rgba(252,92,220,0.3);border-radius:10px;padding:12px 14px;color:#e8e8f0;font-family:'Syne',sans-serif;font-size:13px;outline:none;resize:vertical;line-height:1.7">${getMsg(0)}</textarea>
+
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button onclick="copyDM()" style="flex:1;background:linear-gradient(135deg,#fc5cdc,#7c5cfc);color:white;border:none;padding:13px;border-radius:12px;font-size:14px;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer">
+          📋 Copier le DM
+        </button>
+        <button onclick="openIGProfile('${p.handle}')" style="background:#1a1a24;color:#6b6b88;border:1px solid #2a2a3a;padding:13px 14px;border-radius:12px;font-size:13px;font-family:'Syne',sans-serif;cursor:pointer" title="Ouvrir le profil IG">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+        </button>
+        <button onclick="document.getElementById('dmModal').remove()" style="background:#1a1a24;color:#6b6b88;border:1px solid #2a2a3a;padding:13px 14px;border-radius:12px;font-size:14px;font-family:'Syne',sans-serif;cursor:pointer">✕</button>
+      </div>
+      <div style="margin-top:10px;font-size:11px;color:#3a3a4a;text-align:center;font-family:'Space Mono',monospace">Copie → ouvre Instagram → colle dans les DMs</div>
+    </div>`;
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
+
+  // Stocker pour les fonctions globales
+  window._dmTemplates = templates;
+  window._dmGetMsg = getMsg;
+  window._dmCurrentLang = lang;
+  window._dmProspectId = id;
+}
+
+function switchDMVariant(idx) {
+  document.getElementById('dmText').value = window._dmGetMsg(idx);
+  document.querySelectorAll('[id^="dmVar"]').forEach((b, i) => {
+    b.style.background = i === idx ? 'rgba(252,92,220,0.2)' : '#1a1a24';
+    b.style.borderColor = i === idx ? 'rgba(252,92,220,0.4)' : '#2a2a3a';
+    b.style.color = i === idx ? '#fc5cdc' : '#6b6b88';
+  });
+}
+
+function toggleDMLangPicker() {
+  const p = document.getElementById('dmLangPicker');
+  p.style.display = p.style.display === 'none' ? 'flex' : 'none';
+}
+
+function changeDMLang(id, lang) {
+  const p = DATA.find(x => x.id === id);
+  if (!p) return;
+  const templates = DM_TEMPLATES[lang] || DM_TEMPLATES.en;
+  const firstName = (p.name || p.handle || '').replace('@','').split(' ')[0] || '';
+  window._dmTemplates = templates;
+  window._dmGetMsg = (idx) => (templates[idx] || templates[0])(firstName, p.niche, p.followers);
+  document.getElementById('dmText').value = window._dmGetMsg(0);
+  document.getElementById('dmLangBadge').innerHTML = `${LANG_FLAGS[lang] || '🌐'} ${LANG_NAMES[lang] || lang}`;
+  document.getElementById('dmLangPicker').style.display = 'none';
+}
+
+function copyDM() {
+  const text = document.getElementById('dmText').value;
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('DM copié ! Ouvre Instagram et colle 📋', 'success');
+  });
+}
+
+function openIGProfile(handle) {
+  const username = (handle || '').replace('@', '');
+  window.open(`https://instagram.com/${username}`, '_blank');
 }
 
 async function signOut() {
