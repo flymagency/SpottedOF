@@ -236,6 +236,7 @@
 <script>
 const SUPABASE_URL = 'https://nsvrkogwmzrbjrtbphpb.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_x7QwXgNepnb6t_2LCMniqw_zIEZ2LnR';
+const WORKER = 'https://spottedof-worker.businessflymagency.workers.dev';
 const ADMIN_EMAIL = 'businessflymagency@gmail.com';
 const PLAN_PRICES = { free: 0, starter: 70, pro: 100, agency: 200, admin: 0 };
 
@@ -398,8 +399,8 @@ async function loadTickets() {
 }
 
 async function resolveTicket(id) {
-  await sb.from('tickets').update({ status: 'resolved' }).eq('id', id);
-  showToast('Ticket marqué comme résolu ✓', 'success');
+  await sb.from('tickets').update({ status: 'resolved', resolved_at: new Date().toISOString() }).eq('id', id);
+  showToast('✅ Ticket marqué comme résolu', 'success');
   loadTickets();
 }
 

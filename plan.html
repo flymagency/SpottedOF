@@ -101,6 +101,17 @@
       </a>
       <div style="display:flex;gap:10px;align-items:center">
         <span id="headerEmail" style="font-family:'Space Mono',monospace;font-size:11px;color:var(--muted)"></span>
+        <!-- CLOCHE NOTIFICATIONS -->
+        <div style="position:relative">
+          <button id="notifBtn" onclick="toggleNotifPanel()" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;position:relative">
+            🔔
+            <span id="notifCount" style="display:none;position:absolute;top:-5px;right:-5px;background:#fc5c7c;color:white;font-size:9px;font-weight:700;font-family:'Space Mono',monospace;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center"></span>
+          </button>
+          <div id="notifPanel" style="display:none;position:absolute;right:0;top:44px;background:#111118;border:1px solid #2a2a3a;border-radius:16px;width:320px;z-index:200;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.4)">
+            <div style="padding:14px 16px;border-bottom:1px solid #2a2a3a;font-size:13px;font-weight:700">Notifications</div>
+            <div id="notifList" style="max-height:300px;overflow-y:auto"></div>
+          </div>
+        </div>
         <a href="app.html" class="btn btn-ghost">← Dashboard</a>
       </div>
     </div>
@@ -373,12 +384,67 @@ function renderFeatures(plan) {
 let _ticketUser = null;
 let _ticketProfile = null;
 
-// Stocker user/profile au chargement pour le ticket
+// Stocker user/profile au chargement pour le ticket + charger notifs
 sb.auth.getSession().then(async ({ data }) => {
   if (data.session) {
     _ticketUser = data.session.user;
     const { data: p } = await sb.from('profiles').select('plan, agency_name').eq('id', _ticketUser.id).single();
     _ticketProfile = p;
+    loadNotifications();
+  }
+});
+
+/* ─── NOTIFICATIONS ─── */
+async function loadNotifications() {
+  const { data: tickets } = await sb.from('tickets')
+    .select('*')
+    .eq('user_id', _ticketUser.id)
+    .eq('status', 'resolved')
+    .order('resolved_at', { ascending: false });
+
+  const list = document.getElementById('notifList');
+  const count = document.getElementById('notifCount');
+
+  if (!tickets || tickets.length === 0) {
+    list.innerHTML = `<div style="padding:20px;text-align:center;font-size:12px;color:#6b6b88">Aucune notification</div>`;
+    count.style.display = 'none';
+    return;
+  }
+
+  // Badge count (tous les résolus = notifications)
+  count.textContent = tickets.length;
+  count.style.display = 'flex';
+
+  const CAT_LABELS = {
+    paiement:'💳 Paiement', compte:'🔐 Compte', bug:'🐛 Bug',
+    fonctionnalite:'✨ Fonctionnalité', upgrade:'⬆️ Upgrade', autre:'💬 Autre'
+  };
+
+  list.innerHTML = tickets.map(t => {
+    const date = t.resolved_at
+      ? new Date(t.resolved_at).toLocaleDateString('fr-FR', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })
+      : '';
+    return `<div style="padding:14px 16px;border-bottom:1px solid #1a1a24;display:flex;gap:12px;align-items:flex-start">
+      <div style="font-size:20px;flex-shrink:0">✅</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:700;margin-bottom:3px">Ticket résolu</div>
+        <div style="font-size:12px;color:#6b6b88;margin-bottom:4px">${CAT_LABELS[t.category] || t.category}</div>
+        <div style="font-size:11px;color:#3a3a4a;font-family:'Space Mono',monospace">${date}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleNotifPanel() {
+  const panel = document.getElementById('notifPanel');
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+// Fermer le panel si clic ailleurs
+document.addEventListener('click', e => {
+  if (!document.getElementById('notifBtn')?.contains(e.target)) {
+    const panel = document.getElementById('notifPanel');
+    if (panel) panel.style.display = 'none';
   }
 });
 
