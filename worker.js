@@ -229,6 +229,59 @@ export default {
       return json({ success: true, id: res.id });
     }
 
-    return json({ error: 'Route introuvable', routes: ['POST /score-profiles', 'GET /prospects', 'GET /stats', 'POST /update-status'] }, 404);
+    // POST /find-email
+    // Body: { bio, id? }
+    // Méthode 1 : regex email dans la bio
+    // Méthode 2 : fetch les pages Linktree/Beacons/etc trouvées dans la bio
+    if (request.method === 'POST' && path === '/find-email') {
+      let body;
+      try { body = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
+
+      const bio = body.bio || '';
+      const emails = new Set();
+      const EMAIL_REGEX = /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g;
+
+      // — Méthode 1 : regex direct sur la bio
+      (bio.match(EMAIL_REGEX) || []).forEach(e => emails.add(e.toLowerCase()));
+
+      // — Méthode 2 : liens dans la bio → fetch → regex
+      const LINK_AGGREGATORS = [
+        'linktr.ee', 'beacons.ai', 'allmylinks.com', 'linkin.bio',
+        'msha.ke', 'solo.to', 'tap.bio', 'bio.link', 'lnk.bio',
+        'snipfeed.co', 'koji.to', 'campsite.bio',
+      ];
+      const urlsInBio = bio.match(/https?:\/\/[^\s\)\]>\"]+/g) || [];
+
+      for (const link of urlsInBio) {
+        const isAggregator = LINK_AGGREGATORS.some(d => link.includes(d));
+        if (!isAggregator) continue;
+        try {
+          const res = await fetch(link, {
+            headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SpottedOF/1.0)' },
+            redirect: 'follow',
+            cf: { cacheTtl: 3600 },
+          });
+          const html = await res.text();
+          // Dé-encoder les entités HTML communes avant regex
+          const decoded = html.replace(/&#64;/g, '@').replace(/&amp;/g, '&');
+          (decoded.match(EMAIL_REGEX) || []).forEach(e => emails.add(e.toLowerCase()));
+        } catch { /* page inaccessible, on continue */ }
+      }
+
+      // Filtrer les emails génériques non pertinents
+      const BLACKLIST = ['example.com', 'sentry.io', 'w3.org', 'schema.org'];
+      const filtered = [...emails].filter(e => !BLACKLIST.some(b => e.includes(b)));
+
+      // Si un id est fourni et qu'on a trouvé un email, on le sauvegarde dans Airtable
+      if (body.id && filtered.length > 0) {
+        await airtableRequest(env, 'PATCH', `Prospects/${body.id}`, {
+          fields: { email: filtered[0] }
+        });
+      }
+
+      return json({ emails: filtered, found: filtered.length > 0, source: filtered.length > 0 ? 'bio/linktree' : null });
+    }
+
+    return json({ error: 'Route introuvable', routes: ['POST /score-profiles', 'GET /prospects', 'GET /stats', 'POST /update-status', 'POST /find-email'] }, 404);
   }
 };

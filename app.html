@@ -553,6 +553,9 @@ function renderProspects() {
         <div class="icon-btn" onclick="openPipelineModal('${p.id}','${(p.status||'').toLowerCase()}')" title="Changer statut">
           <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
         </div>
+        <div class="icon-btn" onclick="openEmailModal('${p.id}','${(p.bio||'').replace(/'/g,"\\'").replace(/\n/g,' ')}','${(p.email||'')}')" title="Trouver email">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+        </div>
         <div class="icon-btn ${sv?'saved':''}" onclick="toggleSave('${p.id}',this)" title="Sauvegarder">
           <svg width="13" height="13" fill="${sv?'currentColor':'none'}" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
         </div>
@@ -808,6 +811,83 @@ async function updatePipelineStatus(id, status) {
     renderProspects();
     showToast(`Statut mis à jour → ${status}`, 'success');
   } catch(e) { showToast('Erreur mise à jour statut', 'error'); }
+}
+
+/* ─── EMAIL FINDER ─── */
+function openEmailModal(id, bio, existingEmail) {
+  const existing = document.getElementById('emailModal');
+  if (existing) existing.remove();
+  const modal = document.createElement('div');
+  modal.id = 'emailModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:center;justify-content:center;padding:24px';
+  modal.innerHTML = `
+    <div style="background:#111118;border:1px solid #2a2a3a;border-radius:20px;padding:28px;max-width:400px;width:100%">
+      <div style="font-size:15px;font-weight:700;margin-bottom:6px">📧 Trouver l'email</div>
+      <div style="font-size:12px;color:#6b6b88;margin-bottom:20px;font-family:'Space Mono',monospace">Bio scan + Linktree / Beacons</div>
+      <div id="emailResult" style="min-height:60px;display:flex;align-items:center;justify-content:center">
+        ${existingEmail
+          ? `<div style="width:100%"><div style="font-size:11px;color:#6b6b88;font-family:'Space Mono',monospace;margin-bottom:8px">EMAIL TROUVÉ</div>
+             <div style="display:flex;gap:8px;align-items:center;background:#1a1a24;border:1px solid rgba(45,252,142,0.3);border-radius:10px;padding:12px 14px">
+               <span style="flex:1;color:#2dfc8e;font-family:'Space Mono',monospace;font-size:13px">${existingEmail}</span>
+               <button onclick="copyEmail('${existingEmail}')" style="background:rgba(45,252,142,0.15);color:#2dfc8e;border:none;padding:6px 12px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Syne',sans-serif">Copier</button>
+             </div></div>`
+          : `<span style="color:#6b6b88;font-size:13px">Clique sur Rechercher pour scanner la bio</span>`}
+      </div>
+      <div style="display:flex;gap:10px;margin-top:18px">
+        <button onclick="findEmail('${id}',\`${bio.replace(/`/g,"'")}\`)" id="findEmailBtn" style="flex:1;background:#7c5cfc;color:white;border:none;padding:11px;border-radius:10px;font-size:14px;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer">🔍 Rechercher</button>
+        <button onclick="document.getElementById('emailModal').remove()" style="background:#1a1a24;color:#6b6b88;border:1px solid #2a2a3a;padding:11px 16px;border-radius:10px;font-size:14px;font-family:'Syne',sans-serif;cursor:pointer">Fermer</button>
+      </div>
+    </div>`;
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
+
+async function findEmail(id, bio) {
+  const btn = document.getElementById('findEmailBtn');
+  const result = document.getElementById('emailResult');
+  btn.disabled = true;
+  btn.textContent = '⏳ Scan en cours...';
+  result.innerHTML = `<div style="text-align:center;color:#6b6b88;font-size:13px">
+    <div style="font-size:24px;margin-bottom:8px">🔍</div>
+    Scan de la bio et des liens…
+  </div>`;
+  try {
+    const res = await fetch(`${WORKER}/find-email`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, bio }),
+    });
+    const data = await res.json();
+    if (data.found && data.emails.length > 0) {
+      // Mettre à jour dans DATA local
+      const p = DATA.find(x => x.id === id);
+      if (p) p.email = data.emails[0];
+      result.innerHTML = `
+        <div style="width:100%">
+          <div style="font-size:11px;color:#6b6b88;font-family:'Space Mono',monospace;margin-bottom:8px">${data.emails.length} EMAIL${data.emails.length>1?'S':''} TROUVÉ${data.emails.length>1?'S':''}</div>
+          ${data.emails.map(email => `
+            <div style="display:flex;gap:8px;align-items:center;background:#1a1a24;border:1px solid rgba(45,252,142,0.3);border-radius:10px;padding:12px 14px;margin-bottom:8px">
+              <span style="flex:1;color:#2dfc8e;font-family:'Space Mono',monospace;font-size:13px">${email}</span>
+              <button onclick="copyEmail('${email}')" style="background:rgba(45,252,142,0.15);color:#2dfc8e;border:none;padding:6px 12px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Syne',sans-serif">Copier</button>
+            </div>`).join('')}
+        </div>`;
+      showToast(`📧 ${data.emails.length} email(s) trouvé(s) !`, 'success');
+    } else {
+      result.innerHTML = `<div style="text-align:center">
+        <div style="font-size:28px;margin-bottom:8px">🤷</div>
+        <div style="color:#6b6b88;font-size:13px">Aucun email trouvé dans la bio ou les liens</div>
+        <div style="color:#3a3a4a;font-size:11px;margin-top:6px;font-family:'Space Mono',monospace">La créatrice n'a pas exposé son email publiquement</div>
+      </div>`;
+    }
+  } catch(e) {
+    result.innerHTML = `<div style="color:#fc5c7c;font-size:13px;text-align:center">Erreur lors du scan</div>`;
+  }
+  btn.disabled = false;
+  btn.textContent = '🔍 Rechercher à nouveau';
+}
+
+function copyEmail(email) {
+  navigator.clipboard.writeText(email).then(() => showToast('Email copié ! 📋', 'success'));
 }
 
 async function signOut() {
