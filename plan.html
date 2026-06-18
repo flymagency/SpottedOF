@@ -105,7 +105,7 @@
         <div style="position:relative">
           <button id="notifBtn" onclick="toggleNotifPanel()" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;position:relative">
             🔔
-            <span id="notifCount" style="display:none;position:absolute;top:-5px;right:-5px;background:#fc5c7c;color:white;font-size:9px;font-weight:700;font-family:'Space Mono',monospace;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center"></span>
+            <span id="notifCount" style="display:none;position:absolute;top:-5px;right:-5px;background:#fc5c7c;color:white;font-size:9px;font-weight:700;font-family:'Space Mono',monospace;min-width:16px;height:16px;border-radius:50%;padding:0 3px;justify-content:center;align-items:center"></span>
           </button>
           <div id="notifPanel" style="display:none;position:absolute;right:0;top:44px;background:#111118;border:1px solid #2a2a3a;border-radius:16px;width:320px;z-index:200;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.4)">
             <div style="padding:14px 16px;border-bottom:1px solid #2a2a3a;font-size:13px;font-weight:700">Notifications</div>
@@ -393,11 +393,13 @@ let _ticketProfile = null;
 
 /* ─── NOTIFICATIONS ─── */
 async function loadNotifications() {
-  const { data: tickets } = await sb.from('tickets')
+  const { data: tickets, error } = await sb.from('tickets')
     .select('*')
     .eq('user_id', _ticketUser.id)
     .eq('status', 'resolved')
-    .order('resolved_at', { ascending: false });
+    .order('created_at', { ascending: false });
+
+  console.log('Notifs:', tickets, error);
 
   const list = document.getElementById('notifList');
   const count = document.getElementById('notifCount');
