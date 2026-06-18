@@ -304,15 +304,21 @@ sb.auth.getSession().then(async ({ data }) => {
   const user = data.session.user;
   document.getElementById('headerEmail').textContent = user.email;
 
+  // Stocker pour les tickets
+  _ticketUser = user;
+
   const { data: profile } = await sb.from('profiles').select('*').eq('id', user.id).single();
   const plan = (profile?.plan || 'starter').toLowerCase();
   const paid = profile?.paid || false;
   const createdAt = profile?.created_at || user.created_at;
 
+  _ticketProfile = profile;
+
   renderPlan(plan, paid, createdAt);
   await renderUsage(plan);
   renderFeatures(plan);
   renderUpgrade(plan, paid);
+  loadNotifications(); // charger les notifs après avoir le user
 });
 
 function renderPlan(plan, paid, createdAt) {
@@ -384,15 +390,6 @@ function renderFeatures(plan) {
 let _ticketUser = null;
 let _ticketProfile = null;
 
-// Stocker user/profile au chargement pour le ticket + charger notifs
-sb.auth.getSession().then(async ({ data }) => {
-  if (data.session) {
-    _ticketUser = data.session.user;
-    const { data: p } = await sb.from('profiles').select('plan, agency_name').eq('id', _ticketUser.id).single();
-    _ticketProfile = p;
-    loadNotifications();
-  }
-});
 
 /* ─── NOTIFICATIONS ─── */
 async function loadNotifications() {
