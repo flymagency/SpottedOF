@@ -183,7 +183,50 @@
       <strong>Un problème avec ton abonnement ?</strong><br>
       Contacte-nous directement et on règle ça rapidement.
     </div>
-    <a href="mailto:businessflymagency@gmail.com" class="btn btn-ghost">✉️ Nous contacter</a>
+    <button class="btn btn-ghost" onclick="openTicketModal()">✉️ Nous contacter</button>
+  </div>
+</div>
+
+<!-- MODAL TICKET SUPPORT -->
+<div id="ticketOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);z-index:500;align-items:center;justify-content:center;padding:24px">
+  <div style="background:#111118;border:1px solid #2a2a3a;border-radius:20px;padding:32px;max-width:480px;width:100%">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
+      <div>
+        <div style="font-size:16px;font-weight:700">🎫 Contacter le support</div>
+        <div style="font-size:12px;color:#6b6b88;margin-top:3px;font-family:'Space Mono',monospace">On répond sous 24h</div>
+      </div>
+      <button onclick="closeTicketModal()" style="background:none;border:none;color:#6b6b88;font-size:20px;cursor:pointer">✕</button>
+    </div>
+
+    <div id="ticketSuccess" style="display:none;text-align:center;padding:20px 0">
+      <div style="font-size:48px;margin-bottom:12px">✅</div>
+      <div style="font-size:16px;font-weight:700;margin-bottom:6px">Demande envoyée !</div>
+      <div style="font-size:13px;color:#6b6b88">On revient vers toi sous 24h.</div>
+      <button onclick="closeTicketModal()" style="margin-top:20px;background:#7c5cfc;color:white;border:none;padding:11px 24px;border-radius:10px;font-size:14px;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer">Fermer</button>
+    </div>
+
+    <div id="ticketForm">
+      <div style="margin-bottom:16px">
+        <label style="font-size:11px;color:#6b6b88;font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:0.08em;display:block;margin-bottom:8px">Type de problème</label>
+        <select id="ticketCategory" style="width:100%;background:#1a1a24;border:1px solid #2a2a3a;border-radius:10px;padding:12px 14px;color:#e8e8f0;font-family:'Syne',sans-serif;font-size:14px;outline:none;cursor:pointer">
+          <option value="paiement">💳 Problème de paiement</option>
+          <option value="compte">🔐 Problème de compte / connexion</option>
+          <option value="bug">🐛 Bug technique</option>
+          <option value="fonctionnalite">✨ Demande de fonctionnalité</option>
+          <option value="upgrade">⬆️ Changer de plan</option>
+          <option value="autre">💬 Autre</option>
+        </select>
+      </div>
+      <div style="margin-bottom:20px">
+        <label style="font-size:11px;color:#6b6b88;font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:0.08em;display:block;margin-bottom:8px">Décris ton problème</label>
+        <textarea id="ticketMessage" rows="5" placeholder="Explique-nous le problème en détail..." style="width:100%;background:#1a1a24;border:1px solid #2a2a3a;border-radius:10px;padding:12px 14px;color:#e8e8f0;font-family:'Syne',sans-serif;font-size:14px;outline:none;resize:vertical;line-height:1.6"></textarea>
+      </div>
+      <div id="ticketError" style="display:none;background:rgba(252,92,124,0.1);border:1px solid rgba(252,92,124,0.3);color:#fc5c7c;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:14px"></div>
+      <div style="display:flex;gap:10px">
+        <button onclick="submitTicket()" id="ticketSubmitBtn" style="flex:1;background:#7c5cfc;color:white;border:none;padding:13px;border-radius:12px;font-size:14px;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer">Envoyer la demande</button>
+        <button onclick="closeTicketModal()" style="background:#1a1a24;color:#6b6b88;border:1px solid #2a2a3a;padding:13px 16px;border-radius:12px;font-size:14px;font-family:'Syne',sans-serif;cursor:pointer">Annuler</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -325,6 +368,70 @@ function renderFeatures(plan) {
       <span>${f.label}</span>
     </div>
   `).join('');
+}
+
+let _ticketUser = null;
+let _ticketProfile = null;
+
+// Stocker user/profile au chargement pour le ticket
+sb.auth.getSession().then(async ({ data }) => {
+  if (data.session) {
+    _ticketUser = data.session.user;
+    const { data: p } = await sb.from('profiles').select('plan, agency_name').eq('id', _ticketUser.id).single();
+    _ticketProfile = p;
+  }
+});
+
+function openTicketModal() {
+  document.getElementById('ticketOverlay').style.display = 'flex';
+  document.getElementById('ticketSuccess').style.display = 'none';
+  document.getElementById('ticketForm').style.display = 'block';
+  document.getElementById('ticketMessage').value = '';
+  document.getElementById('ticketError').style.display = 'none';
+}
+
+function closeTicketModal() {
+  document.getElementById('ticketOverlay').style.display = 'none';
+}
+
+async function submitTicket() {
+  const category = document.getElementById('ticketCategory').value;
+  const message = document.getElementById('ticketMessage').value.trim();
+  const btn = document.getElementById('ticketSubmitBtn');
+  const errEl = document.getElementById('ticketError');
+  errEl.style.display = 'none';
+
+  if (!message) {
+    errEl.textContent = 'Décris ton problème avant d\'envoyer.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Envoi...';
+
+  const { error } = await sb.from('tickets').insert({
+    user_id: _ticketUser?.id,
+    email: _ticketUser?.email,
+    agency_name: _ticketProfile?.agency_name || '',
+    plan: _ticketProfile?.plan || 'starter',
+    category,
+    message,
+    status: 'open',
+  });
+
+  if (error) {
+    errEl.textContent = 'Erreur lors de l\'envoi. Réessaie.';
+    errEl.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Envoyer la demande';
+    return;
+  }
+
+  document.getElementById('ticketForm').style.display = 'none';
+  document.getElementById('ticketSuccess').style.display = 'block';
+  btn.disabled = false;
+  btn.textContent = 'Envoyer la demande';
 }
 
 function renderUpgrade(plan, paid) {

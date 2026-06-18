@@ -79,6 +79,15 @@
     .form-input:focus { border-color: var(--accent); }
     .form-select { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; color: var(--text); font-family: 'Syne', sans-serif; font-size: 13px; outline: none; cursor: pointer; }
 
+    /* TICKETS */
+    .ticket-row { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr 2fr 100px; padding: 14px 20px; border-bottom: 1px solid var(--border); align-items: center; gap: 12px; font-size: 13px; }
+    .ticket-row:last-child { border-bottom: none; }
+    .ticket-row.unread { background: rgba(252,92,124,0.04); }
+    .ticket-head { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr 2fr 100px; padding: 10px 20px; border-bottom: 1px solid var(--border); background: var(--surface2); }
+    .cat-badge { font-size:10px;font-family:'Space Mono',monospace;padding:3px 8px;border-radius:6px;font-weight:700;background:rgba(124,92,252,0.12);color:#7c5cfc;border:1px solid rgba(124,92,252,0.3); }
+    .status-open { color:#fc5c7c;font-family:'Space Mono',monospace;font-size:10px;font-weight:700; }
+    .status-resolved { color:#2dfc8e;font-family:'Space Mono',monospace;font-size:10px;font-weight:700; }
+
     .empty-state { text-align: center; padding: 60px 24px; }
     .empty-icon { font-size: 40px; margin-bottom: 12px; }
     .empty-title { font-size: 16px; font-weight: 800; margin-bottom: 6px; }
@@ -160,6 +169,20 @@
     </div>
     <div id="clientList"></div>
   </div>
+
+  <!-- TICKETS SUPPORT -->
+  <div class="section-title" style="margin-top:40px">
+    <div style="display:flex;align-items:center;gap:10px">
+      🎫 Tickets support
+      <span id="ticketBadge" style="display:none;background:#fc5c7c;color:white;font-size:10px;font-weight:700;font-family:'Space Mono',monospace;padding:2px 8px;border-radius:100px"></span>
+    </div>
+    <button class="btn btn-ghost" onclick="loadTickets()" style="font-size:12px">Actualiser</button>
+  </div>
+  <div class="table-wrap" style="margin-bottom:40px">
+    <div id="ticketList">
+      <div style="padding:32px;text-align:center;color:#6b6b88;font-size:13px">Chargement...</div>
+    </div>
+  </div>
 </div>
 
 <!-- MODAL EDIT CLIENT -->
@@ -225,6 +248,7 @@ sb.auth.getSession().then(({ data }) => {
   if (data.session.user.email !== ADMIN_EMAIL) { window.location.href = 'app.html'; return; }
   document.getElementById('adminEmail').textContent = data.session.user.email;
   loadClients();
+  loadTickets();
 });
 
 async function loadClients() {
@@ -315,6 +339,75 @@ async function saveClient() {
 
 function closeModal() { document.getElementById('editModal').classList.remove('open'); }
 async function signOut() { await sb.auth.signOut(); window.location.href = 'login.html'; }
+
+/* ─── TICKETS SUPPORT ─── */
+const CAT_LABELS = {
+  paiement: '💳 Paiement', compte: '🔐 Compte', bug: '🐛 Bug',
+  fonctionnalite: '✨ Fonctionnalité', upgrade: '⬆️ Upgrade', autre: '💬 Autre'
+};
+
+async function loadTickets() {
+  // Admin peut tout lire — besoin d'une policy SELECT pour admin
+  const { data: tickets, error } = await sb.from('tickets').select('*').order('created_at', { ascending: false });
+  const list = document.getElementById('ticketList');
+  const badge = document.getElementById('ticketBadge');
+
+  if (error || !tickets || tickets.length === 0) {
+    list.innerHTML = `<div style="padding:32px;text-align:center;color:#6b6b88;font-size:13px">🎉 Aucun ticket ouvert</div>`;
+    badge.style.display = 'none';
+    return;
+  }
+
+  const openCount = tickets.filter(t => t.status === 'open').length;
+  if (openCount > 0) {
+    badge.textContent = `${openCount} nouveau${openCount > 1 ? 'x' : ''}`;
+    badge.style.display = 'inline';
+  } else {
+    badge.style.display = 'none';
+  }
+
+  list.innerHTML = `
+    <div class="ticket-head">
+      <div class="th">Client</div>
+      <div class="th">Plan</div>
+      <div class="th">Catégorie</div>
+      <div class="th">Date</div>
+      <div class="th">Message</div>
+      <div class="th"></div>
+    </div>
+    ${tickets.map(t => {
+      const date = new Date(t.created_at).toLocaleDateString('fr-FR', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
+      const planColor = { starter:'#7c5cfc', pro:'#2dfc8e', agency:'#fc5cdc', admin:'#fcdc2d' }[t.plan?.toLowerCase()] || '#6b6b88';
+      return `<div class="ticket-row ${t.status==='open'?'unread':''}">
+        <div>
+          <div style="font-weight:700;font-size:12px">${t.agency_name || '—'}</div>
+          <div style="font-size:10px;color:#6b6b88;font-family:'Space Mono',monospace;margin-top:2px">${t.email || ''}</div>
+        </div>
+        <div><span style="font-size:10px;font-family:'Space Mono',monospace;font-weight:700;color:${planColor}">${(t.plan||'—').toUpperCase()}</span></div>
+        <div><span class="cat-badge">${CAT_LABELS[t.category] || t.category}</span></div>
+        <div style="font-size:11px;color:#6b6b88;font-family:'Space Mono',monospace">${date}</div>
+        <div style="font-size:12px;color:#e8e8f0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${t.message}">${t.message}</div>
+        <div style="display:flex;gap:6px;justify-content:flex-end">
+          ${t.status === 'open'
+            ? `<button onclick="resolveTicket('${t.id}')" style="background:rgba(45,252,142,0.12);color:#2dfc8e;border:1px solid rgba(45,252,142,0.3);padding:5px 10px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Syne',sans-serif">✓ Résolu</button>`
+            : `<span class="status-resolved">✓ Résolu</span>`}
+          <button onclick="replyTicket('${t.email}','${(t.agency_name||'').replace(/'/g,"\\'")}','${t.category}')" style="background:#1a1a24;color:#6b6b88;border:1px solid #2a2a3a;padding:5px 10px;border-radius:7px;font-size:11px;cursor:pointer;font-family:'Syne',sans-serif">↩ Répondre</button>
+        </div>
+      </div>`;
+    }).join('')}`;
+}
+
+async function resolveTicket(id) {
+  await sb.from('tickets').update({ status: 'resolved' }).eq('id', id);
+  showToast('Ticket marqué comme résolu ✓', 'success');
+  loadTickets();
+}
+
+function replyTicket(email, agency, category) {
+  const subject = encodeURIComponent(`[SpottedOF Support] Réponse à ta demande — ${CAT_LABELS[category] || category}`);
+  const body = encodeURIComponent(`Bonjour ${agency},\n\nSuite à ta demande concernant "${CAT_LABELS[category] || category}", voici notre réponse :\n\n[Ta réponse ici]\n\nL'équipe SpottedOF`);
+  window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${subject}&body=${body}`, '_blank');
+}
 function showToast(msg, type='success') {
   const t = document.getElementById('toast');
   t.textContent = msg; t.className = `toast ${type} show`;
