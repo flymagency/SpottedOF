@@ -393,13 +393,10 @@ let _ticketProfile = null;
 
 /* ─── NOTIFICATIONS ─── */
 async function loadNotifications() {
-  const { data: tickets, error } = await sb.from('tickets')
+  const { data: tickets } = await sb.from('tickets')
     .select('*')
-    .eq('user_id', _ticketUser.id)
     .eq('status', 'resolved')
     .order('created_at', { ascending: false });
-
-  console.log('Notifs:', tickets, error);
 
   const list = document.getElementById('notifList');
   const count = document.getElementById('notifCount');
@@ -410,9 +407,8 @@ async function loadNotifications() {
     return;
   }
 
-  // Badge count (tous les résolus = notifications)
   count.textContent = tickets.length;
-  count.style.display = 'flex';
+  count.style.cssText = 'display:flex;position:absolute;top:-5px;right:-5px;background:#fc5c7c;color:white;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:50%;padding:0 3px;justify-content:center;align-items:center';
 
   const CAT_LABELS = {
     paiement:'💳 Paiement', compte:'🔐 Compte', bug:'🐛 Bug',
