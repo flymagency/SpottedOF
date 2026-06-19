@@ -463,14 +463,16 @@ export default {
       });
     }
 
-    // GET /scan-poll?run_id=xxx&phase=1|2&min_score=50&handle=xxx&platform=ig&results_limit=100
+    // GET /scan-poll?run_id=xxx&phase=1|2&min_score=50&handle=xxx&platform=ig&results_limit=100&filters={}
     if (request.method === 'GET' && path === '/scan-poll') {
       const runId      = url.searchParams.get('run_id');
       const phase      = parseInt(url.searchParams.get('phase') || '2');
-      const minScore   = parseInt(url.searchParams.get('min_score') || '50');
+      const minScore   = parseInt(url.searchParams.get('min_score') || '20');
       const handle     = url.searchParams.get('handle') || '';
       const platform   = url.searchParams.get('platform') || 'ig';
       const resultsLimit = Math.min(parseInt(url.searchParams.get('results_limit') || '100'), 500);
+      let filters = {};
+      try { filters = JSON.parse(url.searchParams.get('filters') || '{}'); } catch {}
       if (!runId) return json({ error: 'run_id requis' }, 400);
 
       const APIFY_TOKEN = env.APIFY_TOKEN;
@@ -558,9 +560,92 @@ export default {
       });
 
       // Exclure le compte de référence lui-même
-      const filtered = profiles.filter(p => p.username.toLowerCase() !== handle.toLowerCase());
+      const deduped = profiles.filter(p => p.username.toLowerCase() !== handle.toLowerCase());
 
-      // Scorer et filtrer
+      // ── Appliquer les critères de filtrage ──────────────────────────────────
+      const LANG_KEYWORDS = {
+        fr: ['je','mon','ma','les','des','une','est','avec','pour','dans','sur','pas','plus','être','bonjour','merci','salut'],
+        en: ['the','my','and','for','with','your','you','our','are','have','follow','link','bio','check','out','dm'],
+        es: ['mi','el','la','los','las','con','por','que','una','soy','hola','gracias','aquí'],
+        it: ['il','la','le','un','una','con','per','sono','ciao','grazie','qui'],
+        de: ['ich','mein','die','der','das','mit','für','und','hallo','danke','hier'],
+        pt: ['eu','meu','minha','com','para','que','obrigada','olá','aqui'],
+      };
+      function detectBioLang(bio) {
+        if (!bio) return 'en';
+        const b = bio.toLowerCase();
+        let best = 'en', bestScore = 0;
+        for (const [lang, kws] of Object.entries(LANG_KEYWORDS)) {
+          const s = kws.filter(k => b.includes(k)).length;
+          if (s > bestScore) { bestScore = s; best = lang; }
+        }
+        return best;
+      }
+
+      const NICHE_KEYWORDS = {
+        fitness: ['fitness','gym','workout','sport','muscle','bodybuilding','crossfit','running','yoga','pilates'],
+        beauty: ['beauty','makeup','skincare','cosmetic','glam','mua','beauté','maquillage'],
+        lifestyle: ['lifestyle','life','daily','routine','vlog','content','creator'],
+        cosplay: ['cosplay','anime','manga','gamer','geek','nerd','otaku','comic'],
+        dance: ['dance','dancer','dancing','choreography','ballet','hip hop','twerk'],
+        fashion: ['fashion','style','ootd','outfit','model','modelling','influencer'],
+        travel: ['travel','traveler','wanderlust','adventure','explore','trip','voyage'],
+        wellness: ['wellness','health','mindfulness','meditation','mental health','holistic'],
+        gaming: ['gaming','gamer','twitch','streamer','esport','gameplay'],
+        music: ['music','singer','artist','musician','producer','dj','rap','pop'],
+      };
+      function detectNiche(bio) {
+        if (!bio) return '';
+        const b = bio.toLowerCase();
+        for (const [niche, kws] of Object.entries(NICHE_KEYWORDS)) {
+          if (kws.some(k => b.includes(k))) return niche;
+        }
+        return '';
+      }
+
+      const OF_DETECT = ['onlyfans','only fans','fansly','mym.fans','mym content','fans.ly','manyvids','loyalfans'];
+
+      const filtered = deduped.filter(p => {
+        const bio = (p.biography || '').toLowerCase();
+
+        // Profil public uniquement (is_private est dans les données phase 1)
+        // En phase 2 on a isPrivate dans les détails
+        if (filters.public_only && p.isPrivate) return false;
+
+        // Déjà OF/Fansly détecté
+        const hasOf = OF_DETECT.some(k => bio.includes(k));
+        if (filters.no_of && hasOf) return false;   // exclure ceux qui ont déjà OF
+        if (filters.has_of && !hasOf) return false; // garder seulement ceux qui ont OF
+
+        // Non vérifié uniquement
+        if (filters.no_verified && p.isVerified) return false;
+
+        // Followers min/max
+        const fc = p.followersCount || 0;
+        if (filters.followers_min > 0 && fc < filters.followers_min) return false;
+        if (filters.followers_max > 0 && fc > filters.followers_max) return false;
+
+        // Langue
+        if (filters.langs && filters.langs.length > 0) {
+          const lang = detectBioLang(p.biography);
+          if (!filters.langs.includes(lang)) return false;
+        }
+
+        // Niche
+        if (filters.niches && filters.niches.length > 0) {
+          const niche = detectNiche(p.biography) || p.niche || '';
+          if (!filters.niches.includes(niche)) return false;
+        }
+
+        return true;
+      });
+
+      // Enrichir avec niche détectée
+      filtered.forEach(p => {
+        if (!p.niche) p.niche = detectNiche(p.biography);
+      });
+
+      // Scorer et filtrer par score minimum
       const scored = filtered
         .map(p => ({ ...p, score: scoreProfile(p) }))
         .filter(p => p.score >= minScore)
@@ -578,7 +663,7 @@ export default {
         unique_profiles: profiles.length,
         scored: scored.length,
         saved: saved.length,
-        filtered_out: filtered.length - scored.length,
+        filtered_out: deduped.length - scored.length,
         message: `${saved.length} prospects importés (score ≥ ${minScore}%)`,
       });
     }

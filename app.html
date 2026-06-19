@@ -131,7 +131,11 @@
     .score-item-label { font-size: 10px; font-family: 'Space Mono', monospace; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
     .score-item-val { font-size: 15px; font-weight: 800; }
 
-    .scan-form { display: flex; flex-direction: column; gap: 18px; }
+    .scan-form { display: flex; flex-direction: column; gap: 14px; }
+    .scan-section-title { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.1em; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .scan-check-label { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text); cursor: pointer; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; transition: all 0.15s; user-select: none; }
+    .scan-check-label:hover { border-color: var(--accent); }
+    .scan-check-label input[type=checkbox] { accent-color: var(--accent); width: 13px; height: 13px; cursor: pointer; }
     .form-label { font-size: 11px; font-family: 'Space Mono', monospace; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; display: block; }
     .form-input { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 11px 14px; color: var(--text); font-family: 'Syne', sans-serif; font-size: 13px; outline: none; transition: border-color 0.2s; }
     .form-input:focus { border-color: var(--accent); }
@@ -322,7 +326,10 @@
       <button class="modal-close" onclick="closeModal('scanModal')">✕</button>
     </div>
     <div class="modal-body">
-      <div class="scan-form" id="scanFormFields">
+      <div class="scan-form" id="scanFormFields" style="max-height:72vh;overflow-y:auto;padding-right:4px;">
+
+        <!-- Section : Cible -->
+        <div class="scan-section-title">🎯 Cible</div>
         <div>
           <label class="form-label">Plateforme</label>
           <div class="platform-pick" id="scanPlatformPick">
@@ -332,27 +339,106 @@
           </div>
         </div>
         <div>
-          <label class="form-label">Compte Instagram de référence</label>
+          <label class="form-label">Compte de référence</label>
           <div style="position:relative;">
             <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px;">@</span>
             <input class="form-input" id="refHandle" placeholder="fitmodel_123 (sans le @)" style="padding-left:26px;">
           </div>
-          <div style="font-size:11px;color:var(--muted);margin-top:5px;">On scrape les comptes qu'il/elle suit → créatrices de la même niche (compte public uniquement)</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:5px;">On scrape les comptes qu'il/elle suit (compte public uniquement)</div>
         </div>
-        <div>
-          <label class="form-label">Nombre de profils à analyser</label>
-          <div class="range-row">
-            <input type="range" class="range-input" id="countInput" min="20" max="300" value="100" step="10" oninput="document.getElementById('countVal').textContent=this.value">
-            <span class="range-val" id="countVal">100</span>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div>
+            <label class="form-label">Profils à analyser</label>
+            <div class="range-row">
+              <input type="range" class="range-input" id="countInput" min="20" max="300" value="100" step="10" oninput="document.getElementById('countVal').textContent=this.value">
+              <span class="range-val" id="countVal">100</span>
+            </div>
+          </div>
+          <div>
+            <label class="form-label">Score minimum</label>
+            <div class="range-row">
+              <input type="range" class="range-input" id="scoreInput" min="10" max="90" value="30" step="5" oninput="document.getElementById('scoreVal').textContent=this.value+'%'">
+              <span class="range-val" id="scoreVal">30%</span>
+            </div>
           </div>
         </div>
-        <div>
-          <label class="form-label">Score minimum pour import</label>
-          <div class="range-row">
-            <input type="range" class="range-input" id="scoreInput" min="10" max="90" value="30" step="5" oninput="document.getElementById('scoreVal').textContent=this.value+'%'">
-            <span class="range-val" id="scoreVal">30%</span>
+
+        <!-- Section : Profil -->
+        <div class="scan-section-title" style="margin-top:16px;">👤 Type de profil</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <label class="scan-check-label">
+            <input type="checkbox" id="filterPublicOnly" checked>
+            <span>Compte public uniquement</span>
+          </label>
+          <label class="scan-check-label">
+            <input type="checkbox" id="filterNoOf">
+            <span>Pas encore sur OF/Fansly</span>
+          </label>
+          <label class="scan-check-label">
+            <input type="checkbox" id="filterHasOf">
+            <span>Déjà sur OF/Fansly/Mym</span>
+          </label>
+          <label class="scan-check-label">
+            <input type="checkbox" id="filterVerified">
+            <span>Non vérifié seulement</span>
+          </label>
+        </div>
+
+        <!-- Section : Taille du compte -->
+        <div class="scan-section-title" style="margin-top:16px;">📊 Taille du compte</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div>
+            <label class="form-label">Followers min</label>
+            <select class="form-input" id="filterFollowersMin" style="padding:8px 10px;">
+              <option value="0">Pas de minimum</option>
+              <option value="1000">1 000+</option>
+              <option value="5000" selected>5 000+</option>
+              <option value="10000">10 000+</option>
+              <option value="50000">50 000+</option>
+              <option value="100000">100 000+</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Followers max</label>
+            <select class="form-input" id="filterFollowersMax" style="padding:8px 10px;">
+              <option value="0">Pas de maximum</option>
+              <option value="10000">10 000</option>
+              <option value="50000">50 000</option>
+              <option value="100000">100 000</option>
+              <option value="300000" selected>300 000</option>
+              <option value="1000000">1 000 000</option>
+            </select>
           </div>
         </div>
+
+        <!-- Section : Langue -->
+        <div class="scan-section-title" style="margin-top:16px;">🌍 Langue de la bio</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;" id="filterLangs">
+          <label class="scan-check-label"><input type="checkbox" value="fr" checked> 🇫🇷 FR</label>
+          <label class="scan-check-label"><input type="checkbox" value="en" checked> 🇬🇧 EN</label>
+          <label class="scan-check-label"><input type="checkbox" value="es" checked> 🇪🇸 ES</label>
+          <label class="scan-check-label"><input type="checkbox" value="it" checked> 🇮🇹 IT</label>
+          <label class="scan-check-label"><input type="checkbox" value="de"> 🇩🇪 DE</label>
+          <label class="scan-check-label"><input type="checkbox" value="pt"> 🇧🇷 PT</label>
+          <label class="scan-check-label"><input type="checkbox" value="any" checked> 🌐 Toutes</label>
+        </div>
+
+        <!-- Section : Niche -->
+        <div class="scan-section-title" style="margin-top:16px;">💎 Niche</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;" id="filterNiches">
+          <label class="scan-check-label"><input type="checkbox" value="fitness" checked> 💪 Fitness</label>
+          <label class="scan-check-label"><input type="checkbox" value="beauty" checked> 💄 Beauty</label>
+          <label class="scan-check-label"><input type="checkbox" value="lifestyle" checked> ✨ Lifestyle</label>
+          <label class="scan-check-label"><input type="checkbox" value="cosplay" checked> 🎭 Cosplay</label>
+          <label class="scan-check-label"><input type="checkbox" value="dance" checked> 💃 Dance</label>
+          <label class="scan-check-label"><input type="checkbox" value="fashion" checked> 👗 Fashion</label>
+          <label class="scan-check-label"><input type="checkbox" value="travel" checked> ✈️ Travel</label>
+          <label class="scan-check-label"><input type="checkbox" value="wellness" checked> 🧘 Wellness</label>
+          <label class="scan-check-label"><input type="checkbox" value="gaming"> 🎮 Gaming</label>
+          <label class="scan-check-label"><input type="checkbox" value="music"> 🎵 Music</label>
+          <label class="scan-check-label" id="filterNicheAny"><input type="checkbox" value="any" checked> 🌐 Toutes</label>
+        </div>
+
       </div>
       <!-- État : scan en cours -->
       <div id="scanProgress" style="display:none;text-align:center;padding:24px 0;">
@@ -799,6 +885,7 @@ function pickPlatform(el) { document.querySelectorAll('.plat-pick-btn').forEach(
 let _scanPollInterval = null;
 let _scanCurrentRunId = null;
 let _scanCurrentPhase = 1;
+let _scanFilters = {};
 
 async function launchScan() {
   const h = document.getElementById('refHandle').value.trim().replace(/^[@]+/, '').replace(/\s+/g,'');
@@ -809,6 +896,26 @@ async function launchScan() {
   const platformBtn = document.querySelector('#scanPlatformPick .plat-pick-btn.sel');
   const platform = platformBtn ? platformBtn.dataset.platform : 'ig';
   const platformLabel = PLATFORM_LABELS[platform] || platform;
+
+  // Collecter les critères de filtrage
+  const filters = {
+    public_only:    document.getElementById('filterPublicOnly').checked,
+    no_of:          document.getElementById('filterNoOf').checked,
+    has_of:         document.getElementById('filterHasOf').checked,
+    no_verified:    document.getElementById('filterVerified').checked,
+    followers_min:  parseInt(document.getElementById('filterFollowersMin').value) || 0,
+    followers_max:  parseInt(document.getElementById('filterFollowersMax').value) || 0,
+    langs: (() => {
+      const anyChecked = document.querySelector('#filterLangs input[value="any"]')?.checked;
+      if (anyChecked) return [];
+      return [...document.querySelectorAll('#filterLangs input:checked')].map(i => i.value);
+    })(),
+    niches: (() => {
+      const anyChecked = document.querySelector('#filterNiches input[value="any"]')?.checked;
+      if (anyChecked) return [];
+      return [...document.querySelectorAll('#filterNiches input:checked:not([value="any"])')].map(i => i.value);
+    })(),
+  };
 
   // Passer en mode "loading"
   document.getElementById('scanFormFields').style.display = 'none';
@@ -822,13 +929,14 @@ async function launchScan() {
     const startRes = await fetch(`${WORKER}/scan-similar`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ handle: h, platform, results_limit: resultsLimit, min_score: minScore }),
+      body: JSON.stringify({ handle: h, platform, results_limit: resultsLimit, min_score: minScore, filters }),
     });
     const startData = await startRes.json();
     if (!startData.success || startData.error) throw new Error(startData.error || 'Erreur démarrage scan');
 
     _scanCurrentRunId = startData.run_id;
     _scanCurrentPhase = startData.phase || 1;
+    _scanFilters = filters;
 
     // Polling toutes les 5 secondes
     _scanPollInterval = setInterval(async () => {
@@ -840,6 +948,7 @@ async function launchScan() {
           handle: h,
           platform,
           results_limit: resultsLimit,
+          filters: JSON.stringify(_scanFilters),
         });
         const pollRes = await fetch(`${WORKER}/scan-poll?${qs}`);
         const pollData = await pollRes.json();
