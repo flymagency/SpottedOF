@@ -3197,25 +3197,28 @@ function renderReplies() {
 
           <!-- Autres boîtes mail -->
           <div style="padding:20px 28px;border-bottom:1px solid var(--border);background:#fafbff">
-            <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:12px">Compatibilité</div>
-            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+            <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:12px">Toutes boîtes mail supportées</div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+              <!-- Gmail — natif -->
               <div style="display:flex;align-items:center;gap:8px;background:white;border:1px solid rgba(5,150,105,0.3);border-radius:10px;padding:8px 14px">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="#EA4335"><path d="M20 4H4C2.9 4 2 4.9 2 6v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
                 <span style="font-size:12px;font-weight:700">Gmail</span>
-                <span style="font-size:10px;background:rgba(5,150,105,0.1);color:var(--green);border-radius:4px;padding:1px 6px;font-weight:700;font-family:'Space Mono',monospace">Disponible</span>
+                <span style="font-size:10px;background:rgba(5,150,105,0.1);color:var(--green);border-radius:4px;padding:1px 6px;font-weight:700;font-family:'Space Mono',monospace">OAuth natif</span>
               </div>
+              <!-- Autres — via transfert -->
               ${[
-                { name: 'Outlook', icon: '📨', color: '#0078D4' },
-                { name: 'Yahoo Mail', icon: '💌', color: '#7B0099' },
-                { name: 'Apple Mail', icon: '✉️', color: '#555' },
+                { name: 'Outlook', icon: '📨', id: 'outlook' },
+                { name: 'Yahoo Mail', icon: '💌', id: 'yahoo' },
+                { name: 'Apple Mail', icon: '✉️', id: 'apple' },
+                { name: 'ProtonMail', icon: '🔒', id: 'proton' },
               ].map(m => `
-                <div style="display:flex;align-items:center;gap:8px;background:white;border:1px solid var(--border);border-radius:10px;padding:8px 14px;opacity:0.6">
+                <button onclick="showForwardingGuide('${m.id}')" style="display:flex;align-items:center;gap:8px;background:white;border:1px solid var(--border);border-radius:10px;padding:8px 14px;cursor:pointer;font-family:'Inter',sans-serif;transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
                   <span style="font-size:16px">${m.icon}</span>
-                  <span style="font-size:12px;font-weight:600;color:var(--muted)">${m.name}</span>
-                  <span style="font-size:10px;background:var(--surface2);color:var(--muted);border-radius:4px;padding:1px 6px;font-weight:700;font-family:'Space Mono',monospace">Bientôt</span>
-                </div>`).join('')}
+                  <span style="font-size:12px;font-weight:600">${m.name}</span>
+                  <span style="font-size:10px;background:rgba(79,70,229,0.07);color:var(--accent);border-radius:4px;padding:1px 6px;font-weight:700;font-family:'Space Mono',monospace">Guide →</span>
+                </button>`).join('')}
             </div>
-            <div style="font-size:11px;color:var(--muted);margin-top:10px">SpottedOF ne lit que les emails liés à tes prospects — rien d'autre n'est accessible.</div>
+            <div style="font-size:11px;color:var(--muted)">💡 Outlook, Yahoo, Apple Mail, ProtonMail — active le transfert automatique vers Gmail en 2 min. SpottedOF détectera toutes tes réponses.</div>
           </div>
 
           <!-- CTA -->
@@ -3407,6 +3410,123 @@ function startGmailPolling() {
   setInterval(async () => {
     if (getGmailToken()) await scanGmailReplies();
   }, 10 * 60 * 1000);
+}
+
+/* ═══════════════════════════════════════════════
+   GUIDE TRANSFERT EMAIL (Outlook / Yahoo / etc.)
+   ═══════════════════════════════════════════════ */
+const FORWARDING_GUIDES = {
+  outlook: {
+    name: 'Outlook / Hotmail',
+    icon: '📨',
+    color: '#0078D4',
+    steps: [
+      { n: '1', text: 'Va sur <strong>outlook.live.com</strong> et connecte-toi' },
+      { n: '2', text: 'Clique sur ⚙️ <strong>Paramètres</strong> (en haut à droite) → <strong>Afficher tous les paramètres Outlook</strong>' },
+      { n: '3', text: 'Va dans <strong>Courrier → Transfert</strong>' },
+      { n: '4', text: 'Active <strong>"Transférer vers une autre adresse email"</strong> et entre ton adresse Gmail' },
+      { n: '5', text: 'Clique <strong>Enregistrer</strong> — Gmail recevra une confirmation' },
+      { n: '6', text: 'Reviens ici et <strong>connecte Gmail</strong> — SpottedOF détectera toutes tes réponses Outlook 🎉' },
+    ],
+  },
+  yahoo: {
+    name: 'Yahoo Mail',
+    icon: '💌',
+    color: '#7B0099',
+    steps: [
+      { n: '1', text: 'Va sur <strong>mail.yahoo.com</strong> et connecte-toi' },
+      { n: '2', text: 'Clique sur ⚙️ <strong>Paramètres</strong> → <strong>Plus de paramètres</strong>' },
+      { n: '3', text: 'Dans le menu de gauche, clique <strong>Boîtes de messagerie</strong>' },
+      { n: '4', text: 'Clique sur ton nom de compte → section <strong>Transfert de courrier</strong>' },
+      { n: '5', text: 'Entre ton adresse Gmail et clique <strong>Vérifier</strong>' },
+      { n: '6', text: 'Valide le lien de confirmation reçu sur Gmail, puis <strong>connecte Gmail ici</strong> 🎉' },
+    ],
+  },
+  apple: {
+    name: 'Apple Mail / iCloud',
+    icon: '✉️',
+    color: '#555',
+    steps: [
+      { n: '1', text: 'Va sur <strong>icloud.com/mail</strong> et connecte-toi avec ton Apple ID' },
+      { n: '2', text: 'Clique sur ⚙️ <strong>Préférences</strong> (en bas à gauche)' },
+      { n: '3', text: 'Va dans l\'onglet <strong>Général</strong> → <strong>Transférer mes emails vers</strong>' },
+      { n: '4', text: 'Entre ton adresse Gmail et clique <strong>Terminé</strong>' },
+      { n: '5', text: 'Valide depuis ton Gmail, puis <strong>connecte Gmail ici</strong> 🎉' },
+    ],
+  },
+  proton: {
+    name: 'ProtonMail',
+    icon: '🔒',
+    color: '#6D4AFF',
+    steps: [
+      { n: '1', text: 'Va sur <strong>proton.me/mail</strong> et connecte-toi' },
+      { n: '2', text: 'Clique sur ⚙️ <strong>Paramètres</strong> → <strong>Tous les paramètres</strong>' },
+      { n: '3', text: 'Dans <strong>Messagerie → Transfert automatique</strong>, ajoute ton Gmail' },
+      { n: '4', text: '⚠️ Note : le transfert ProtonMail vers Gmail déchiffre les emails — c\'est intentionnel pour la compatibilité' },
+      { n: '5', text: 'Valide l\'adresse Gmail, puis <strong>connecte Gmail ici</strong> 🎉' },
+    ],
+  },
+};
+
+function showForwardingGuide(providerId) {
+  const guide = FORWARDING_GUIDES[providerId];
+  if (!guide) return;
+
+  // Créer une modal inline si elle n'existe pas
+  let modal = document.getElementById('forwardingGuideModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'forwardingGuideModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+    modal.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
+    document.body.appendChild(modal);
+  }
+
+  modal.innerHTML = `
+    <div style="background:var(--surface);border-radius:20px;width:100%;max-width:520px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.25)">
+      <!-- Header -->
+      <div style="background:linear-gradient(135deg,#f4f5f9,#eef0f8);padding:22px 26px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="font-size:28px">${guide.icon}</span>
+          <div>
+            <div style="font-size:15px;font-weight:800">Connecter ${guide.name}</div>
+            <div style="font-size:12px;color:var(--muted)">Transfert automatique vers Gmail — 2 minutes</div>
+          </div>
+        </div>
+        <button onclick="document.getElementById('forwardingGuideModal').style.display='none'" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--muted);padding:4px">×</button>
+      </div>
+
+      <!-- Explication -->
+      <div style="padding:20px 26px;background:rgba(79,70,229,0.03);border-bottom:1px solid var(--border)">
+        <div style="font-size:13px;color:var(--muted);line-height:1.6">
+          💡 <strong>Principe :</strong> tu actives le transfert dans ${guide.name} pour que chaque email reçu soit aussi copié vers ton Gmail. SpottedOF scanne ensuite ton Gmail et détecte les réponses de tes prospects — quelle que soit leur boîte d'origine.
+        </div>
+      </div>
+
+      <!-- Étapes -->
+      <div style="padding:20px 26px;max-height:320px;overflow-y:auto">
+        <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:14px">Étapes à suivre</div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          ${guide.steps.map(s => `
+            <div style="display:flex;gap:12px;align-items:flex-start">
+              <div style="width:26px;height:26px;background:var(--accent);color:white;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;font-family:'Space Mono',monospace;flex-shrink:0">${s.n}</div>
+              <div style="font-size:13px;line-height:1.55;padding-top:3px">${s.text}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <div style="padding:18px 26px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end">
+        <button onclick="document.getElementById('forwardingGuideModal').style.display='none'" class="btn btn-ghost">Fermer</button>
+        <button onclick="document.getElementById('forwardingGuideModal').style.display='none';connectGmail()" style="display:flex;align-items:center;gap:8px;background:#EA4335;color:white;border:none;border-radius:12px;padding:11px 20px;cursor:pointer;font-size:13px;font-weight:700;font-family:'Inter',sans-serif">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M20 4H4C2.9 4 2 4.9 2 6v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+          Connecter Gmail maintenant
+        </button>
+      </div>
+    </div>
+  `;
+  modal.style.display = 'flex';
 }
 
 /* ─── INTÉGRATION DANS LE PANEL NOTIF (réponses récentes) ─── */
