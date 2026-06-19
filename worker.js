@@ -25,7 +25,21 @@ function json(data, status = 200) {
 //   Mots-clés bio    : 15 pts
 //   Ratio f/f        : 10 pts
 
-const OF_KEYWORDS = ['onlyfans', 'only fans', 'of link', 'of 🔥', '🔞', 'fans.ly', 'fansly', 'mym.fans', 'mym content'];
+const OF_KEYWORDS = [
+  // OnlyFans
+  'onlyfans', 'only fans', 'of link', 'of 🔥', 'fans.ly', 'fansly',
+  // MYM
+  'mym.fans', 'mym content', 'mymfans', 'mym fans',
+  // FanVu / Fanvue
+  'fanvu', 'fanvue',
+  // Reveal
+  'reveal.co', 'revealapp',
+  // Autres plateformes contenu adulte/privé
+  'manyvids', 'loyalfans', 'patreon.com', 'admire.me', 'unlockd', 'findom',
+  'frenchfans', 'myfans', 'justforfans',
+  // Signaux génériques
+  '🔞', 'lien privé', 'contenu privé', 'private content', 'content creator 18',
+];
 const COLLAB_KEYWORDS = ['collab', 'promo', 'partnership', 'partenariat', 'booking', 'dm open', 'dm for', 'contact', 'business', 'manager'];
 
 // Niches à fort potentiel OFM — bonus/malus
@@ -608,7 +622,15 @@ export default {
         return '';
       }
 
-      const OF_DETECT = ['onlyfans','only fans','fansly','mym.fans','mym content','fans.ly','manyvids','loyalfans'];
+      const OF_DETECT = [
+        'onlyfans','only fans','fans.ly','fansly',
+        'mym.fans','mym content','mymfans','mym fans',
+        'fanvu','fanvue',
+        'reveal.co','revealapp',
+        'manyvids','loyalfans','patreon.com','admire.me','unlockd','findom',
+        'frenchfans','myfans','justforfans',
+        '🔞','lien privé','contenu privé','private content','content creator 18',
+      ];
 
       const filtered = deduped.filter(p => {
         const bio = (p.biography || '').toLowerCase();

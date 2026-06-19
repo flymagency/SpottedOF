@@ -369,8 +369,8 @@
         <div class="scan-section-title scan-filter-block" data-platforms="ig" style="margin-top:16px;">👤 Type de profil</div>
         <div class="scan-filter-block" data-platforms="ig" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
           <label class="scan-check-label"><input type="checkbox" id="filterPublicOnly" checked><span>Compte public uniquement</span></label>
-          <label class="scan-check-label"><input type="checkbox" id="filterNoOf"><span>Pas encore sur OF/Fansly</span></label>
-          <label class="scan-check-label"><input type="checkbox" id="filterHasOf"><span>Déjà sur OF/Fansly/Mym</span></label>
+          <label class="scan-check-label"><input type="checkbox" id="filterNoOf"><span>Pas encore sur plateforme privée</span></label>
+          <label class="scan-check-label"><input type="checkbox" id="filterHasOf"><span>Déjà sur plateforme privée</span></label>
           <label class="scan-check-label"><input type="checkbox" id="filterVerified"><span>Non vérifié seulement</span></label>
         </div>
 
@@ -490,8 +490,6 @@
           </div>
         </div>
         <div class="scan-filter-block" data-platforms="tt" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;">
-          <label class="scan-check-label"><input type="checkbox" id="filterTTNoOf"><span>Pas encore sur OF/Fansly</span></label>
-          <label class="scan-check-label"><input type="checkbox" id="filterTTHasOf"><span>Déjà sur OF/Fansly/Mym</span></label>
           <label class="scan-check-label"><input type="checkbox" id="filterTTVerified"><span>Non vérifié seulement</span></label>
         </div>
 
@@ -520,8 +518,8 @@
           </div>
         </div>
         <div class="scan-filter-block" data-platforms="th" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;">
-          <label class="scan-check-label"><input type="checkbox" id="filterTHNoOf"><span>Pas encore sur OF/Fansly</span></label>
-          <label class="scan-check-label"><input type="checkbox" id="filterTHHasOf"><span>Déjà sur OF/Fansly/Mym</span></label>
+          <label class="scan-check-label"><input type="checkbox" id="filterTHNoOf"><span>Pas encore sur plateforme privée</span></label>
+          <label class="scan-check-label"><input type="checkbox" id="filterTHHasOf"><span>Déjà sur plateforme privée</span></label>
           <label class="scan-check-label"><input type="checkbox" id="filterTHVerified"><span>Non vérifié seulement</span></label>
         </div>
 
@@ -1060,8 +1058,6 @@ async function launchScan() {
       followers_max:  getInt('filterTTFollowersMax'),
       posts_min:      getInt('filterTTPostsMin'),
       likes_min:      getInt('filterTTLikesMin'),
-      no_of:          getChecked('filterTTNoOf'),
-      has_of:         getChecked('filterTTHasOf'),
       no_verified:    getChecked('filterTTVerified'),
     });
   } else if (platform === 'th') {
@@ -1197,7 +1193,7 @@ function resetScanModal() {
   document.getElementById('scanFooter').style.display = 'flex';
   // Reset TT inputs
   ['filterTTFollowersMin','filterTTFollowersMax','filterTTPostsMin','filterTTLikesMin'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
-  ['filterTTNoOf','filterTTHasOf','filterTTVerified'].forEach(id => { const el = document.getElementById(id); if(el) el.checked=false; });
+  ['filterTTVerified'].forEach(id => { const el = document.getElementById(id); if(el) el.checked=false; });
   // Reset TH inputs
   ['filterTHFollowersMin','filterTHFollowersMax'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
   ['filterTHNoOf','filterTHHasOf','filterTHVerified'].forEach(id => { const el = document.getElementById(id); if(el) el.checked=false; });
