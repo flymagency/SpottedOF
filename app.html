@@ -334,7 +334,7 @@
             <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px;">@</span>
             <input class="form-input" id="refHandle" placeholder="ex: fitmodel, cosplay_queen…" style="padding-left:26px;">
           </div>
-          <div style="font-size:11px;color:var(--muted);margin-top:5px;">On analyse ses posts → extrait ses hashtags → trouve des créatrices similaires</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:5px;">On scrape les comptes qu'il/elle suit → créatrices de la même niche (compte public uniquement)</div>
         </div>
         <div>
           <label class="form-label">Nombre de profils à analyser</label>
@@ -772,8 +772,8 @@ async function launchScan() {
   document.getElementById('scanProgress').style.display = 'block';
   document.getElementById('scanResult').style.display = 'none';
   document.getElementById('scanLaunchBtn').disabled = true;
-  document.getElementById('scanProgressLabel').textContent = `Analyse du profil @${h}…`;
-  document.getElementById('scanProgressSub').textContent = 'Phase 1/2 — extraction des hashtags du compte';
+  document.getElementById('scanProgressLabel').textContent = `Scan des abonnements de @${h}…`;
+  document.getElementById('scanProgressSub').textContent = 'Récupération des comptes suivis (peut prendre 1-3 min)';
 
   try {
     const startRes = await fetch(`${WORKER}/scan-similar`, {

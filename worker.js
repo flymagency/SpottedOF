@@ -382,22 +382,23 @@ export default {
       try {
         if (platform === 'ig' || platform === 'instagram') {
           // Phase 1 : scrape les posts du profil de référence pour extraire ses hashtags
-          const phase1RunId = await apifyStartRun('apify~instagram-scraper', {
-            directUrls: [`https://www.instagram.com/${handle}/`],
-            resultsType: 'posts',
-            resultsLimit: 12, // 12 posts suffisent pour avoir les hashtags principaux
+          // Scrape directement les "following" du compte de référence
+          // Actor dédié : apify~instagram-following-scraper
+          const followingRunId = await apifyStartRun('apify~instagram-following-scraper', {
+            username: handle,
+            resultsLimit: resultsLimit,
           }, APIFY_TOKEN);
 
           return json({
             success: true,
-            run_id: phase1RunId,
-            phase: 1,
+            run_id: followingRunId,
+            phase: 2, // phase unique — pas besoin d'extraire des hashtags
             handle,
             platform,
             results_limit: resultsLimit,
             min_score: minScore,
             status: 'RUNNING',
-            message: `Phase 1/2 : analyse du profil @${handle}…`,
+            message: `Scan des abonnements de @${handle}…`,
           });
         }
 
@@ -524,7 +525,25 @@ export default {
 
       let rawProfiles = [];
       if (platform === 'ig' || platform === 'instagram') {
-        rawProfiles = items.map(normalizeIGPost).filter(Boolean);
+        // L'actor instagram-following-scraper retourne des profils directement
+        // (username, fullName, biography, followersCount, followingCount, …)
+        // normalizeIGPost gère aussi bien les profils que les posts
+        rawProfiles = items.map(item => {
+          // Format "following" actor : champs directs
+          if (item.username) {
+            return {
+              username: item.username || '',
+              fullName: item.fullName || item.name || '',
+              biography: item.biography || item.bio || '',
+              followersCount: item.followersCount || item.followers_count || 0,
+              followingCount: item.followingCount || item.following_count || 0,
+              engagementRate: item.engagementRate || 0,
+              platform: 'ig',
+              userId: item.id || item.pk || '',
+            };
+          }
+          return normalizeIGPost(item);
+        }).filter(Boolean);
       } else if (platform === 'tt' || platform === 'tiktok') {
         rawProfiles = items.map(normalizeTTItem).filter(Boolean);
       } else if (platform === 'th' || platform === 'threads') {
