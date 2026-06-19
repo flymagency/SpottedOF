@@ -332,7 +332,7 @@
           <label class="form-label">Compte Instagram de référence</label>
           <div style="position:relative;">
             <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px;">@</span>
-            <input class="form-input" id="refHandle" placeholder="ex: fitmodel, cosplay_queen…" style="padding-left:26px;">
+            <input class="form-input" id="refHandle" placeholder="fitmodel_123 (sans le @)" style="padding-left:26px;">
           </div>
           <div style="font-size:11px;color:var(--muted);margin-top:5px;">On scrape les comptes qu'il/elle suit → créatrices de la même niche (compte public uniquement)</div>
         </div>
@@ -810,9 +810,9 @@ async function launchScan() {
         if (!pollData.done && pollData.run_id && pollData.phase === 2) {
           _scanCurrentRunId = pollData.run_id;
           _scanCurrentPhase = 2;
-          const tags = pollData.hashtags ? '#' + pollData.hashtags.join(' #') : '';
-          document.getElementById('scanProgressLabel').textContent = `Recherche de créatrices similaires…`;
-          document.getElementById('scanProgressSub').textContent = `Phase 2/2 — hashtags détectés : ${tags}`;
+          const n = pollData.profiles_to_detail || pollData.total_following || '?';
+          document.getElementById('scanProgressLabel').textContent = `Récupération des profils complets…`;
+          document.getElementById('scanProgressSub').textContent = `Phase 2/2 — ${n} profils à analyser (bio, followers, score…)`;
           return;
         }
 

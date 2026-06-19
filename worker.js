@@ -381,8 +381,7 @@ export default {
 
       try {
         if (platform === 'ig' || platform === 'instagram') {
-          // Phase 1 : scrape les posts du profil de référence pour extraire ses hashtags
-          // Scrape directement les "following" du compte de référence
+          // Phase 1 : récupérer la liste des following (usernames + is_private)
           // Actor : datadoping~instagram-following-scraper
           const followingRunId = await apifyStartRun('datadoping~instagram-following-scraper', {
             usernames: [handle],
@@ -392,13 +391,13 @@ export default {
           return json({
             success: true,
             run_id: followingRunId,
-            phase: 2, // phase unique — pas besoin d'extraire des hashtags
+            phase: 1, // phase 1 → on extraira les usernames → phase 2 = détails complets
             handle,
             platform,
             results_limit: resultsLimit,
             min_score: minScore,
             status: 'RUNNING',
-            message: `Scan des abonnements de @${handle}…`,
+            message: `Phase 1/2 — récupération des abonnements de @${handle}…`,
           });
         }
 
@@ -470,80 +469,53 @@ export default {
       );
       const items = await itemsRes.json();
 
-      // ── PHASE 1 (IG uniquement) : extraire les hashtags des posts du profil ──
+      // ── PHASE 1 (IG) : following list → extraire usernames → lancer scrape de détails ──
       if (phase === 1 && (platform === 'ig' || platform === 'instagram')) {
         if (!Array.isArray(items) || items.length === 0) {
-          return json({ done: true, error: `Aucun post trouvé pour @${handle}. Compte privé ou inexistant.` });
+          return json({ done: true, error: `Aucun abonnement trouvé pour @${handle}. Compte privé ou inexistant ?` });
         }
 
-        // Compter les hashtags dans tous les posts
-        const tagCount = {};
-        for (const post of items) {
-          const tags = post.hashtags || [];
-          for (const tag of tags) {
-            const t = tag.toLowerCase().replace(/^#/, '');
-            tagCount[t] = (tagCount[t] || 0) + 1;
-          }
+        // Extraire les usernames (on exclut les privés et le compte de référence)
+        const usernames = items
+          .filter(p => p.username && !p.is_private && p.username.toLowerCase() !== handle.toLowerCase())
+          .map(p => p.username)
+          .slice(0, Math.min(resultsLimit, 200)); // max 200 profils à détailler
+
+        if (usernames.length === 0) {
+          return json({ done: true, error: `Tous les abonnements de @${handle} sont des comptes privés.` });
         }
 
-        // Top 3 hashtags (les plus utilisés par ce compte)
-        const topTags = Object.entries(tagCount)
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 3)
-          .map(([t]) => t);
-
-        if (topTags.length === 0) {
-          // Pas de hashtags → fallback sur le nom du compte comme keyword
-          topTags.push(handle);
-        }
-
-        // Démarrer la phase 2 : scraper ces hashtags
-        const hashtagUrls = topTags.map(t => `https://www.instagram.com/explore/tags/${encodeURIComponent(t)}/`);
+        // Phase 2 : scraper les détails complets de ces profils
+        const profileUrls = usernames.map(u => `https://www.instagram.com/${u}/`);
         try {
           const phase2RunId = await apifyStartRun('apify~instagram-scraper', {
-            directUrls: hashtagUrls,
-            resultsType: 'posts',
-            resultsLimit: resultsLimit * 4, // beaucoup de posts pour avoir assez d'auteurs uniques
+            directUrls: profileUrls,
+            resultsType: 'details',
+            resultsLimit: usernames.length,
           }, APIFY_TOKEN);
 
           return json({
             done: false,
             phase: 2,
             run_id: phase2RunId,
-            hashtags: topTags,
-            label: `Phase 2/2 : scan des hashtags #${topTags.join(' #')}…`,
+            total_following: items.length,
+            profiles_to_detail: usernames.length,
+            label: `Phase 2/2 — récupération des détails de ${usernames.length} profils…`,
           });
         } catch(e) {
           return json({ done: true, error: e.message });
         }
       }
 
-      // ── PHASE 2 : normaliser les items et importer ──
+      // ── PHASE 2 / FINAL : normaliser les profils détaillés et importer ──
       if (!Array.isArray(items) || items.length === 0) {
         return json({ status: 'SUCCEEDED', done: true, saved: 0, total_found: 0, scored: 0, filtered_out: 0, message: 'Aucun profil trouvé' });
       }
 
       let rawProfiles = [];
       if (platform === 'ig' || platform === 'instagram') {
-        // L'actor instagram-following-scraper retourne des profils directement
-        // (username, fullName, biography, followersCount, followingCount, …)
-        // normalizeIGPost gère aussi bien les profils que les posts
-        rawProfiles = items.map(item => {
-          // Format "following" actor : champs directs
-          if (item.username) {
-            return {
-              username: item.username || '',
-              fullName: item.fullName || item.name || '',
-              biography: item.biography || item.bio || '',
-              followersCount: item.followersCount || item.followers_count || 0,
-              followingCount: item.followingCount || item.following_count || 0,
-              engagementRate: item.engagementRate || 0,
-              platform: 'ig',
-              userId: item.id || item.pk || '',
-            };
-          }
-          return normalizeIGPost(item);
-        }).filter(Boolean);
+        // Les items sont des profils complets (resultsType: 'details')
+        rawProfiles = items.map(item => normalizeIGPost(item)).filter(Boolean);
       } else if (platform === 'tt' || platform === 'tiktok') {
         rawProfiles = items.map(normalizeTTItem).filter(Boolean);
       } else if (platform === 'th' || platform === 'threads') {
