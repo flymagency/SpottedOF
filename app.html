@@ -329,12 +329,12 @@
           </div>
         </div>
         <div>
-          <label class="form-label" id="refHandleLabel">Hashtag ou niche à explorer</label>
+          <label class="form-label">Compte Instagram de référence</label>
           <div style="position:relative;">
-            <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px;">#</span>
-            <input class="form-input" id="refHandle" placeholder="fitness, cosplay, dance, beauty…" style="padding-left:26px;">
+            <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px;">@</span>
+            <input class="form-input" id="refHandle" placeholder="ex: fitmodel, cosplay_queen…" style="padding-left:26px;">
           </div>
-          <div style="font-size:11px;color:var(--muted);margin-top:5px;">On scrape les créatrices qui postent sous ce hashtag</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:5px;">On analyse ses posts → extrait ses hashtags → trouve des créatrices similaires</div>
         </div>
         <div>
           <label class="form-label">Nombre de profils à analyser</label>
@@ -754,10 +754,12 @@ function pickScanPlatform(el) {
 function pickPlatform(el) { document.querySelectorAll('.plat-pick-btn').forEach(b=>b.classList.remove('sel')); el.classList.add('sel'); }
 
 let _scanPollInterval = null;
+let _scanCurrentRunId = null;
+let _scanCurrentPhase = 1;
 
 async function launchScan() {
-  const h = document.getElementById('refHandle').value.trim().replace(/^[#@]+/, '').replace(/\s+/g,'');
-  if (!h) { showToast('Entrez un handle de référence','error'); return; }
+  const h = document.getElementById('refHandle').value.trim().replace(/^[@]+/, '').replace(/\s+/g,'');
+  if (!h) { showToast('Entrez un compte de référence','error'); return; }
 
   const resultsLimit = parseInt(document.getElementById('countInput').value);
   const minScore = parseInt(document.getElementById('scoreInput').value);
@@ -770,62 +772,73 @@ async function launchScan() {
   document.getElementById('scanProgress').style.display = 'block';
   document.getElementById('scanResult').style.display = 'none';
   document.getElementById('scanLaunchBtn').disabled = true;
-  document.getElementById('scanProgressLabel').textContent = `Scan ${platformLabel} — #${h} en cours…`;
+  document.getElementById('scanProgressLabel').textContent = `Analyse du profil @${h}…`;
+  document.getElementById('scanProgressSub').textContent = 'Phase 1/2 — extraction des hashtags du compte';
 
   try {
-    // Lancer le run Apify
     const startRes = await fetch(`${WORKER}/scan-similar`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ handle: h, platform, results_limit: resultsLimit, min_score: minScore }),
     });
     const startData = await startRes.json();
+    if (!startData.success || startData.error) throw new Error(startData.error || 'Erreur démarrage scan');
 
-    if (!startData.success) {
-      throw new Error(startData.error || 'Erreur démarrage scan');
-    }
-    if (startData.error) {
-      throw new Error(startData.error);
-    }
-
-    const runId = startData.run_id;
-    document.getElementById('scanProgressLabel').textContent = `Scan ${platformLabel} — #${h} en cours…`;
-    document.getElementById('scanProgressSub').textContent = `Run ID: ${runId.slice(0,8)}… — 1-3 min selon la plateforme`;
+    _scanCurrentRunId = startData.run_id;
+    _scanCurrentPhase = startData.phase || 1;
 
     // Polling toutes les 5 secondes
     _scanPollInterval = setInterval(async () => {
       try {
-        const pollRes = await fetch(`${WORKER}/scan-poll?run_id=${runId}&min_score=${minScore}&handle=${h}&platform=${platform}`);
+        const qs = new URLSearchParams({
+          run_id: _scanCurrentRunId,
+          phase: _scanCurrentPhase,
+          min_score: minScore,
+          handle: h,
+          platform,
+          results_limit: resultsLimit,
+        });
+        const pollRes = await fetch(`${WORKER}/scan-poll?${qs}`);
         const pollData = await pollRes.json();
 
+        if (pollData.error && pollData.done) {
+          clearInterval(_scanPollInterval);
+          throw new Error(pollData.error);
+        }
+
+        // Transition phase 1 → phase 2
+        if (!pollData.done && pollData.run_id && pollData.phase === 2) {
+          _scanCurrentRunId = pollData.run_id;
+          _scanCurrentPhase = 2;
+          const tags = pollData.hashtags ? '#' + pollData.hashtags.join(' #') : '';
+          document.getElementById('scanProgressLabel').textContent = `Recherche de créatrices similaires…`;
+          document.getElementById('scanProgressSub').textContent = `Phase 2/2 — hashtags détectés : ${tags}`;
+          return;
+        }
+
         if (!pollData.done) {
-          // Encore en cours
-          document.getElementById('scanProgressSub').textContent = `Statut : ${pollData.status} — patience…`;
+          const label = pollData.label || (pollData.status === 'RUNNING' ? 'En cours…' : pollData.status);
+          document.getElementById('scanProgressSub').textContent = label;
           return;
         }
 
         // Terminé !
         clearInterval(_scanPollInterval);
 
-        if (pollData.error) {
-          throw new Error(pollData.error);
-        }
-
-        // Afficher résultat
         document.getElementById('scanProgress').style.display = 'none';
         document.getElementById('scanResult').style.display = 'block';
         document.getElementById('scanResult').innerHTML = `
           <div style="font-size:40px;margin-bottom:12px;">✅</div>
           <div style="font-size:16px;font-weight:800;margin-bottom:8px;">${pollData.saved} prospects importés !</div>
           <div style="font-size:12px;color:var(--muted);line-height:1.6;">
-            ${pollData.total_found} profils analysés<br>
+            ${pollData.unique_profiles || pollData.total_found} profils uniques analysés<br>
             ${pollData.scored} avec score ≥ ${minScore}%<br>
             ${pollData.filtered_out} filtrés (score trop bas)
           </div>
           <button class="btn btn-primary" style="margin-top:18px;" onclick="closeModal('scanModal');loadProspects();">Voir les prospects</button>
         `;
         document.getElementById('scanFooter').style.display = 'none';
-        showToast(`${pollData.saved} prospects importés depuis #${h} 🎯`, 'success');
+        showToast(`${pollData.saved} prospects importés depuis @${h} 🎯`, 'success');
 
       } catch(e) {
         clearInterval(_scanPollInterval);
