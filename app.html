@@ -1639,18 +1639,46 @@ async function signOut() {
 }
 
 /* ─── NOTIFICATIONS ─── */
+const NOTIF_SEEN_KEY = 'spottedof_seen_notifs';
+
+function getSeenNotifs() {
+  try { return new Set(JSON.parse(localStorage.getItem(NOTIF_SEEN_KEY) || '[]')); }
+  catch { return new Set(); }
+}
+function saveSeenNotifs(set) {
+  localStorage.setItem(NOTIF_SEEN_KEY, JSON.stringify([...set]));
+}
+
+let _allNotifTickets = [];
+
 async function loadNotifications() {
   const { data: tickets } = await sb.from('tickets')
     .select('*')
     .eq('status', 'resolved')
     .order('created_at', { ascending: false });
 
-  const list = document.getElementById('notifList');
-  const count = document.getElementById('notifCount');
+  _allNotifTickets = tickets || [];
+  _renderNotifBadge();
+}
 
-  if (!tickets || tickets.length === 0) {
-    list.innerHTML = `<div style="padding:20px;text-align:center;font-size:12px;color:#6b6b88">Aucune notification</div>`;
+function _renderNotifBadge() {
+  const seen = getSeenNotifs();
+  const unread = _allNotifTickets.filter(t => !seen.has(t.id));
+  const count = document.getElementById('notifCount');
+  if (unread.length > 0) {
+    count.textContent = unread.length;
+    count.style.cssText = 'display:flex;position:absolute;top:-5px;right:-5px;background:#fc5c7c;color:white;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:50%;padding:0 3px;justify-content:center;align-items:center';
+  } else {
     count.style.display = 'none';
+  }
+}
+
+function _renderNotifPanel() {
+  const list = document.getElementById('notifList');
+  const seen = getSeenNotifs();
+
+  if (!_allNotifTickets.length) {
+    list.innerHTML = `<div style="padding:20px;text-align:center;font-size:12px;color:#6b6b88">Aucune notification</div>`;
     return;
   }
 
@@ -1659,25 +1687,52 @@ async function loadNotifications() {
     fonctionnalite:'✨ Fonctionnalité', upgrade:'⬆️ Upgrade', autre:'💬 Autre'
   };
 
-  count.textContent = tickets.length;
-  count.style.cssText = 'display:flex;position:absolute;top:-5px;right:-5px;background:#fc5c7c;color:white;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:50%;padding:0 3px;justify-content:center;align-items:center';
-
-  list.innerHTML = tickets.map(t => {
+  list.innerHTML = _allNotifTickets.map(t => {
+    const isNew = !seen.has(t.id);
     const date = new Date(t.created_at).toLocaleDateString('fr-FR', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
-    return `<div style="padding:12px 16px;border-bottom:1px solid #1a1a24;display:flex;gap:10px;align-items:flex-start">
-      <div style="font-size:18px;flex-shrink:0">✅</div>
-      <div>
-        <div style="font-size:12px;font-weight:700;margin-bottom:2px">Ticket résolu</div>
+    return `<div onclick="markNotifRead('${t.id}',this)" style="padding:12px 16px;border-bottom:1px solid #1a1a24;display:flex;gap:10px;align-items:flex-start;cursor:pointer;transition:background 0.15s;${isNew ? 'background:rgba(252,92,124,0.06)' : ''}" onmouseover="this.style.background='rgba(124,92,252,0.06)'" onmouseout="this.style.background='${isNew ? 'rgba(252,92,124,0.06)' : ''}'">
+      <div style="font-size:18px;flex-shrink:0">${isNew ? '🔴' : '✅'}</div>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:700;margin-bottom:2px">Ticket résolu${isNew ? ' <span style="color:#fc5c7c;font-size:9px;font-weight:700;background:rgba(252,92,124,0.15);padding:1px 5px;border-radius:4px;">NEW</span>' : ''}</div>
         <div style="font-size:11px;color:#6b6b88">${CAT_LABELS[t.category] || t.category}</div>
         <div style="font-size:10px;color:#3a3a4a;font-family:'Space Mono',monospace;margin-top:3px">${date}</div>
       </div>
     </div>`;
-  }).join('');
+  }).join('') + (_allNotifTickets.some(t => !seen.has(t.id)) ? `
+    <div style="padding:10px 16px;text-align:center;">
+      <button onclick="markAllNotifsRead()" style="font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;font-family:'Syne',sans-serif;">
+        Tout marquer comme lu
+      </button>
+    </div>` : '');
+}
+
+function markNotifRead(id, el) {
+  const seen = getSeenNotifs();
+  seen.add(id);
+  saveSeenNotifs(seen);
+  // Mettre à jour visuellement sans recharger
+  el.style.background = '';
+  el.querySelector('div:first-child').textContent = '✅';
+  const title = el.querySelector('div:last-child div:first-child');
+  if (title) title.innerHTML = 'Ticket résolu';
+  _renderNotifBadge();
+}
+
+function markAllNotifsRead() {
+  const seen = getSeenNotifs();
+  _allNotifTickets.forEach(t => seen.add(t.id));
+  saveSeenNotifs(seen);
+  _renderNotifBadge();
+  _renderNotifPanel();
 }
 
 function toggleNotifPanel() {
   const panel = document.getElementById('notifPanel');
-  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+  const isOpen = panel.style.display !== 'none';
+  panel.style.display = isOpen ? 'none' : 'block';
+  if (!isOpen) {
+    _renderNotifPanel(); // rafraîchit le contenu à l'ouverture
+  }
 }
 
 document.addEventListener('click', e => {
