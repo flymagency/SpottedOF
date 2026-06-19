@@ -694,6 +694,8 @@ async function loadProspects() {
       bio: p.bio || '',
       hasOf: p.has_of || false,
       ofLink: p.of_link || false,
+      privatePlatform: p.private_platform || '',
+      privatePlatformUrl: p.private_platform_url || '',
       score: p.score || 0,
       status: p.status || 'nouveau',
       note: p.note || '',
@@ -762,7 +764,7 @@ function renderProspects() {
           <span class="card-stat">${fmt(p.followers)} followers</span>
           <span class="card-stat" style="color:var(--yellow)">${p.engagement}% eng.</span>
         </div>
-        ${p.hasOf?'<span class="badge badge-of">Monétisée</span>':'<span class="badge badge-convert">À contacter</span>'}
+        ${p.hasOf ? privatePlatformBadge(p) : '<span class="badge badge-convert">À contacter</span>'}
       </div>`;
     }).join('');
     return;
@@ -884,7 +886,7 @@ function openProspect(id) {
       <div>
         <div class="modal-handle">${p.handle}</div>
         <div class="modal-meta">${p.name} · ${p.niche} · <span class="platform-dot dot-${p.platform}" style="margin-left:4px"></span>${p.platform.toUpperCase()}</div>
-        <div style="margin-top:8px">${p.hasOf?'<span class="badge badge-of">Monétisée</span>':'<span class="badge badge-convert">À contacter</span>'}</div>
+        <div style="margin-top:8px">${p.hasOf ? privatePlatformBadge(p) : '<span class="badge badge-convert">À contacter</span>'}</div>
       </div>
     </div>
     <div class="modal-bio">${p.bio || '<em style="color:var(--muted)">Pas de bio disponible</em>'}</div>
@@ -892,7 +894,7 @@ function openProspect(id) {
       <div class="score-item"><div class="score-item-label">Score global</div><div class="score-item-val s-${cl}">${p.score}%</div></div>
       <div class="score-item"><div class="score-item-label">Followers</div><div class="score-item-val">${fmt(p.followers)}</div></div>
       <div class="score-item"><div class="score-item-label">Engagement</div><div class="score-item-val" style="color:var(--yellow)">${p.engagement}%</div></div>
-      <div class="score-item"><div class="score-item-label">Lien OF détecté</div><div class="score-item-val" style="color:${p.ofLink?'var(--pink)':'var(--muted)'}">${p.ofLink?'Oui ✓':'Non'}</div></div>
+      <div class="score-item"><div class="score-item-label">Plateforme privée</div><div class="score-item-val" style="color:${p.privatePlatform?'var(--pink)':'var(--muted);font-size:12px'}">${p.privatePlatform || '—'}</div></div>
     </div>`;
   document.getElementById('prospectModal').classList.add('open');
 }
@@ -1214,6 +1216,22 @@ function showToast(msg, type='success') {
 }
 document.querySelectorAll('.modal-overlay').forEach(el=>el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('open')}));
 
+/* ─── PRIVATE PLATFORM BADGE ─── */
+function privatePlatformBadge(p) {
+  const name = p.privatePlatform || 'Plateforme privée';
+  const url  = p.privatePlatformUrl;
+  const icon = {
+    'OnlyFans': '🔒', 'Fansly': '🔒', 'MYM': '🔒', 'FanVue': '🔒',
+    'Reveal': '🔒', 'Patreon': '🎨', 'FrenchFans': '🔒',
+    'ManyVids': '🎬', 'JustForFans': '🔒', 'LoyalFans': '🔒',
+    'Admire.me': '🔒', 'Contenu privé': '🔞',
+  }[name] || '🔒';
+  if (url) {
+    return `<a href="${url}" target="_blank" rel="noopener" onclick="event.stopPropagation()" class="badge badge-of" style="text-decoration:none;gap:5px" title="Voir la plateforme">${icon} ${name} ↗</a>`;
+  }
+  return `<span class="badge badge-of">${icon} ${name}</span>`;
+}
+
 /* ─── STATUS BADGE ─── */
 function statusBadge(p) {
   const s = (p.status || '').toLowerCase();
@@ -1221,7 +1239,7 @@ function statusBadge(p) {
   if (s === 'en discussion') return '<span class="badge" style="background:rgba(79,70,229,0.1);color:#4f46e5;border:1px solid rgba(79,70,229,0.25)">En discussion</span>';
   if (s === 'signée') return '<span class="badge" style="background:rgba(5,150,105,0.1);color:#059669;border:1px solid rgba(5,150,105,0.25)">✓ Signée</span>';
   if (s === 'refus') return '<span class="badge" style="background:rgba(232,68,90,0.1);color:#e8445a;border:1px solid rgba(232,68,90,0.25)">Refus</span>';
-  if (p.hasOf) return '<span class="badge badge-of">Monétisée</span>';
+  if (p.hasOf) return privatePlatformBadge(p);
   return '<span class="badge badge-convert">À contacter</span>';
 }
 

@@ -42,6 +42,48 @@ const OF_KEYWORDS = [
 ];
 const COLLAB_KEYWORDS = ['collab', 'promo', 'partnership', 'partenariat', 'booking', 'dm open', 'dm for', 'contact', 'business', 'manager'];
 
+// Détection plateforme privée + extraction URL
+const PRIVATE_PLATFORMS = [
+  { name: 'OnlyFans',   domains: ['onlyfans.com', 'fans.ly'],           keywords: ['onlyfans', 'only fans', 'of link', 'of 🔥'] },
+  { name: 'Fansly',     domains: ['fansly.com'],                         keywords: ['fansly'] },
+  { name: 'MYM',        domains: ['mym.fans'],                           keywords: ['mym.fans', 'mymfans', 'mym content', 'mym fans'] },
+  { name: 'FanVue',     domains: ['fanvue.com', 'fanvu.com'],            keywords: ['fanvue', 'fanvu'] },
+  { name: 'Reveal',     domains: ['reveal.co'],                          keywords: ['reveal.co', 'revealapp'] },
+  { name: 'Patreon',    domains: ['patreon.com'],                        keywords: ['patreon.com'] },
+  { name: 'FrenchFans', domains: ['frenchfans.fr'],                      keywords: ['frenchfans'] },
+  { name: 'ManyVids',   domains: ['manyvids.com'],                       keywords: ['manyvids'] },
+  { name: 'JustForFans',domains: ['justforfans.com'],                    keywords: ['justforfans'] },
+  { name: 'LoyalFans',  domains: ['loyalfans.com'],                      keywords: ['loyalfans'] },
+  { name: 'Admire.me',  domains: ['admire.me'],                          keywords: ['admire.me'] },
+];
+
+function detectPrivatePlatform(bio, externalUrl) {
+  const b = (bio || '').toLowerCase();
+  const ext = (externalUrl || '').toLowerCase();
+
+  for (const p of PRIVATE_PLATFORMS) {
+    // 1. Check external URL (most reliable — direct link)
+    const domainMatch = p.domains.find(d => ext.includes(d));
+    if (domainMatch) return { name: p.name, url: externalUrl };
+
+    // 2. Check bio keywords
+    const kwMatch = p.keywords.find(k => b.includes(k));
+    if (kwMatch) {
+      // Try to extract a URL from the bio that matches the platform domain
+      const urlInBio = (bio || '').match(/https?:\/\/[^\s\n]+/g) || [];
+      const platformUrl = urlInBio.find(u => p.domains.some(d => u.toLowerCase().includes(d)));
+      return { name: p.name, url: platformUrl || null };
+    }
+  }
+
+  // Generic signals (🔞 etc.) — platform unknown
+  if (b.includes('🔞') || b.includes('lien privé') || b.includes('contenu privé') || b.includes('private content')) {
+    return { name: 'Contenu privé', url: externalUrl || null };
+  }
+
+  return null;
+}
+
 // Niches à fort potentiel OFM — bonus/malus
 const NICHE_SCORES = {
   fitness:    +8,  lifestyle: +6,  beauty:   +6,
@@ -118,6 +160,7 @@ async function saveProspects(env, profiles, scanSource) {
     const score = scoreProfile(p);
     const bio = p.biography || p.bio || '';
     const hasOf = OF_KEYWORDS.some(kw => bio.toLowerCase().includes(kw));
+    const privPlat = detectPrivatePlatform(bio, p.externalUrl || '');
 
     return {
       fields: {
@@ -130,6 +173,8 @@ async function saveProspects(env, profiles, scanSource) {
         bio: bio,
         has_of: hasOf,
         of_link: hasOf,
+        private_platform: privPlat ? privPlat.name : '',
+        private_platform_url: privPlat ? (privPlat.url || '') : '',
         score: score,
         status: 'nouveau',
         scan_source: scanSource || '',
