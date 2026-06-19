@@ -3625,7 +3625,7 @@ async function createTeam() {
   if (!name || !name.trim()) return;
 
   const { data: created, error } = await sb.from('teams').insert({ name: name.trim(), owner_id: currentUser.id }).select().single();
-  if (error || !created) { showToast('Erreur création équipe', 'error'); return; }
+  if (error || !created) { showToast('Erreur : ' + (error?.message || 'inconnue'), 'error'); console.error('createTeam error:', error); return; }
 
   // Se joindre en tant qu'admin
   await sb.from('team_members').insert({
