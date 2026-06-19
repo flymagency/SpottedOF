@@ -275,10 +275,10 @@
 
     <!-- OUTILS -->
     <div class="nav-section">Outils</div>
-    <button class="nav-item" onclick="showComingSoon('Rappels de suivi')">
+    <button class="nav-item" id="nav-reminders" onclick="navTo('reminders')">
       <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
       Rappels
-      <span class="nav-soon">Bientôt</span>
+      <span class="nav-badge" id="reminders-badge" style="display:none"></span>
     </button>
     <button class="nav-item" onclick="showComingSoon('Gestion équipe')">
       <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -345,6 +345,11 @@
 
   <!-- CONTENT -->
   <div class="content">
+
+  <!-- ═══ VUE RAPPELS ═══ -->
+  <div id="view-reminders" style="display:none">
+    <div id="reminders-body"></div>
+  </div>
 
   <!-- ═══ VUE BLACKLIST ═══ -->
   <div id="view-blacklist" style="display:none">
@@ -779,6 +784,7 @@ sb.auth.getSession().then(async ({ data }) => {
 
   loadProspects();
   loadNotifications();
+  initReminders();
 });
 
 let DATA = [];
@@ -1465,6 +1471,16 @@ async function updatePipelineStatus(id, status) {
     if (m) m.remove();
     renderProspects();
     showToast(`Statut mis à jour → ${status}`, 'success');
+
+    // Rappel auto : quand on contacte → rappel dans 1h
+    if (p && status === 'contactée') {
+      createAutoReminder(p, REMINDER_DELAY_MS);
+      showToast(`Rappel créé — on te ping dans 1h pour ${p.handle} 🔔`, 'success');
+    }
+    // Si réponse ou signé → on dismiss les rappels existants
+    if (['en discussion', 'signée', 'refus', 'nouveau'].includes(status)) {
+      clearRemindersForProspect(id);
+    }
   } catch(e) { showToast('Erreur mise à jour statut', 'error'); }
 }
 
@@ -2139,9 +2155,10 @@ const NAV_TITLES = {
   blacklist:   'Blacklist',
   stats:       'Statistiques',
   performance: 'Performance',
+  reminders:   'Rappels',
 };
 const NAV_TAB_MAP = { prospects: 'all', saved: 'saved', private: 'of', contact: 'convert' };
-const SEPARATE_VIEWS = new Set(['blacklist', 'stats', 'performance']);
+const SEPARATE_VIEWS = new Set(['blacklist', 'stats', 'performance', 'reminders']);
 
 function navTo(section) {
   // Active state sidebar
@@ -2153,7 +2170,7 @@ function navTo(section) {
   document.getElementById('topbarTitle').textContent = NAV_TITLES[section] || section;
 
   // Show/hide views
-  const allViews = ['prospects', 'blacklist', 'stats', 'performance'];
+  const allViews = ['prospects', 'blacklist', 'stats', 'performance', 'reminders'];
   allViews.forEach(v => {
     const el = document.getElementById(`view-${v}`);
     if (el) el.style.display = (v === section || (section === 'all' && v === 'prospects')) ? '' : 'none';
@@ -2162,9 +2179,10 @@ function navTo(section) {
   if (SEPARATE_VIEWS.has(section)) {
     // These sections have their own view containers
     document.getElementById(`view-${section}`).style.display = '';
-    if (section === 'blacklist') renderBlacklist();
-    if (section === 'stats')     renderStats();
+    if (section === 'blacklist')   renderBlacklist();
+    if (section === 'stats')       renderStats();
     if (section === 'performance') renderPerformance();
+    if (section === 'reminders')   renderReminders();
     return;
   }
 
@@ -2476,6 +2494,400 @@ function renderPerformance() {
         </tbody>
       </table>
     </div>`;
+}
+
+/* ═══════════════════════════════════════════════
+   SYSTÈME DE RAPPELS
+   ═══════════════════════════════════════════════ */
+const REMINDERS_KEY = 'spottedof_reminders';
+const REMINDER_DELAY_MS = 60 * 60 * 1000; // 1 heure
+
+function getReminders() {
+  try { return JSON.parse(localStorage.getItem(REMINDERS_KEY) || '[]'); }
+  catch { return []; }
+}
+function saveReminders(arr) {
+  localStorage.setItem(REMINDERS_KEY, JSON.stringify(arr));
+}
+function genReminderId() {
+  return 'r_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
+}
+
+/* Crée un rappel automatique quand on contacte un prospect */
+function createAutoReminder(prospect, delayMs) {
+  const reminders = getReminders();
+  // Évite les doublons sur le même prospect
+  const existing = reminders.find(r => r.prospectId === prospect.id && !r.dismissed);
+  if (existing) return;
+  reminders.push({
+    id: genReminderId(),
+    prospectId: prospect.id,
+    handle: prospect.handle,
+    niche: prospect.niche || '',
+    platform: prospect.platform || 'ig',
+    type: 'follow_up',
+    message: `Pas de réponse de ${prospect.handle} — pense à relancer 👋`,
+    dueAt: Date.now() + (delayMs || REMINDER_DELAY_MS),
+    createdAt: Date.now(),
+    dismissed: false,
+    triggered: false,
+  });
+  saveReminders(reminders);
+  updateRemindersBadge();
+}
+
+/* Supprime les rappels d'un prospect si on change son statut */
+function clearRemindersForProspect(prospectId) {
+  const reminders = getReminders().map(r =>
+    r.prospectId === prospectId ? { ...r, dismissed: true } : r
+  );
+  saveReminders(reminders);
+  updateRemindersBadge();
+}
+
+/* Vérifie les rappels dus et les ajoute aux notifs */
+function checkDueReminders() {
+  const now = Date.now();
+  let reminders = getReminders();
+  let changed = false;
+  reminders = reminders.map(r => {
+    if (!r.dismissed && !r.triggered && r.dueAt <= now) {
+      changed = true;
+      return { ...r, triggered: true };
+    }
+    return r;
+  });
+  if (changed) {
+    saveReminders(reminders);
+    updateRemindersBadge();
+    _renderNotifBadge(); // re-render le badge notif global
+  }
+}
+
+/* Compte les rappels actifs (triggered et non dismissed) pour le badge */
+function getDueReminders() {
+  return getReminders().filter(r => r.triggered && !r.dismissed);
+}
+function getPendingReminders() {
+  return getReminders().filter(r => !r.triggered && !r.dismissed);
+}
+
+function updateRemindersBadge() {
+  const due = getDueReminders().length;
+  const pending = getPendingReminders().length;
+  const badge = document.getElementById('reminders-badge');
+  if (!badge) return;
+  const total = due + pending;
+  if (total > 0) {
+    badge.textContent = total;
+    badge.style.display = '';
+    if (due > 0) {
+      badge.style.background = 'rgba(232,68,90,0.15)';
+      badge.style.color = 'var(--accent2)';
+    }
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+/* Intégration dans le panneau de notifs */
+function getReminderNotifs() {
+  return getDueReminders().map(r => ({
+    id: r.id,
+    isReminder: true,
+    handle: r.handle,
+    message: r.message,
+    dueAt: r.dueAt,
+    prospectId: r.prospectId,
+  }));
+}
+
+/* Dismiss un rappel */
+function dismissReminder(reminderId) {
+  const reminders = getReminders().map(r =>
+    r.id === reminderId ? { ...r, dismissed: true } : r
+  );
+  saveReminders(reminders);
+  updateRemindersBadge();
+  // Re-render si le panel notif est ouvert
+  const panel = document.getElementById('notifPanel');
+  if (panel && panel.style.display !== 'none') _renderNotifPanel();
+  // Re-render si vue rappels ouverte
+  const view = document.getElementById('view-reminders');
+  if (view && view.style.display !== 'none') renderReminders();
+}
+
+/* Snooze +30min */
+function snoozeReminder(reminderId) {
+  const reminders = getReminders().map(r =>
+    r.id === reminderId ? { ...r, triggered: false, dueAt: Date.now() + 30 * 60 * 1000 } : r
+  );
+  saveReminders(reminders);
+  updateRemindersBadge();
+  showToast('Rappel snoozé — dans 30 min ⏰', 'success');
+  const view = document.getElementById('view-reminders');
+  if (view && view.style.display !== 'none') renderReminders();
+  const panel = document.getElementById('notifPanel');
+  if (panel && panel.style.display !== 'none') _renderNotifPanel();
+}
+
+/* ─── VUE RAPPELS ─── */
+function renderReminders() {
+  const el = document.getElementById('reminders-body');
+  const due = getDueReminders();
+  const pending = getPendingReminders();
+  const all = [...due, ...pending];
+
+  el.innerHTML = `
+    <!-- Header action -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div style="font-size:13px;color:var(--muted)">${due.length} à traiter · ${pending.length} en attente</div>
+      <button class="btn btn-primary" onclick="openNewReminderModal()">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Nouveau rappel
+      </button>
+    </div>
+
+    ${due.length > 0 ? `
+    <!-- Rappels dus -->
+    <div style="margin-bottom:8px;font-family:'Space Mono',monospace;font-size:10px;color:var(--accent2);text-transform:uppercase;letter-spacing:0.08em">🔴 À traiter maintenant</div>
+    <div class="table-wrap" style="margin-bottom:24px">
+      ${due.map(r => reminderRow(r, true)).join('')}
+    </div>` : ''}
+
+    ${pending.length > 0 ? `
+    <!-- Rappels en attente -->
+    <div style="margin-bottom:8px;font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em">⏳ En attente</div>
+    <div class="table-wrap">
+      ${pending.map(r => reminderRow(r, false)).join('')}
+    </div>` : ''}
+
+    ${!all.length ? `
+    <div class="analytics-section">
+      <div class="empty-state">
+        <div class="empty-icon">🔔</div>
+        <div class="empty-title">Aucun rappel actif</div>
+        <div class="empty-sub">Les rappels se créent automatiquement quand tu contactes un prospect.<br>Tu peux aussi en créer manuellement.</div>
+      </div>
+    </div>` : ''}`;
+}
+
+function reminderRow(r, isDue) {
+  const p = DATA.find(x => x.id === r.prospectId);
+  const timeLeft = r.dueAt - Date.now();
+  const timeStr = isDue
+    ? `il y a ${fmtTimeAgo(r.dueAt)}`
+    : `dans ${fmtTimeLeft(r.dueAt)}`;
+  const colorDot = r.platform === 'ig' ? 'dot-ig' : r.platform === 'tt' ? 'dot-tt' : 'dot-th';
+  return `
+    <div class="bl-row" style="${isDue ? 'background:rgba(232,68,90,0.03);' : ''}">
+      <div class="avatar" style="flex-shrink:0;${isDue ? 'border-color:rgba(232,68,90,0.3)' : ''}">
+        ${p ? avatarHTML(r.handle, r.platform, 40) : `<span style="font-size:16px">${isDue?'🔴':'⏳'}</span>`}
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:700"><span class="platform-dot ${colorDot}"></span>${r.handle}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${r.message}</div>
+      </div>
+      <div style="font-family:'Space Mono',monospace;font-size:10px;color:${isDue ? 'var(--accent2)' : 'var(--muted)'};white-space:nowrap;margin:0 12px">${timeStr}</div>
+      ${isDue ? `
+        <button onclick="openProspect('${r.prospectId}')" class="btn btn-primary" style="font-size:11px;padding:6px 12px;white-space:nowrap">Voir profil</button>
+        <button onclick="snoozeReminder('${r.id}')" class="btn btn-ghost" style="font-size:11px;padding:6px 10px" title="Snooze 30 min">⏰</button>
+        <button onclick="dismissReminder('${r.id}')" class="btn btn-ghost" style="font-size:11px;padding:6px 10px;color:var(--accent2)" title="Marquer traité">✓</button>
+      ` : `
+        <button onclick="dismissReminder('${r.id}')" class="btn btn-ghost" style="font-size:11px;padding:6px 10px;color:var(--muted)" title="Annuler">✕</button>
+      `}
+    </div>`;
+}
+
+function fmtTimeLeft(dueAt) {
+  const ms = dueAt - Date.now();
+  const m = Math.round(ms / 60000);
+  if (m < 60) return `${m} min`;
+  const h = Math.floor(m / 60);
+  const rem = m % 60;
+  return rem > 0 ? `${h}h${rem}min` : `${h}h`;
+}
+function fmtTimeAgo(dueAt) {
+  const ms = Date.now() - dueAt;
+  const m = Math.round(ms / 60000);
+  if (m < 60) return `${m} min`;
+  const h = Math.floor(m / 60);
+  return `${h}h`;
+}
+
+/* Modal nouveau rappel manuel */
+function openNewReminderModal() {
+  const existing = document.getElementById('newReminderModal');
+  if (existing) existing.remove();
+
+  const options = DATA.filter(p => p.status !== 'blacklistée').slice(0, 100);
+  const modal = document.createElement('div');
+  modal.id = 'newReminderModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:center;justify-content:center;padding:24px';
+  modal.innerHTML = `
+    <div style="background:#ffffff;border:1px solid #e2e4ec;border-radius:20px;padding:28px;max-width:420px;width:100%">
+      <div style="font-size:15px;font-weight:700;margin-bottom:18px">🔔 Nouveau rappel</div>
+      <div style="margin-bottom:14px">
+        <label class="form-label">Prospect</label>
+        <select id="reminderProspect" class="form-input" style="padding:8px 10px">
+          <option value="">— Sélectionner un prospect</option>
+          ${options.map(p => `<option value="${p.id}">${p.handle} · ${p.niche}</option>`).join('')}
+        </select>
+      </div>
+      <div style="margin-bottom:14px">
+        <label class="form-label">Message du rappel</label>
+        <input id="reminderMessage" class="form-input" value="Pas de réponse — pense à relancer 👋" placeholder="Ton message de rappel...">
+      </div>
+      <div style="margin-bottom:20px">
+        <label class="form-label">Délai</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          ${[
+            { label: '30 min', ms: 30*60*1000 },
+            { label: '1 heure', ms: 60*60*1000, sel: true },
+            { label: '3 heures', ms: 3*60*60*1000 },
+            { label: '24 heures', ms: 24*60*60*1000 },
+          ].map(d => `
+            <button onclick="selectReminderDelay(this,${d.ms})" data-ms="${d.ms}" class="plat-pick-btn${d.sel?' sel':''}">
+              ${d.label}
+            </button>`).join('')}
+        </div>
+        <input type="hidden" id="reminderDelayMs" value="${60*60*1000}">
+      </div>
+      <div style="display:flex;gap:10px">
+        <button onclick="saveNewReminder()" class="btn btn-primary" style="flex:1">Créer le rappel</button>
+        <button onclick="document.getElementById('newReminderModal').remove()" class="btn btn-ghost">Annuler</button>
+      </div>
+    </div>`;
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
+
+function selectReminderDelay(el, ms) {
+  document.querySelectorAll('#newReminderModal .plat-pick-btn').forEach(b => b.classList.remove('sel'));
+  el.classList.add('sel');
+  document.getElementById('reminderDelayMs').value = ms;
+}
+
+function saveNewReminder() {
+  const prospectId = document.getElementById('reminderProspect').value;
+  const message = document.getElementById('reminderMessage').value.trim();
+  const delayMs = parseInt(document.getElementById('reminderDelayMs').value);
+  if (!prospectId) { showToast('Sélectionne un prospect', 'error'); return; }
+  if (!message) { showToast('Entre un message', 'error'); return; }
+  const p = DATA.find(x => x.id === prospectId);
+  if (!p) return;
+
+  const reminders = getReminders();
+  reminders.push({
+    id: genReminderId(),
+    prospectId: p.id,
+    handle: p.handle,
+    niche: p.niche || '',
+    platform: p.platform || 'ig',
+    type: 'manual',
+    message,
+    dueAt: Date.now() + delayMs,
+    createdAt: Date.now(),
+    dismissed: false,
+    triggered: false,
+  });
+  saveReminders(reminders);
+  updateRemindersBadge();
+  document.getElementById('newReminderModal').remove();
+  renderReminders();
+  showToast(`Rappel créé pour ${p.handle} ✓`, 'success');
+}
+
+/* ─── INTÉGRATION DANS LE PANEL NOTIF ─── */
+// Override de _renderNotifPanel pour inclure les rappels
+const _originalRenderNotifPanel = _renderNotifPanel;
+function _renderNotifPanel() {
+  const list = document.getElementById('notifList');
+  const seen = getSeenNotifs();
+  const dueReminders = getDueReminders();
+
+  const CAT_LABELS = {
+    paiement:'💳 Paiement', compte:'🔐 Compte', bug:'🐛 Bug',
+    fonctionnalite:'✨ Fonctionnalité', upgrade:'⬆️ Upgrade', autre:'💬 Autre'
+  };
+
+  let html = '';
+
+  // Rappels dus en premier
+  if (dueReminders.length > 0) {
+    html += dueReminders.map(r => `
+      <div style="padding:12px 16px;border-bottom:1px solid #e2e4ec;background:rgba(232,68,90,0.04);display:flex;gap:10px;align-items:flex-start">
+        <div style="font-size:18px;flex-shrink:0">🔔</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:700;margin-bottom:2px;display:flex;align-items:center;gap:6px">
+            Rappel
+            <span style="color:#e8445a;font-size:9px;font-weight:700;background:rgba(232,68,90,0.1);padding:1px 5px;border-radius:4px">MAINTENANT</span>
+          </div>
+          <div style="font-size:11px;color:#0f1117;margin-bottom:4px;font-weight:500">${r.message}</div>
+          <div style="display:flex;gap:6px;margin-top:6px">
+            <button onclick="dismissReminder('${r.id}')" style="font-size:10px;background:rgba(5,150,105,0.08);color:#059669;border:1px solid rgba(5,150,105,0.25);padding:3px 8px;border-radius:6px;cursor:pointer;font-family:'Inter',sans-serif;font-weight:700">✓ Traité</button>
+            <button onclick="snoozeReminder('${r.id}')" style="font-size:10px;background:#f0f1f6;color:#6b7280;border:1px solid #e2e4ec;padding:3px 8px;border-radius:6px;cursor:pointer;font-family:'Inter',sans-serif;font-weight:700">⏰ +30min</button>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+
+  // Tickets Supabase résolus
+  if (_allNotifTickets.length > 0) {
+    html += _allNotifTickets.map(t => {
+      const isNew = !seen.has(t.id);
+      const date = new Date(t.created_at).toLocaleDateString('fr-FR', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
+      return `<div onclick="markNotifRead('${t.id}',this)" style="padding:12px 16px;border-bottom:1px solid #e2e4ec;display:flex;gap:10px;align-items:flex-start;cursor:pointer;transition:background 0.15s;${isNew ? 'background:rgba(232,68,90,0.05)' : ''}" onmouseover="this.style.background='rgba(79,70,229,0.05)'" onmouseout="this.style.background='${isNew ? 'rgba(232,68,90,0.05)' : ''}'">
+        <div style="font-size:18px;flex-shrink:0">${isNew ? '🔴' : '✅'}</div>
+        <div style="flex:1">
+          <div style="font-size:12px;font-weight:700;margin-bottom:2px">Ticket résolu${isNew ? ' <span style="color:#e8445a;font-size:9px;font-weight:700;background:rgba(232,68,90,0.1);padding:1px 5px;border-radius:4px;">NEW</span>' : ''}</div>
+          <div style="font-size:11px;color:#6b6b88">${CAT_LABELS[t.category] || t.category}</div>
+          <div style="font-size:10px;color:#3a3a4a;font-family:'Space Mono',monospace;margin-top:3px">${date}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  if (!html) {
+    list.innerHTML = `<div style="padding:20px;text-align:center;font-size:12px;color:#6b6b88">Aucune notification</div>`;
+    return;
+  }
+
+  list.innerHTML = html;
+
+  // Bouton tout marquer lu si tickets non lus
+  if (_allNotifTickets.some(t => !seen.has(t.id))) {
+    list.innerHTML += `<div style="padding:10px 16px;text-align:center;">
+      <button onclick="markAllNotifsRead()" style="font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;font-family:'Inter',sans-serif;">Tout marquer comme lu</button>
+    </div>`;
+  }
+}
+
+// Override _renderNotifBadge pour inclure les rappels
+const _originalRenderNotifBadge = _renderNotifBadge;
+function _renderNotifBadge() {
+  const seen = getSeenNotifs();
+  const unreadTickets = _allNotifTickets.filter(t => !seen.has(t.id)).length;
+  const dueReminders = getDueReminders().length;
+  const total = unreadTickets + dueReminders;
+  const count = document.getElementById('notifCount');
+  if (total > 0) {
+    count.textContent = total;
+    count.style.cssText = 'display:flex;position:absolute;top:-5px;right:-5px;background:#e8445a;color:white;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:50%;padding:0 3px;justify-content:center;align-items:center';
+  } else {
+    count.style.display = 'none';
+  }
+}
+
+/* Init rappels au chargement */
+function initReminders() {
+  updateRemindersBadge();
+  checkDueReminders();
+  // Vérifier toutes les minutes
+  setInterval(() => {
+    checkDueReminders();
+    updateRemindersBadge();
+  }, 60 * 1000);
 }
 
 function showComingSoon(feature) {
