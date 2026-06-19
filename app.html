@@ -233,12 +233,12 @@
       <div class="stat-sub">seuil actuel : 60%</div>
     </div>
     <div class="stat-card pink">
-      <div class="stat-label">Déjà sur OF</div>
+      <div class="stat-label">Sur plateforme privée</div>
       <div class="stat-value" style="color:var(--pink)">38</div>
       <div class="stat-sub">15% des profils</div>
     </div>
     <div class="stat-card green">
-      <div class="stat-label">À convertir</div>
+      <div class="stat-label">À contacter</div>
       <div class="stat-value" style="color:var(--green)">209</div>
       <div class="stat-sub">haut potentiel</div>
     </div>
@@ -251,10 +251,9 @@
     </div>
     <div class="filter-tabs">
       <button class="filter-tab active" onclick="setTab(this,'all')">Tous</button>
-      <button class="filter-tab" onclick="setTab(this,'of')">Déjà OF</button>
-      <button class="filter-tab" onclick="setTab(this,'convert')">À convertir</button>
+      <button class="filter-tab" onclick="setTab(this,'of')">Sur privé</button>
+      <button class="filter-tab" onclick="setTab(this,'convert')">À contacter</button>
       <button class="filter-tab" onclick="setTab(this,'saved')">Sauvegardés</button>
-      <button class="filter-tab" onclick="setTab(this,'pipeline')">Pipeline</button>
     </div>
     <div class="filter-platform">
       <button class="plat-btn" onclick="togglePlatform(this,'ig')">IG</button>
@@ -763,7 +762,7 @@ function renderProspects() {
           <span class="card-stat">${fmt(p.followers)} followers</span>
           <span class="card-stat" style="color:var(--yellow)">${p.engagement}% eng.</span>
         </div>
-        ${p.hasOf?'<span class="badge badge-of">OF actif</span>':'<span class="badge badge-convert">À convertir</span>'}
+        ${p.hasOf?'<span class="badge badge-of">Sur privé</span>':'<span class="badge badge-convert">À contacter</span>'}
       </div>`;
     }).join('');
     return;
@@ -885,7 +884,7 @@ function openProspect(id) {
       <div>
         <div class="modal-handle">${p.handle}</div>
         <div class="modal-meta">${p.name} · ${p.niche} · <span class="platform-dot dot-${p.platform}" style="margin-left:4px"></span>${p.platform.toUpperCase()}</div>
-        <div style="margin-top:8px">${p.hasOf?'<span class="badge badge-of">OF actif</span>':'<span class="badge badge-convert">À convertir</span>'}</div>
+        <div style="margin-top:8px">${p.hasOf?'<span class="badge badge-of">Sur privé</span>':'<span class="badge badge-convert">À contacter</span>'}</div>
       </div>
     </div>
     <div class="modal-bio">${p.bio || '<em style="color:var(--muted)">Pas de bio disponible</em>'}</div>
@@ -1222,8 +1221,8 @@ function statusBadge(p) {
   if (s === 'en discussion') return '<span class="badge" style="background:rgba(124,92,252,0.12);color:#7c5cfc;border:1px solid rgba(124,92,252,0.3)">En discussion</span>';
   if (s === 'signée') return '<span class="badge" style="background:rgba(45,252,142,0.12);color:#2dfc8e;border:1px solid rgba(45,252,142,0.3)">✓ Signée</span>';
   if (s === 'refus') return '<span class="badge" style="background:rgba(252,92,124,0.12);color:#fc5c7c;border:1px solid rgba(252,92,124,0.3)">Refus</span>';
-  if (p.hasOf) return '<span class="badge badge-of">OF actif</span>';
-  return '<span class="badge badge-convert">À convertir</span>';
+  if (p.hasOf) return '<span class="badge badge-of">Sur privé</span>';
+  return '<span class="badge badge-convert">À contacter</span>';
 }
 
 /* ─── NOTES ─── */
