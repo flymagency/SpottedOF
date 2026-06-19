@@ -282,9 +282,93 @@ export default {
         return json({ emails: filtered, found: filtered.length > 0, source: filtered.length > 0 ? 'bio/linktree' : null });
     }
 
+    // ─── APIFY HELPERS ───────────────────────────────────────────────────────────
+
+    // Retourne { actorId, input } selon la plateforme
+    function buildApifyRun(platform, handle, resultsLimit) {
+      if (platform === 'ig' || platform === 'instagram') {
+        return {
+          actorId: 'apify~instagram-scraper',
+          input: {
+            directUrls: [`https://www.instagram.com/${handle}/`],
+            resultsType: 'following',
+            resultsLimit,
+            proxy: { useApifyProxy: true },
+          },
+        };
+      }
+      if (platform === 'tt' || platform === 'tiktok') {
+        return {
+          actorId: 'clockworks~tiktok-scraper',
+          input: {
+            profiles: [`https://www.tiktok.com/@${handle}`],
+            scrapeType: 'following',
+            resultsPerPage: resultsLimit,
+            shouldDownloadVideos: false,
+            shouldDownloadCovers: false,
+            proxy: { useApifyProxy: true },
+          },
+        };
+      }
+      if (platform === 'th' || platform === 'threads') {
+        return {
+          actorId: 'apify~threads-scraper',
+          input: {
+            username: handle,
+            scrapeType: 'following',
+            resultsLimit,
+            proxy: { useApifyProxy: true },
+          },
+        };
+      }
+      return null;
+    }
+
+    // Normalise un item Apify brut → format interne, selon la plateforme
+    function normalizeApifyItem(item, platform) {
+      if (platform === 'ig' || platform === 'instagram') {
+        return {
+          username: item.username || item.ownerUsername || '',
+          fullName: item.fullName || item.name || '',
+          biography: item.biography || item.bio || '',
+          followersCount: item.followersCount || 0,
+          followingCount: item.followingCount || 0,
+          engagementRate: item.engagementRate || 0,
+          platform: 'ig',
+          userId: item.id || item.userId || '',
+        };
+      }
+      if (platform === 'tt' || platform === 'tiktok') {
+        // clockworks~tiktok-scraper : profils dans item ou item.authorMeta
+        const a = item.authorMeta || item;
+        return {
+          username: a.name || a.uniqueId || item.uniqueId || '',
+          fullName: a.nickName || a.nickname || '',
+          biography: a.signature || item.signature || '',
+          followersCount: a.fans || a.followerCount || item.stats?.followerCount || 0,
+          followingCount: a.following || item.stats?.followingCount || 0,
+          engagementRate: 0,
+          platform: 'tt',
+          userId: a.id || item.id || '',
+        };
+      }
+      if (platform === 'th' || platform === 'threads') {
+        return {
+          username: item.username || item.handle || '',
+          fullName: item.name || item.fullName || '',
+          biography: item.biography || item.bio || item.description || '',
+          followersCount: item.followersCount || item.followers || 0,
+          followingCount: item.followingCount || item.following || 0,
+          engagementRate: 0,
+          platform: 'th',
+          userId: item.id || item.userId || '',
+        };
+      }
+      return null;
+    }
+
     // POST /scan-similar
     // Body: { handle, platform, results_limit, min_score }
-    // Lance un run Apify (Instagram Scraper) pour trouver des profils similaires
     if (request.method === 'POST' && path === '/scan-similar') {
       let body;
       try { body = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
@@ -292,33 +376,22 @@ export default {
       const handle = (body.handle || '').replace('@', '').trim();
       if (!handle) return json({ error: 'handle requis' }, 400);
 
-      const platform = (body.platform || 'instagram').toLowerCase();
+      const platform = (body.platform || 'ig').toLowerCase();
       const resultsLimit = Math.min(body.results_limit || 100, 500);
       const minScore = body.min_score || 50;
-
-      // Pour l'instant on supporte Instagram via Apify
-      if (platform !== 'instagram' && platform !== 'ig') {
-        return json({ error: 'Seul Instagram est supporté via Apify pour l\'instant' }, 400);
-      }
 
       const APIFY_TOKEN = env.APIFY_TOKEN;
       if (!APIFY_TOKEN) return json({ error: 'APIFY_TOKEN non configuré' }, 500);
 
-      // Lancer un run Apify — Instagram Scraper (apify~instagram-scraper)
-      // On scrape les "following" du compte de référence = créatrices similaires
-      const actorInput = {
-        directUrls: [`https://www.instagram.com/${handle}/`],
-        resultsType: 'following',
-        resultsLimit: resultsLimit,
-        proxy: { useApifyProxy: true },
-      };
+      const run = buildApifyRun(platform, handle, resultsLimit);
+      if (!run) return json({ error: `Plateforme non supportée : ${platform}` }, 400);
 
       const runRes = await fetch(
-        `https://api.apify.com/v2/acts/apify~instagram-scraper/runs?token=${APIFY_TOKEN}`,
+        `https://api.apify.com/v2/acts/${run.actorId}/runs?token=${APIFY_TOKEN}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(actorInput),
+          body: JSON.stringify(run.input),
         }
       );
 
@@ -329,37 +402,33 @@ export default {
 
       const runData = await runRes.json();
       const runId = runData.data?.id;
-      const datasetId = runData.data?.defaultDatasetId;
 
       if (!runId) return json({ error: 'Apify: run ID manquant', raw: runData }, 502);
 
       return json({
         success: true,
         run_id: runId,
-        dataset_id: datasetId,
         handle,
+        platform,
         min_score: minScore,
         status: 'RUNNING',
-        message: `Scan lancé pour @${handle} — ${resultsLimit} profils max`,
+        message: `Scan ${platform.toUpperCase()} lancé pour @${handle} — ${resultsLimit} profils max`,
       });
     }
 
-    // GET /scan-poll?run_id=xxx&min_score=50&handle=xxx
-    // Vérifie le statut du run Apify ; si terminé, score + sauvegarde
+    // GET /scan-poll?run_id=xxx&min_score=50&handle=xxx&platform=ig
     if (request.method === 'GET' && path === '/scan-poll') {
       const runId = url.searchParams.get('run_id');
       const minScore = parseInt(url.searchParams.get('min_score') || '50');
       const handle = url.searchParams.get('handle') || '';
+      const platform = url.searchParams.get('platform') || 'ig';
       if (!runId) return json({ error: 'run_id requis' }, 400);
 
       const APIFY_TOKEN = env.APIFY_TOKEN;
 
-      // Vérifier le statut du run
-      const statusRes = await fetch(
-        `https://api.apify.com/v2/actor-runs/${runId}?token=${APIFY_TOKEN}`
-      );
+      const statusRes = await fetch(`https://api.apify.com/v2/actor-runs/${runId}?token=${APIFY_TOKEN}`);
       const statusData = await statusRes.json();
-      const status = statusData.data?.status; // RUNNING, SUCCEEDED, FAILED, etc.
+      const status = statusData.data?.status;
       const datasetId = statusData.data?.defaultDatasetId;
 
       if (status === 'RUNNING' || status === 'READY' || status === 'ABORTING') {
@@ -370,28 +439,19 @@ export default {
         return json({ status, done: true, error: 'Run Apify échoué ou annulé', run_id: runId });
       }
 
-      // Run terminé — récupérer les items du dataset
       const itemsRes = await fetch(
         `https://api.apify.com/v2/datasets/${datasetId}/items?token=${APIFY_TOKEN}&limit=500`
       );
       const items = await itemsRes.json();
 
       if (!Array.isArray(items) || items.length === 0) {
-        return json({ status: 'SUCCEEDED', done: true, saved: 0, message: 'Aucun profil trouvé' });
+        return json({ status: 'SUCCEEDED', done: true, saved: 0, total_found: 0, scored: 0, filtered_out: 0, message: 'Aucun profil trouvé' });
       }
 
-      // Normaliser les champs Apify → format interne
-      const profiles = items.map(p => ({
-        username: p.username || p.ownerUsername || '',
-        fullName: p.fullName || p.name || '',
-        biography: p.biography || p.bio || '',
-        followersCount: p.followersCount || p.followersCount || 0,
-        followingCount: p.followingCount || 0,
-        engagementRate: p.engagementRate || 0,
-        platform: 'ig',
-        niche: p.niche || '',
-        userId: p.id || p.userId || '',
-      }));
+      // Normaliser selon la plateforme
+      const profiles = items
+        .map(item => normalizeApifyItem(item, platform))
+        .filter(p => p && p.username);
 
       // Scorer et filtrer
       const scored = profiles
@@ -399,9 +459,8 @@ export default {
         .filter(p => p.score >= minScore)
         .sort((a, b) => b.score - a.score);
 
-      // Sauvegarder dans Airtable
       const saved = scored.length > 0
-        ? await saveProspects(env, scored, handle ? `@${handle}` : 'apify-scan')
+        ? await saveProspects(env, scored, handle ? `@${handle} (${platform})` : `apify-${platform}`)
         : [];
 
       return json({

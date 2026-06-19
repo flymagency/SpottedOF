@@ -321,7 +321,15 @@
     <div class="modal-body">
       <div class="scan-form" id="scanFormFields">
         <div>
-          <label class="form-label">Compte de référence Instagram</label>
+          <label class="form-label">Plateforme</label>
+          <div class="platform-pick" id="scanPlatformPick">
+            <button class="plat-pick-btn sel" data-platform="ig" onclick="pickScanPlatform(this)">📸 Instagram</button>
+            <button class="plat-pick-btn" data-platform="tt" onclick="pickScanPlatform(this)">🎵 TikTok</button>
+            <button class="plat-pick-btn" data-platform="th" onclick="pickScanPlatform(this)">🧵 Threads</button>
+          </div>
+        </div>
+        <div>
+          <label class="form-label" id="refHandleLabel">Compte de référence Instagram</label>
           <input class="form-input" id="refHandle" placeholder="@handle_exemple">
           <div style="font-size:11px;color:var(--muted);margin-top:5px;">On scrape les comptes que ce profil suit → créatrices similaires</div>
         </div>
@@ -727,11 +735,21 @@ async function importCSV(input) {
   }
 }
 
+const PLATFORM_LABELS = { ig: 'Instagram', tt: 'TikTok', th: 'Threads' };
+
 function openScanModal() {
   resetScanModal();
   document.getElementById('refHandle').value = '';
   document.getElementById('scanModal').classList.add('open');
 }
+
+function pickScanPlatform(el) {
+  document.querySelectorAll('#scanPlatformPick .plat-pick-btn').forEach(b => b.classList.remove('sel'));
+  el.classList.add('sel');
+  const plat = el.dataset.platform;
+  document.getElementById('refHandleLabel').textContent = `Compte de référence ${PLATFORM_LABELS[plat] || ''}`;
+}
+
 function pickPlatform(el) { document.querySelectorAll('.plat-pick-btn').forEach(b=>b.classList.remove('sel')); el.classList.add('sel'); }
 
 let _scanPollInterval = null;
@@ -742,20 +760,23 @@ async function launchScan() {
 
   const resultsLimit = parseInt(document.getElementById('countInput').value);
   const minScore = parseInt(document.getElementById('scoreInput').value);
+  const platformBtn = document.querySelector('#scanPlatformPick .plat-pick-btn.sel');
+  const platform = platformBtn ? platformBtn.dataset.platform : 'ig';
+  const platformLabel = PLATFORM_LABELS[platform] || platform;
 
   // Passer en mode "loading"
   document.getElementById('scanFormFields').style.display = 'none';
   document.getElementById('scanProgress').style.display = 'block';
   document.getElementById('scanResult').style.display = 'none';
   document.getElementById('scanLaunchBtn').disabled = true;
-  document.getElementById('scanProgressLabel').textContent = `Lancement du scan pour @${h}…`;
+  document.getElementById('scanProgressLabel').textContent = `Lancement du scan ${platformLabel} pour @${h}…`;
 
   try {
     // Lancer le run Apify
     const startRes = await fetch(`${WORKER}/scan-similar`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ handle: h, platform: 'instagram', results_limit: resultsLimit, min_score: minScore }),
+      body: JSON.stringify({ handle: h, platform, results_limit: resultsLimit, min_score: minScore }),
     });
     const startData = await startRes.json();
 
@@ -764,13 +785,13 @@ async function launchScan() {
     }
 
     const runId = startData.run_id;
-    document.getElementById('scanProgressLabel').textContent = `Scan en cours pour @${h}…`;
-    document.getElementById('scanProgressSub').textContent = `Run ID: ${runId.slice(0,8)}… — 1-2 min`;
+    document.getElementById('scanProgressLabel').textContent = `Scan ${platformLabel} en cours pour @${h}…`;
+    document.getElementById('scanProgressSub').textContent = `Run ID: ${runId.slice(0,8)}… — 1-3 min selon la plateforme`;
 
     // Polling toutes les 5 secondes
     _scanPollInterval = setInterval(async () => {
       try {
-        const pollRes = await fetch(`${WORKER}/scan-poll?run_id=${runId}&min_score=${minScore}&handle=${h}`);
+        const pollRes = await fetch(`${WORKER}/scan-poll?run_id=${runId}&min_score=${minScore}&handle=${h}&platform=${platform}`);
         const pollData = await pollRes.json();
 
         if (!pollData.done) {
