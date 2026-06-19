@@ -290,10 +290,10 @@ export default {
         return {
           actorId: 'apify~instagram-scraper',
           input: {
+            // Format accepté par l'actor officiel Apify Instagram Scraper
             directUrls: [`https://www.instagram.com/${handle}/`],
             resultsType: 'following',
             resultsLimit,
-            proxy: { useApifyProxy: true },
           },
         };
       }
@@ -306,7 +306,6 @@ export default {
             resultsPerPage: resultsLimit,
             shouldDownloadVideos: false,
             shouldDownloadCovers: false,
-            proxy: { useApifyProxy: true },
           },
         };
       }
@@ -317,7 +316,6 @@ export default {
             username: handle,
             scrapeType: 'following',
             resultsLimit,
-            proxy: { useApifyProxy: true },
           },
         };
       }
@@ -396,8 +394,10 @@ export default {
       );
 
       if (!runRes.ok) {
-        const err = await runRes.text();
-        return json({ error: 'Apify error', details: err }, 502);
+        let errDetails;
+        try { errDetails = await runRes.json(); } catch { errDetails = await runRes.text(); }
+        const msg = errDetails?.error?.message || errDetails?.message || JSON.stringify(errDetails);
+        return json({ error: `Apify error (${runRes.status}): ${msg}`, details: errDetails }, 502);
       }
 
       const runData = await runRes.json();

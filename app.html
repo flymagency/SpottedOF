@@ -783,6 +783,9 @@ async function launchScan() {
     if (!startData.success) {
       throw new Error(startData.error || 'Erreur démarrage scan');
     }
+    if (startData.error) {
+      throw new Error(startData.error);
+    }
 
     const runId = startData.run_id;
     document.getElementById('scanProgressLabel').textContent = `Scan ${platformLabel} en cours pour @${h}…`;
@@ -840,7 +843,7 @@ function _showScanError(msg) {
   document.getElementById('scanResult').innerHTML = `
     <div style="font-size:36px;margin-bottom:12px;">❌</div>
     <div style="font-size:14px;font-weight:700;color:var(--accent2);margin-bottom:8px;">Erreur scan</div>
-    <div style="font-size:12px;color:var(--muted);">${msg}</div>
+    <div style="font-size:12px;color:var(--muted);word-break:break-word;max-height:120px;overflow-y:auto;">${msg}</div>
     <button class="btn btn-ghost" style="margin-top:14px;" onclick="resetScanModal()">Réessayer</button>
   `;
   document.getElementById('scanFooter').style.display = 'none';
