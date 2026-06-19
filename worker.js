@@ -285,25 +285,26 @@ export default {
     // ─── APIFY HELPERS ───────────────────────────────────────────────────────────
 
     // Retourne { actorId, input } selon la plateforme
-    function buildApifyRun(platform, handle, resultsLimit) {
+    // `query` = hashtag (sans #) ou mot-clé de niche
+    function buildApifyRun(platform, query, resultsLimit) {
       if (platform === 'ig' || platform === 'instagram') {
+        // On scrape le hashtag → récupère des posts → extrait les auteurs uniques
         return {
           actorId: 'apify~instagram-scraper',
           input: {
-            // Format accepté par l'actor officiel Apify Instagram Scraper
-            directUrls: [`https://www.instagram.com/${handle}/`],
-            resultsType: 'following',
-            resultsLimit,
+            directUrls: [`https://www.instagram.com/explore/tags/${encodeURIComponent(query)}/`],
+            resultsType: 'posts',
+            resultsLimit: resultsLimit * 3, // on prend plus de posts pour avoir assez d'auteurs uniques
           },
         };
       }
       if (platform === 'tt' || platform === 'tiktok') {
+        // Hashtag TikTok
         return {
           actorId: 'clockworks~tiktok-scraper',
           input: {
-            profiles: [`https://www.tiktok.com/@${handle}`],
-            scrapeType: 'following',
-            resultsPerPage: resultsLimit,
+            hashtags: [query],
+            resultsPerPage: resultsLimit * 3,
             shouldDownloadVideos: false,
             shouldDownloadCovers: false,
           },
@@ -313,9 +314,8 @@ export default {
         return {
           actorId: 'apify~threads-scraper',
           input: {
-            username: handle,
-            scrapeType: 'following',
-            resultsLimit,
+            queries: [query],
+            resultsLimit: resultsLimit * 3,
           },
         };
       }
@@ -325,16 +325,33 @@ export default {
     // Normalise un item Apify brut → format interne, selon la plateforme
     function normalizeApifyItem(item, platform) {
       if (platform === 'ig' || platform === 'instagram') {
-        return {
-          username: item.username || item.ownerUsername || '',
-          fullName: item.fullName || item.name || '',
-          biography: item.biography || item.bio || '',
-          followersCount: item.followersCount || 0,
-          followingCount: item.followingCount || 0,
-          engagementRate: item.engagementRate || 0,
+        // Les items sont des posts → on extrait les infos de l'auteur
+        const owner = item.ownerFullName ? {
+          username: item.ownerUsername || '',
+          fullName: item.ownerFullName || '',
+          biography: '',
+          followersCount: item.videoViewCount || 0, // approximation si pas de followersCount
+          followingCount: 0,
+          engagementRate: item.likesCount && item.videoViewCount
+            ? Math.round((item.likesCount / item.videoViewCount) * 100) : 0,
           platform: 'ig',
-          userId: item.id || item.userId || '',
-        };
+          userId: item.ownerId || '',
+        } : null;
+
+        // Parfois l'item EST un profil (resultsType: 'details')
+        if (!owner && item.username) {
+          return {
+            username: item.username || '',
+            fullName: item.fullName || '',
+            biography: item.biography || '',
+            followersCount: item.followersCount || 0,
+            followingCount: item.followingCount || 0,
+            engagementRate: item.engagementRate || 0,
+            platform: 'ig',
+            userId: item.id || '',
+          };
+        }
+        return owner;
       }
       if (platform === 'tt' || platform === 'tiktok') {
         // clockworks~tiktok-scraper : profils dans item ou item.authorMeta
@@ -449,9 +466,17 @@ export default {
       }
 
       // Normaliser selon la plateforme
-      const profiles = items
+      const rawProfiles = items
         .map(item => normalizeApifyItem(item, platform))
         .filter(p => p && p.username);
+
+      // Dédupliquer par username (plusieurs posts du même auteur)
+      const seen = new Set();
+      const profiles = rawProfiles.filter(p => {
+        if (seen.has(p.username)) return false;
+        seen.add(p.username);
+        return true;
+      });
 
       // Scorer et filtrer
       const scored = profiles
@@ -459,8 +484,9 @@ export default {
         .filter(p => p.score >= minScore)
         .sort((a, b) => b.score - a.score);
 
+      const scanSource = handle ? `#${handle} (${platform})` : `apify-${platform}`;
       const saved = scored.length > 0
-        ? await saveProspects(env, scored, handle ? `@${handle} (${platform})` : `apify-${platform}`)
+        ? await saveProspects(env, scored, scanSource)
         : [];
 
       return json({

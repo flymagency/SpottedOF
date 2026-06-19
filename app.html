@@ -329,9 +329,12 @@
           </div>
         </div>
         <div>
-          <label class="form-label" id="refHandleLabel">Compte de référence Instagram</label>
-          <input class="form-input" id="refHandle" placeholder="@handle_exemple">
-          <div style="font-size:11px;color:var(--muted);margin-top:5px;">On scrape les comptes que ce profil suit → créatrices similaires</div>
+          <label class="form-label" id="refHandleLabel">Hashtag ou niche à explorer</label>
+          <div style="position:relative;">
+            <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px;">#</span>
+            <input class="form-input" id="refHandle" placeholder="fitness, cosplay, dance, beauty…" style="padding-left:26px;">
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:5px;">On scrape les créatrices qui postent sous ce hashtag</div>
         </div>
         <div>
           <label class="form-label">Nombre de profils à analyser</label>
@@ -746,8 +749,6 @@ function openScanModal() {
 function pickScanPlatform(el) {
   document.querySelectorAll('#scanPlatformPick .plat-pick-btn').forEach(b => b.classList.remove('sel'));
   el.classList.add('sel');
-  const plat = el.dataset.platform;
-  document.getElementById('refHandleLabel').textContent = `Compte de référence ${PLATFORM_LABELS[plat] || ''}`;
 }
 
 function pickPlatform(el) { document.querySelectorAll('.plat-pick-btn').forEach(b=>b.classList.remove('sel')); el.classList.add('sel'); }
@@ -755,7 +756,7 @@ function pickPlatform(el) { document.querySelectorAll('.plat-pick-btn').forEach(
 let _scanPollInterval = null;
 
 async function launchScan() {
-  const h = document.getElementById('refHandle').value.trim().replace('@','');
+  const h = document.getElementById('refHandle').value.trim().replace(/^[#@]+/, '').replace(/\s+/g,'');
   if (!h) { showToast('Entrez un handle de référence','error'); return; }
 
   const resultsLimit = parseInt(document.getElementById('countInput').value);
@@ -769,7 +770,7 @@ async function launchScan() {
   document.getElementById('scanProgress').style.display = 'block';
   document.getElementById('scanResult').style.display = 'none';
   document.getElementById('scanLaunchBtn').disabled = true;
-  document.getElementById('scanProgressLabel').textContent = `Lancement du scan ${platformLabel} pour @${h}…`;
+  document.getElementById('scanProgressLabel').textContent = `Scan ${platformLabel} — #${h} en cours…`;
 
   try {
     // Lancer le run Apify
@@ -788,7 +789,7 @@ async function launchScan() {
     }
 
     const runId = startData.run_id;
-    document.getElementById('scanProgressLabel').textContent = `Scan ${platformLabel} en cours pour @${h}…`;
+    document.getElementById('scanProgressLabel').textContent = `Scan ${platformLabel} — #${h} en cours…`;
     document.getElementById('scanProgressSub').textContent = `Run ID: ${runId.slice(0,8)}… — 1-3 min selon la plateforme`;
 
     // Polling toutes les 5 secondes
@@ -824,7 +825,7 @@ async function launchScan() {
           <button class="btn btn-primary" style="margin-top:18px;" onclick="closeModal('scanModal');loadProspects();">Voir les prospects</button>
         `;
         document.getElementById('scanFooter').style.display = 'none';
-        showToast(`${pollData.saved} prospects importés depuis @${h} 🎯`, 'success');
+        showToast(`${pollData.saved} prospects importés depuis #${h} 🎯`, 'success');
 
       } catch(e) {
         clearInterval(_scanPollInterval);
