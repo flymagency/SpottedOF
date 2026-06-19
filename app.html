@@ -303,10 +303,9 @@
       Rappels
       <span class="nav-badge" id="reminders-badge" style="display:none"></span>
     </button>
-    <button class="nav-item" onclick="showComingSoon('Gestion équipe')">
+    <button class="nav-item" id="nav-team" onclick="navTo('team')">
       <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
       Équipe
-      <span class="nav-soon">Bientôt</span>
     </button>
     <button class="nav-item" onclick="showComingSoon('Détection doublons')">
       <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
@@ -368,6 +367,11 @@
 
   <!-- CONTENT -->
   <div class="content">
+
+  <!-- ═══ VUE ÉQUIPE ═══ -->
+  <div id="view-team" style="display:none">
+    <div id="team-body"></div>
+  </div>
 
   <!-- ═══ VUE RÉPONSES ═══ -->
   <div id="view-replies" style="display:none">
@@ -815,6 +819,7 @@ sb.auth.getSession().then(async ({ data }) => {
   loadReplies();
   initReminders();
   startGmailPolling();
+  initTeam().then(() => checkInviteToken());
 });
 
 // Google Identity Services (Gmail OAuth)
@@ -1386,6 +1391,7 @@ async function launchScan() {
         `;
         document.getElementById('scanFooter').style.display = 'none';
         showToast(`${pollData.saved} prospects importés depuis @${h} 🎯`, 'success');
+        logTeamActivity('scan', `@${h}`, '', { saved: pollData.saved, platform });
 
       } catch(e) {
         clearInterval(_scanPollInterval);
@@ -1539,9 +1545,11 @@ async function updatePipelineStatus(id, status) {
     if (m) m.remove();
     renderProspects();
     showToast(`Statut mis à jour → ${status}`, 'success');
+    logTeamActivity('status_change', p?.handle || '', id, { status });
 
     // Rappel auto : quand on contacte → rappel dans 1h
     if (p && status === 'contactée') {
+      logTeamActivity('contact', p.handle, id);
       createAutoReminder(p, REMINDER_DELAY_MS);
       showToast(`Rappel créé — on te ping dans 1h pour ${p.handle} 🔔`, 'success');
     }
@@ -2225,9 +2233,10 @@ const NAV_TITLES = {
   performance: 'Performance',
   reminders:   'Rappels',
   replies:     'Réponses',
+  team:        'Équipe',
 };
 const NAV_TAB_MAP = { prospects: 'all', saved: 'saved', private: 'of', contact: 'convert' };
-const SEPARATE_VIEWS = new Set(['blacklist', 'stats', 'performance', 'reminders', 'replies']);
+const SEPARATE_VIEWS = new Set(['blacklist', 'stats', 'performance', 'reminders', 'replies', 'team']);
 
 function navTo(section) {
   // Active state sidebar
@@ -2239,7 +2248,7 @@ function navTo(section) {
   document.getElementById('topbarTitle').textContent = NAV_TITLES[section] || section;
 
   // Show/hide views
-  const allViews = ['prospects', 'blacklist', 'stats', 'performance', 'reminders', 'replies'];
+  const allViews = ['prospects', 'blacklist', 'stats', 'performance', 'reminders', 'replies', 'team'];
   allViews.forEach(v => {
     const el = document.getElementById(`view-${v}`);
     if (el) el.style.display = (v === section || (section === 'all' && v === 'prospects')) ? '' : 'none';
@@ -2253,6 +2262,7 @@ function navTo(section) {
     if (section === 'performance') renderPerformance();
     if (section === 'reminders')   renderReminders();
     if (section === 'replies')     renderReplies();
+    if (section === 'team')        renderTeam();
     return;
   }
 
@@ -3561,6 +3571,403 @@ function initSidebarUser(email, plan) {
 }
 
 // Init — chargement déclenché par auth check ci-dessus
+
+/* ═══════════════════════════════════════════════════════════════
+   ÉQUIPE — Team management
+   ═══════════════════════════════════════════════════════════════ */
+
+let TEAM = null;          // { id, name, owner_id }
+let TEAM_MEMBERS = [];    // [{ id, user_id, email, role, created_at }]
+let TEAM_INVITES = [];    // [{ id, email, role, token, expires_at, accepted_at }]
+let TEAM_ACTIVITY = [];   // [{ id, user_id, user_email, action, prospect_handle, created_at }]
+
+const ROLE_LABELS = { admin: 'Admin', manager: 'Manager', viewer: 'Viewer' };
+const ROLE_COLORS = {
+  admin:   'background:rgba(79,70,229,0.1);color:var(--accent)',
+  manager: 'background:rgba(5,150,105,0.1);color:var(--green)',
+  viewer:  'background:rgba(107,114,128,0.1);color:var(--muted)',
+};
+const ACTION_LABELS = {
+  scan:          '🔍 Scan lancé',
+  contact:       '📤 Prospect contacté',
+  reply:         '💬 Réponse reçue',
+  save:          '⭐ Prospect sauvegardé',
+  blacklist:     '🚫 Prospect blacklisté',
+  status_change: '🔄 Statut modifié',
+  invite_sent:   '✉️ Invitation envoyée',
+  member_joined: '🎉 Membre rejoint',
+};
+
+// ─── INIT ÉQUIPE ─────────────────────────────────────────────────────────────
+
+async function initTeam() {
+  if (!currentUser) return;
+
+  // Chercher si l'utilisateur est owner d'une équipe
+  let { data: owned } = await sb.from('teams').select('*').eq('owner_id', currentUser.id).single();
+
+  if (!owned) {
+    // Chercher si membre d'une équipe
+    const { data: membership } = await sb.from('team_members').select('team_id').eq('user_id', currentUser.id).single();
+    if (membership) {
+      const { data: t } = await sb.from('teams').select('*').eq('id', membership.team_id).single();
+      owned = t;
+    }
+  }
+
+  if (!owned) {
+    // Créer une équipe par défaut pour ce user
+    const email = currentUser.email || '';
+    const name = email.split('@')[0] || 'Mon équipe';
+    const { data: created } = await sb.from('teams').insert({ name, owner_id: currentUser.id }).select().single();
+    owned = created;
+    if (owned) {
+      // Se joindre en tant qu'admin
+      await sb.from('team_members').insert({
+        team_id: owned.id, user_id: currentUser.id, email: currentUser.email, role: 'admin', invited_by: currentUser.id,
+      });
+    }
+  }
+
+  TEAM = owned;
+  await loadTeamData();
+}
+
+async function loadTeamData() {
+  if (!TEAM) return;
+  const [membersRes, invitesRes, activityRes] = await Promise.all([
+    sb.from('team_members').select('*').eq('team_id', TEAM.id).order('created_at'),
+    sb.from('team_invites').select('*').eq('team_id', TEAM.id).order('created_at', { ascending: false }),
+    sb.from('team_activity').select('*').eq('team_id', TEAM.id).order('created_at', { ascending: false }).limit(50),
+  ]);
+  TEAM_MEMBERS  = membersRes.data  || [];
+  TEAM_INVITES  = invitesRes.data  || [];
+  TEAM_ACTIVITY = activityRes.data || [];
+}
+
+// ─── LOG ACTIVITÉ ─────────────────────────────────────────────────────────────
+
+async function logTeamActivity(action, prospectHandle = '', prospectId = '', meta = {}) {
+  if (!TEAM || !currentUser) return;
+  try {
+    await sb.from('team_activity').insert({
+      team_id: TEAM.id,
+      user_id: currentUser.id,
+      user_email: currentUser.email,
+      action,
+      prospect_handle: prospectHandle,
+      prospect_id: prospectId,
+      meta,
+    });
+  } catch(e) {}
+}
+
+// ─── IS OWNER ? ──────────────────────────────────────────────────────────────
+
+function isTeamOwner() {
+  return TEAM && currentUser && TEAM.owner_id === currentUser.id;
+}
+function myTeamRole() {
+  const me = TEAM_MEMBERS.find(m => m.user_id === currentUser?.id);
+  return me?.role || 'viewer';
+}
+function canEdit() { return ['admin', 'manager'].includes(myTeamRole()); }
+
+// ─── INVITATIONS ─────────────────────────────────────────────────────────────
+
+async function sendTeamInvite() {
+  const email = document.getElementById('inviteEmail').value.trim().toLowerCase();
+  const role  = document.getElementById('inviteRole').value;
+  if (!email || !email.includes('@')) { showToast('Email invalide', 'error'); return; }
+  if (!TEAM) { showToast('Équipe non chargée', 'error'); return; }
+
+  // Vérifier si déjà membre
+  if (TEAM_MEMBERS.find(m => m.email.toLowerCase() === email)) {
+    showToast('Cette personne est déjà membre', 'error'); return;
+  }
+
+  const btn = document.getElementById('inviteBtn');
+  btn.disabled = true; btn.textContent = 'Envoi…';
+
+  try {
+    const { data: invite, error } = await sb.from('team_invites').insert({
+      team_id: TEAM.id, email, role, invited_by: currentUser.id,
+    }).select().single();
+
+    if (error) throw error;
+    TEAM_INVITES.unshift(invite);
+
+    const link = `${location.origin}${location.pathname}?invite=${invite.token}`;
+    await navigator.clipboard.writeText(link).catch(() => {});
+
+    document.getElementById('inviteEmail').value = '';
+    showToast(`Lien copié ! Envoie-le à ${email} 📋`, 'success');
+    await logTeamActivity('invite_sent', '', '', { email, role });
+    renderTeam();
+  } catch(e) {
+    showToast('Erreur : ' + e.message, 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Inviter';
+  }
+}
+
+async function copyInviteLink(token) {
+  const link = `${location.origin}${location.pathname}?invite=${token}`;
+  await navigator.clipboard.writeText(link);
+  showToast('Lien copié ! 📋', 'success');
+}
+
+async function revokeInvite(id) {
+  await sb.from('team_invites').delete().eq('id', id);
+  TEAM_INVITES = TEAM_INVITES.filter(i => i.id !== id);
+  showToast('Invitation annulée', 'success');
+  renderTeam();
+}
+
+// ─── ACCEPTER UNE INVITATION (via URL ?invite=token) ─────────────────────────
+
+async function checkInviteToken() {
+  const params = new URLSearchParams(location.search);
+  const token = params.get('invite');
+  if (!token || !currentUser) return;
+
+  // Nettoyer l'URL
+  history.replaceState({}, '', location.pathname);
+
+  const { data: invite } = await sb.from('team_invites').select('*').eq('token', token).single();
+  if (!invite) { showToast('Invitation invalide ou expirée', 'error'); return; }
+  if (invite.accepted_at) { showToast('Cette invitation a déjà été utilisée', 'error'); return; }
+  if (new Date(invite.expires_at) < new Date()) { showToast('Invitation expirée (7 jours max)', 'error'); return; }
+
+  // Rejoindre l'équipe
+  const { error } = await sb.from('team_members').insert({
+    team_id: invite.team_id,
+    user_id: currentUser.id,
+    email: currentUser.email,
+    role: invite.role,
+    invited_by: invite.invited_by,
+  });
+
+  if (error && error.code !== '23505') { // 23505 = already exists
+    showToast('Erreur en rejoignant l\'équipe', 'error'); return;
+  }
+
+  // Marquer l'invitation comme acceptée
+  await sb.from('team_invites').update({ accepted_at: new Date().toISOString() }).eq('id', invite.id);
+  await logTeamActivity('member_joined');
+
+  showToast('Tu as rejoint l\'équipe ! 🎉', 'success');
+  TEAM = null;
+  await initTeam();
+  navTo('team');
+}
+
+// ─── GESTION MEMBRES ─────────────────────────────────────────────────────────
+
+async function changeRole(memberId, newRole) {
+  await sb.from('team_members').update({ role: newRole }).eq('id', memberId);
+  const m = TEAM_MEMBERS.find(x => x.id === memberId);
+  if (m) m.role = newRole;
+  showToast(`Rôle mis à jour → ${ROLE_LABELS[newRole]}`, 'success');
+  renderTeam();
+}
+
+async function removeMember(memberId) {
+  const m = TEAM_MEMBERS.find(x => x.id === memberId);
+  if (!m) return;
+  if (m.user_id === TEAM.owner_id) { showToast('Tu ne peux pas supprimer le propriétaire', 'error'); return; }
+  if (!confirm(`Retirer ${m.email} de l'équipe ?`)) return;
+  await sb.from('team_members').delete().eq('id', memberId);
+  TEAM_MEMBERS = TEAM_MEMBERS.filter(x => x.id !== memberId);
+  showToast(`${m.email} retiré de l'équipe`, 'success');
+  renderTeam();
+}
+
+async function renameTeam() {
+  const name = prompt('Nouveau nom de l\'équipe :', TEAM?.name || '');
+  if (!name || !name.trim()) return;
+  await sb.from('teams').update({ name: name.trim() }).eq('id', TEAM.id);
+  TEAM.name = name.trim();
+  showToast('Équipe renommée ✓', 'success');
+  renderTeam();
+}
+
+// ─── RENDER ──────────────────────────────────────────────────────────────────
+
+async function renderTeam() {
+  const el = document.getElementById('team-body');
+  if (!el) return;
+
+  if (!TEAM) {
+    el.innerHTML = `<div class="analytics-section"><div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-title">Chargement…</div></div></div>`;
+    await initTeam();
+  }
+
+  const isOwner = isTeamOwner();
+  const myRole  = myTeamRole();
+  const pendingInvites = TEAM_INVITES.filter(i => !i.accepted_at);
+  const now = new Date();
+
+  el.innerHTML = `
+
+    <!-- ── Header équipe ── -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px">
+      <div style="display:flex;align-items:center;gap:16px">
+        <div style="width:52px;height:52px;background:linear-gradient(135deg,var(--accent),var(--pink));border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">👥</div>
+        <div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <h2 style="font-size:20px;font-weight:800">${TEAM.name}</h2>
+            ${isOwner ? `<button onclick="renameTeam()" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;padding:2px 6px;border-radius:6px;transition:background 0.15s" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='none'">✏️</button>` : ''}
+          </div>
+          <div style="font-size:13px;color:var(--muted);margin-top:2px">${TEAM_MEMBERS.length} membre${TEAM_MEMBERS.length > 1 ? 's' : ''} · Rôle : <strong style="color:var(--text)">${ROLE_LABELS[myRole]}</strong></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span style="font-size:11px;font-family:'Space Mono',monospace;color:var(--muted)">ID : ${TEAM.id.slice(0,8)}…</span>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start">
+      <div>
+
+        <!-- ── Membres ── -->
+        <div class="analytics-section" style="margin-bottom:20px;padding:0;overflow:hidden">
+          <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+            <div class="analytics-title" style="margin:0">Membres (${TEAM_MEMBERS.length})</div>
+          </div>
+          ${TEAM_MEMBERS.map(m => {
+            const isMe = m.user_id === currentUser?.id;
+            const isOwnerRow = m.user_id === TEAM?.owner_id;
+            const initial = (m.email || '?')[0].toUpperCase();
+            const joinDate = new Date(m.created_at).toLocaleDateString('fr-FR', { day:'2-digit', month:'short', year:'numeric' });
+            return `
+            <div style="display:flex;align-items:center;gap:14px;padding:14px 20px;border-bottom:1px solid var(--border)">
+              <div style="width:38px;height:38px;background:linear-gradient(135deg,var(--accent),var(--pink));border-radius:10px;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:15px;flex-shrink:0">${initial}</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px">
+                  ${m.email}
+                  ${isMe ? '<span style="font-size:10px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-family:\'Space Mono\',monospace">Moi</span>' : ''}
+                  ${isOwnerRow ? '<span style="font-size:10px;background:rgba(217,119,6,0.1);color:var(--yellow);border:1px solid rgba(217,119,6,0.2);border-radius:4px;padding:1px 6px;font-family:\'Space Mono\',monospace">Propriétaire</span>' : ''}
+                </div>
+                <div style="font-size:11px;color:var(--muted);margin-top:2px">Membre depuis ${joinDate}</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                ${isOwner && !isOwnerRow ? `
+                  <select onchange="changeRole('${m.id}',this.value)" style="font-size:11px;font-family:'Space Mono',monospace;border:1px solid var(--border);border-radius:8px;padding:4px 8px;background:var(--surface);cursor:pointer;font-weight:700;${ROLE_COLORS[m.role]}">
+                    <option value="admin"   ${m.role==='admin'   ? 'selected':''}>Admin</option>
+                    <option value="manager" ${m.role==='manager' ? 'selected':''}>Manager</option>
+                    <option value="viewer"  ${m.role==='viewer'  ? 'selected':''}>Viewer</option>
+                  </select>
+                  <button onclick="removeMember('${m.id}')" style="background:none;border:1px solid var(--border);border-radius:8px;padding:4px 8px;cursor:pointer;font-size:11px;color:var(--accent2);transition:all 0.15s" onmouseover="this.style.background='rgba(232,68,90,0.06)'" onmouseout="this.style.background='none'">✕</button>
+                ` : `<span style="font-size:11px;font-family:'Space Mono',monospace;padding:4px 10px;border-radius:8px;font-weight:700;${ROLE_COLORS[m.role]}">${ROLE_LABELS[m.role]}</span>`}
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+
+        <!-- ── Invitations en attente ── -->
+        ${pendingInvites.length > 0 ? `
+        <div class="analytics-section" style="margin-bottom:20px;padding:0;overflow:hidden">
+          <div style="padding:16px 20px;border-bottom:1px solid var(--border)">
+            <div class="analytics-title" style="margin:0">Invitations en attente (${pendingInvites.length})</div>
+          </div>
+          ${pendingInvites.map(inv => {
+            const exp = new Date(inv.expires_at);
+            const daysLeft = Math.max(0, Math.ceil((exp - now) / 86400000));
+            return `
+            <div style="display:flex;align-items:center;gap:14px;padding:12px 20px;border-bottom:1px solid var(--border)">
+              <div style="width:38px;height:38px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">✉️</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:13px;font-weight:600">${inv.email}</div>
+                <div style="font-size:11px;color:var(--muted);margin-top:2px">
+                  <span style="font-family:'Space Mono',monospace;font-size:10px;${ROLE_COLORS[inv.role]};padding:1px 6px;border-radius:4px;font-weight:700">${ROLE_LABELS[inv.role]}</span>
+                  · expire dans ${daysLeft}j
+                </div>
+              </div>
+              <div style="display:flex;gap:6px">
+                <button onclick="copyInviteLink('${inv.token}')" class="btn btn-ghost" style="font-size:11px;padding:5px 10px">📋 Copier lien</button>
+                ${isOwner ? `<button onclick="revokeInvite('${inv.id}')" class="btn btn-ghost" style="font-size:11px;padding:5px 10px;color:var(--accent2)">Annuler</button>` : ''}
+              </div>
+            </div>`;
+          }).join('')}
+        </div>` : ''}
+
+        <!-- ── Activité récente ── -->
+        <div class="analytics-section" style="padding:0;overflow:hidden">
+          <div style="padding:16px 20px;border-bottom:1px solid var(--border)">
+            <div class="analytics-title" style="margin:0">Activité récente</div>
+          </div>
+          ${TEAM_ACTIVITY.length === 0 ? `
+            <div style="padding:32px;text-align:center;color:var(--muted);font-size:13px">Aucune activité pour l'instant</div>
+          ` : TEAM_ACTIVITY.slice(0, 20).map(a => {
+            const date = new Date(a.created_at).toLocaleDateString('fr-FR', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
+            const initial = (a.user_email || '?')[0].toUpperCase();
+            const label = ACTION_LABELS[a.action] || a.action;
+            return `
+            <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border)">
+              <div style="width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--pink));border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:12px;flex-shrink:0">${initial}</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:12px;font-weight:600">${a.user_email || '—'}</div>
+                <div style="font-size:12px;color:var(--muted);margin-top:2px">
+                  ${label}${a.prospect_handle ? ` · <strong style="color:var(--text)">${a.prospect_handle}</strong>` : ''}
+                </div>
+              </div>
+              <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);white-space:nowrap">${date}</div>
+            </div>`;
+          }).join('')}
+        </div>
+
+      </div>
+
+      <!-- ── Sidebar droite : rôles + inviter ── -->
+      <div>
+
+        <!-- Inviter un membre -->
+        ${isOwner ? `
+        <div class="analytics-section" style="margin-bottom:16px">
+          <div class="analytics-title">Inviter un membre</div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <input id="inviteEmail" type="email" placeholder="email@exemple.com" class="search-input" style="width:100%;padding:10px 14px;font-size:13px">
+            <select id="inviteRole" style="padding:10px 14px;border:1px solid var(--border);border-radius:10px;font-size:13px;background:var(--surface);font-family:'Inter',sans-serif;cursor:pointer">
+              <option value="viewer">Viewer — Lecture seule</option>
+              <option value="manager">Manager — Peut scanner/contacter</option>
+              <option value="admin">Admin — Accès complet</option>
+            </select>
+            <button id="inviteBtn" onclick="sendTeamInvite()" class="btn btn-primary" style="width:100%;justify-content:center">
+              ✉️ Inviter &amp; copier lien
+            </button>
+            <div style="font-size:11px;color:var(--muted);line-height:1.5;text-align:center">Un lien d'invitation est généré et copié dans ton presse-papier. Envoie-le par email, WhatsApp ou Slack.</div>
+          </div>
+        </div>` : ''}
+
+        <!-- Rôles -->
+        <div class="analytics-section">
+          <div class="analytics-title">Rôles &amp; permissions</div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            ${[
+              { role: 'admin', label: 'Admin', perms: ['Gérer les membres', 'Scanner', 'Contacter', 'Voir tout', 'Supprimer des prospects'] },
+              { role: 'manager', label: 'Manager', perms: ['Scanner', 'Contacter', 'Modifier statuts', 'Voir les prospects'] },
+              { role: 'viewer', label: 'Viewer', perms: ['Voir les prospects', 'Voir les stats'] },
+            ].map(r => `
+              <div style="background:var(--surface2);border-radius:10px;padding:12px 14px">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                  <span style="font-size:11px;font-family:'Space Mono',monospace;font-weight:700;padding:3px 8px;border-radius:6px;${ROLE_COLORS[r.role]}">${r.label}</span>
+                </div>
+                <ul style="list-style:none;display:flex;flex-direction:column;gap:4px">
+                  ${r.perms.map(p => `<li style="font-size:11px;color:var(--muted);display:flex;gap:6px"><span style="color:var(--green)">✓</span>${p}</li>`).join('')}
+                </ul>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  `;
+}
+
+// ─── VÉRIFIER INVITE AU CHARGEMENT ───────────────────────────────────────────
+// Appelé après auth dans le bloc onAuthStateChange
 </script>
 </body>
 </html>
