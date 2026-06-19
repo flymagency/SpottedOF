@@ -3620,21 +3620,58 @@ async function initTeam() {
   if (TEAM) await loadTeamData();
 }
 
-async function createTeam() {
-  const name = prompt('Nom de ton équipe :', (currentUser?.email || '').split('@')[0] || 'Mon équipe');
-  if (!name || !name.trim()) return;
+function createTeam() {
+  // Modal de création d'équipe
+  const existing = document.getElementById('createTeamModal');
+  if (existing) existing.remove();
+  const defaultName = (currentUser?.email || '').split('@')[0] || 'Mon équipe';
+  const modal = document.createElement('div');
+  modal.id = 'createTeamModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.onclick = e => { if (e.target === modal) modal.remove(); };
+  modal.innerHTML = `
+    <div style="background:var(--surface);border-radius:20px;width:100%;max-width:400px;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,0.25)">
+      <div style="font-size:32px;text-align:center;margin-bottom:12px">👥</div>
+      <h3 style="font-size:17px;font-weight:800;text-align:center;margin-bottom:6px">Créer une équipe</h3>
+      <p style="font-size:13px;color:var(--muted);text-align:center;margin-bottom:20px;line-height:1.5">Donne un nom à ton équipe — tu pourras inviter des membres ensuite.</p>
+      <input id="teamNameInput" type="text" value="${defaultName}" placeholder="Nom de l'équipe"
+        style="width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:12px;font-size:14px;font-family:'Inter',sans-serif;margin-bottom:16px;box-sizing:border-box"
+        onkeydown="if(event.key==='Enter') confirmCreateTeam()">
+      <div style="display:flex;gap:10px">
+        <button onclick="document.getElementById('createTeamModal').remove()" class="btn btn-ghost" style="flex:1;justify-content:center">Annuler</button>
+        <button onclick="confirmCreateTeam()" class="btn btn-primary" style="flex:1;justify-content:center">Créer →</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  setTimeout(() => { const i = document.getElementById('teamNameInput'); if(i){i.focus();i.select();} }, 50);
+}
 
-  const { data: created, error } = await sb.from('teams').insert({ name: name.trim(), owner_id: currentUser.id }).select().single();
-  if (error || !created) { showToast('Erreur : ' + (error?.message || 'inconnue'), 'error'); console.error('createTeam error:', error); return; }
+async function confirmCreateTeam() {
+  const input = document.getElementById('teamNameInput');
+  const name = (input?.value || '').trim();
+  if (!name) { showToast('Entre un nom d\'équipe', 'error'); return; }
 
-  // Se joindre en tant qu'admin
-  await sb.from('team_members').insert({
+  const btn = document.querySelector('#createTeamModal .btn-primary');
+  if (btn) { btn.disabled = true; btn.textContent = 'Création…'; }
+
+  const { data: created, error } = await sb.from('teams').insert({ name, owner_id: currentUser.id }).select().single();
+  if (error || !created) {
+    showToast('Erreur : ' + (error?.message || 'inconnue'), 'error');
+    console.error('createTeam error:', error);
+    if (btn) { btn.disabled = false; btn.textContent = 'Créer →'; }
+    return;
+  }
+
+  const { error: e2 } = await sb.from('team_members').insert({
     team_id: created.id, user_id: currentUser.id, email: currentUser.email, role: 'admin', invited_by: currentUser.id,
   });
+  if (e2) console.error('team_members insert error:', e2);
 
+  document.getElementById('createTeamModal')?.remove();
   TEAM = created;
   await loadTeamData();
-  showToast(`Équipe "${name.trim()}" créée ✓`, 'success');
+  showToast(`Équipe "${name}" créée ✓`, 'success');
   renderTeam();
 }
 
@@ -3789,10 +3826,34 @@ async function removeMember(memberId) {
 }
 
 async function renameTeam() {
-  const name = prompt('Nouveau nom de l\'équipe :', TEAM?.name || '');
-  if (!name || !name.trim()) return;
-  await sb.from('teams').update({ name: name.trim() }).eq('id', TEAM.id);
-  TEAM.name = name.trim();
+  const existing = document.getElementById('renameTeamModal');
+  if (existing) existing.remove();
+  const modal = document.createElement('div');
+  modal.id = 'renameTeamModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.onclick = e => { if (e.target === modal) modal.remove(); };
+  modal.innerHTML = `
+    <div style="background:var(--surface);border-radius:20px;width:100%;max-width:380px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,0.25)">
+      <h3 style="font-size:16px;font-weight:800;margin-bottom:14px">✏️ Renommer l'équipe</h3>
+      <input id="renameTeamInput" type="text" value="${TEAM?.name || ''}" placeholder="Nom de l'équipe"
+        style="width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:12px;font-size:14px;font-family:'Inter',sans-serif;margin-bottom:14px;box-sizing:border-box"
+        onkeydown="if(event.key==='Enter') confirmRenameTeam()">
+      <div style="display:flex;gap:10px">
+        <button onclick="document.getElementById('renameTeamModal').remove()" class="btn btn-ghost" style="flex:1;justify-content:center">Annuler</button>
+        <button onclick="confirmRenameTeam()" class="btn btn-primary" style="flex:1;justify-content:center">Renommer</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  setTimeout(() => { const i = document.getElementById('renameTeamInput'); if(i){i.focus();i.select();} }, 50);
+}
+
+async function confirmRenameTeam() {
+  const name = (document.getElementById('renameTeamInput')?.value || '').trim();
+  if (!name) return;
+  await sb.from('teams').update({ name }).eq('id', TEAM.id);
+  TEAM.name = name;
+  document.getElementById('renameTeamModal')?.remove();
   showToast('Équipe renommée ✓', 'success');
   renderTeam();
 }
