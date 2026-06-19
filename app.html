@@ -315,45 +315,52 @@
 <div class="modal-overlay" id="scanModal">
   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title">Lancer un scan Phantombuster</div>
+      <div class="modal-title">🔍 Scan automatique — Apify</div>
       <button class="modal-close" onclick="closeModal('scanModal')">✕</button>
     </div>
     <div class="modal-body">
-      <div class="scan-form">
+      <div class="scan-form" id="scanFormFields">
         <div>
-          <label class="form-label">Compte de référence (handle)</label>
+          <label class="form-label">Compte de référence Instagram</label>
           <input class="form-input" id="refHandle" placeholder="@handle_exemple">
+          <div style="font-size:11px;color:var(--muted);margin-top:5px;">On scrape les comptes que ce profil suit → créatrices similaires</div>
         </div>
         <div>
-          <label class="form-label">Plateforme</label>
-          <div class="platform-pick">
-            <button class="plat-pick-btn sel" onclick="pickPlatform(this)">Instagram</button>
-            <button class="plat-pick-btn" onclick="pickPlatform(this)">TikTok</button>
-            <button class="plat-pick-btn" onclick="pickPlatform(this)">Threads</button>
+          <label class="form-label">Nombre de profils à analyser</label>
+          <div class="range-row">
+            <input type="range" class="range-input" id="countInput" min="20" max="300" value="100" step="10" oninput="document.getElementById('countVal').textContent=this.value">
+            <span class="range-val" id="countVal">100</span>
           </div>
         </div>
         <div>
-          <label class="form-label">Nombre de profils à scanner</label>
+          <label class="form-label">Score minimum pour import</label>
           <div class="range-row">
-            <input type="range" class="range-input" min="50" max="1000" value="200" step="50" oninput="document.getElementById('countVal').textContent=this.value">
-            <span class="range-val" id="countVal">200</span>
-          </div>
-        </div>
-        <div>
-          <label class="form-label">Score minimum</label>
-          <div class="range-row">
-            <input type="range" class="range-input" min="30" max="90" value="60" step="5" oninput="document.getElementById('scoreVal').textContent=this.value+'%'">
-            <span class="range-val" id="scoreVal">60%</span>
+            <input type="range" class="range-input" id="scoreInput" min="30" max="90" value="55" step="5" oninput="document.getElementById('scoreVal').textContent=this.value+'%'">
+            <span class="range-val" id="scoreVal">55%</span>
           </div>
         </div>
       </div>
+      <!-- État : scan en cours -->
+      <div id="scanProgress" style="display:none;text-align:center;padding:24px 0;">
+        <div style="font-size:36px;margin-bottom:12px;">⚡</div>
+        <div id="scanProgressLabel" style="font-size:14px;font-weight:700;margin-bottom:8px;">Scan en cours…</div>
+        <div id="scanProgressSub" style="font-size:12px;color:var(--muted);">Apify scrape les profils, ça peut prendre 1-2 min</div>
+        <div style="margin-top:18px;height:4px;background:var(--surface2);border-radius:4px;overflow:hidden;">
+          <div id="scanProgressBar" style="height:100%;width:30%;background:linear-gradient(90deg,var(--accent),var(--pink));border-radius:4px;animation:scanPulse 1.5s ease-in-out infinite alternate;"></div>
+        </div>
+      </div>
+      <!-- Résultat -->
+      <div id="scanResult" style="display:none;text-align:center;padding:20px 0;"></div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-primary" style="flex:1" onclick="launchScan()">Lancer le scan</button>
+    <div class="modal-footer" id="scanFooter">
+      <button class="btn btn-primary" style="flex:1" id="scanLaunchBtn" onclick="launchScan()">⚡ Lancer le scan</button>
       <button class="btn btn-ghost" onclick="closeModal('scanModal')">Annuler</button>
     </div>
   </div>
 </div>
+<style>
+@keyframes scanPulse { from { width: 20%; } to { width: 80%; } }
+</style>
 
 <div class="toast" id="toast"></div>
 
@@ -720,14 +727,111 @@ async function importCSV(input) {
   }
 }
 
-function openScanModal() { document.getElementById('scanModal').classList.add('open'); }
+function openScanModal() {
+  resetScanModal();
+  document.getElementById('refHandle').value = '';
+  document.getElementById('scanModal').classList.add('open');
+}
 function pickPlatform(el) { document.querySelectorAll('.plat-pick-btn').forEach(b=>b.classList.remove('sel')); el.classList.add('sel'); }
 
+let _scanPollInterval = null;
+
 async function launchScan() {
-  const h = document.getElementById('refHandle').value.trim();
+  const h = document.getElementById('refHandle').value.trim().replace('@','');
   if (!h) { showToast('Entrez un handle de référence','error'); return; }
-  closeModal('scanModal');
-  showToast('Scan lancé — résultats dans quelques minutes ⚡','success');
+
+  const resultsLimit = parseInt(document.getElementById('countInput').value);
+  const minScore = parseInt(document.getElementById('scoreInput').value);
+
+  // Passer en mode "loading"
+  document.getElementById('scanFormFields').style.display = 'none';
+  document.getElementById('scanProgress').style.display = 'block';
+  document.getElementById('scanResult').style.display = 'none';
+  document.getElementById('scanLaunchBtn').disabled = true;
+  document.getElementById('scanProgressLabel').textContent = `Lancement du scan pour @${h}…`;
+
+  try {
+    // Lancer le run Apify
+    const startRes = await fetch(`${WORKER}/scan-similar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ handle: h, platform: 'instagram', results_limit: resultsLimit, min_score: minScore }),
+    });
+    const startData = await startRes.json();
+
+    if (!startData.success) {
+      throw new Error(startData.error || 'Erreur démarrage scan');
+    }
+
+    const runId = startData.run_id;
+    document.getElementById('scanProgressLabel').textContent = `Scan en cours pour @${h}…`;
+    document.getElementById('scanProgressSub').textContent = `Run ID: ${runId.slice(0,8)}… — 1-2 min`;
+
+    // Polling toutes les 5 secondes
+    _scanPollInterval = setInterval(async () => {
+      try {
+        const pollRes = await fetch(`${WORKER}/scan-poll?run_id=${runId}&min_score=${minScore}&handle=${h}`);
+        const pollData = await pollRes.json();
+
+        if (!pollData.done) {
+          // Encore en cours
+          document.getElementById('scanProgressSub').textContent = `Statut : ${pollData.status} — patience…`;
+          return;
+        }
+
+        // Terminé !
+        clearInterval(_scanPollInterval);
+
+        if (pollData.error) {
+          throw new Error(pollData.error);
+        }
+
+        // Afficher résultat
+        document.getElementById('scanProgress').style.display = 'none';
+        document.getElementById('scanResult').style.display = 'block';
+        document.getElementById('scanResult').innerHTML = `
+          <div style="font-size:40px;margin-bottom:12px;">✅</div>
+          <div style="font-size:16px;font-weight:800;margin-bottom:8px;">${pollData.saved} prospects importés !</div>
+          <div style="font-size:12px;color:var(--muted);line-height:1.6;">
+            ${pollData.total_found} profils analysés<br>
+            ${pollData.scored} avec score ≥ ${minScore}%<br>
+            ${pollData.filtered_out} filtrés (score trop bas)
+          </div>
+          <button class="btn btn-primary" style="margin-top:18px;" onclick="closeModal('scanModal');loadProspects();">Voir les prospects</button>
+        `;
+        document.getElementById('scanFooter').style.display = 'none';
+        showToast(`${pollData.saved} prospects importés depuis @${h} 🎯`, 'success');
+
+      } catch(e) {
+        clearInterval(_scanPollInterval);
+        _showScanError(e.message);
+      }
+    }, 5000);
+
+  } catch(e) {
+    _showScanError(e.message);
+  }
+}
+
+function _showScanError(msg) {
+  document.getElementById('scanProgress').style.display = 'none';
+  document.getElementById('scanResult').style.display = 'block';
+  document.getElementById('scanResult').innerHTML = `
+    <div style="font-size:36px;margin-bottom:12px;">❌</div>
+    <div style="font-size:14px;font-weight:700;color:var(--accent2);margin-bottom:8px;">Erreur scan</div>
+    <div style="font-size:12px;color:var(--muted);">${msg}</div>
+    <button class="btn btn-ghost" style="margin-top:14px;" onclick="resetScanModal()">Réessayer</button>
+  `;
+  document.getElementById('scanFooter').style.display = 'none';
+}
+
+function resetScanModal() {
+  if (_scanPollInterval) clearInterval(_scanPollInterval);
+  document.getElementById('scanFormFields').style.display = 'block';
+  document.getElementById('scanProgress').style.display = 'none';
+  document.getElementById('scanResult').style.display = 'none';
+  document.getElementById('scanLaunchBtn').disabled = false;
+  document.getElementById('scanFooter').style.display = 'flex';
 }
 
 let currentProspect = null;

@@ -282,6 +282,139 @@ export default {
         return json({ emails: filtered, found: filtered.length > 0, source: filtered.length > 0 ? 'bio/linktree' : null });
     }
 
-    return json({ error: 'Route introuvable', routes: ['POST /score-profiles', 'GET /prospects', 'GET /stats', 'POST /update-status', 'POST /find-email'] }, 404);
+    // POST /scan-similar
+    // Body: { handle, platform, results_limit, min_score }
+    // Lance un run Apify (Instagram Scraper) pour trouver des profils similaires
+    if (request.method === 'POST' && path === '/scan-similar') {
+      let body;
+      try { body = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
+
+      const handle = (body.handle || '').replace('@', '').trim();
+      if (!handle) return json({ error: 'handle requis' }, 400);
+
+      const platform = (body.platform || 'instagram').toLowerCase();
+      const resultsLimit = Math.min(body.results_limit || 100, 500);
+      const minScore = body.min_score || 50;
+
+      // Pour l'instant on supporte Instagram via Apify
+      if (platform !== 'instagram' && platform !== 'ig') {
+        return json({ error: 'Seul Instagram est supporté via Apify pour l\'instant' }, 400);
+      }
+
+      const APIFY_TOKEN = env.APIFY_TOKEN;
+      if (!APIFY_TOKEN) return json({ error: 'APIFY_TOKEN non configuré' }, 500);
+
+      // Lancer un run Apify — Instagram Scraper (apify~instagram-scraper)
+      // On scrape les "following" du compte de référence = créatrices similaires
+      const actorInput = {
+        directUrls: [`https://www.instagram.com/${handle}/`],
+        resultsType: 'following',
+        resultsLimit: resultsLimit,
+        proxy: { useApifyProxy: true },
+      };
+
+      const runRes = await fetch(
+        `https://api.apify.com/v2/acts/apify~instagram-scraper/runs?token=${APIFY_TOKEN}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(actorInput),
+        }
+      );
+
+      if (!runRes.ok) {
+        const err = await runRes.text();
+        return json({ error: 'Apify error', details: err }, 502);
+      }
+
+      const runData = await runRes.json();
+      const runId = runData.data?.id;
+      const datasetId = runData.data?.defaultDatasetId;
+
+      if (!runId) return json({ error: 'Apify: run ID manquant', raw: runData }, 502);
+
+      return json({
+        success: true,
+        run_id: runId,
+        dataset_id: datasetId,
+        handle,
+        min_score: minScore,
+        status: 'RUNNING',
+        message: `Scan lancé pour @${handle} — ${resultsLimit} profils max`,
+      });
+    }
+
+    // GET /scan-poll?run_id=xxx&min_score=50&handle=xxx
+    // Vérifie le statut du run Apify ; si terminé, score + sauvegarde
+    if (request.method === 'GET' && path === '/scan-poll') {
+      const runId = url.searchParams.get('run_id');
+      const minScore = parseInt(url.searchParams.get('min_score') || '50');
+      const handle = url.searchParams.get('handle') || '';
+      if (!runId) return json({ error: 'run_id requis' }, 400);
+
+      const APIFY_TOKEN = env.APIFY_TOKEN;
+
+      // Vérifier le statut du run
+      const statusRes = await fetch(
+        `https://api.apify.com/v2/actor-runs/${runId}?token=${APIFY_TOKEN}`
+      );
+      const statusData = await statusRes.json();
+      const status = statusData.data?.status; // RUNNING, SUCCEEDED, FAILED, etc.
+      const datasetId = statusData.data?.defaultDatasetId;
+
+      if (status === 'RUNNING' || status === 'READY' || status === 'ABORTING') {
+        return json({ status, run_id: runId, done: false });
+      }
+
+      if (status !== 'SUCCEEDED') {
+        return json({ status, done: true, error: 'Run Apify échoué ou annulé', run_id: runId });
+      }
+
+      // Run terminé — récupérer les items du dataset
+      const itemsRes = await fetch(
+        `https://api.apify.com/v2/datasets/${datasetId}/items?token=${APIFY_TOKEN}&limit=500`
+      );
+      const items = await itemsRes.json();
+
+      if (!Array.isArray(items) || items.length === 0) {
+        return json({ status: 'SUCCEEDED', done: true, saved: 0, message: 'Aucun profil trouvé' });
+      }
+
+      // Normaliser les champs Apify → format interne
+      const profiles = items.map(p => ({
+        username: p.username || p.ownerUsername || '',
+        fullName: p.fullName || p.name || '',
+        biography: p.biography || p.bio || '',
+        followersCount: p.followersCount || p.followersCount || 0,
+        followingCount: p.followingCount || 0,
+        engagementRate: p.engagementRate || 0,
+        platform: 'ig',
+        niche: p.niche || '',
+        userId: p.id || p.userId || '',
+      }));
+
+      // Scorer et filtrer
+      const scored = profiles
+        .map(p => ({ ...p, score: scoreProfile(p) }))
+        .filter(p => p.score >= minScore)
+        .sort((a, b) => b.score - a.score);
+
+      // Sauvegarder dans Airtable
+      const saved = scored.length > 0
+        ? await saveProspects(env, scored, handle ? `@${handle}` : 'apify-scan')
+        : [];
+
+      return json({
+        status: 'SUCCEEDED',
+        done: true,
+        total_found: items.length,
+        scored: scored.length,
+        saved: saved.length,
+        filtered_out: items.length - scored.length,
+        message: `${saved.length} prospects importés (score ≥ ${minScore}%)`,
+      });
+    }
+
+    return json({ error: 'Route introuvable', routes: ['POST /score-profiles', 'GET /prospects', 'GET /stats', 'POST /update-status', 'POST /find-email', 'POST /scan-similar', 'GET /scan-poll'] }, 404);
   }
 };
