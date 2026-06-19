@@ -388,35 +388,41 @@ export default {
 
     // Normalise un item Apify (post Instagram) → profil interne
     function normalizeIGPost(item) {
-      if (!item.ownerUsername && !item.username) return null;
-      // item peut être un post (ownerUsername) ou un profil (username)
-      if (item.ownerUsername) {
-        return {
-          username: item.ownerUsername,
-          fullName: item.ownerFullName || '',
-          biography: '',
-          followersCount: 0,
-          followingCount: 0,
-          engagementRate: item.likesCount && item.commentsCount
-            ? parseFloat(((item.likesCount + item.commentsCount) / 1000).toFixed(2)) : 0,
-          platform: 'ig',
-          userId: item.ownerId || '',
-        };
+      // Supporte : profils complets (username), posts (ownerUsername), et champs snake_case
+      const username = item.username || item.ownerUsername || item.owner?.username || '';
+      if (!username) return null;
+
+      // Followers — plusieurs noms de champ selon l'acteur Apify
+      const followersCount = item.followersCount || item.followers_count
+        || item.owner?.followersCount || item.ownerFollowersCount || 0;
+
+      // Bio
+      const biography = item.biography || item.bio || item.description || item.owner?.biography || '';
+
+      // External URL
+      const externalUrl = item.externalUrl || item.external_url
+        || (item.externalUrls && item.externalUrls[0]) || item.owner?.externalUrl || '';
+
+      // Engagement — post-based items on calcule depuis les likes/comments
+      let engagementRate = item.engagementRate || item.engagement_rate || 0;
+      if (!engagementRate && item.likesCount && followersCount > 0) {
+        engagementRate = parseFloat(((item.likesCount + (item.commentsCount || 0)) / followersCount * 100).toFixed(2));
       }
+
       return {
-        username: item.username || '',
-        fullName: item.fullName || '',
-        biography: item.biography || '',
-        followersCount: item.followersCount || 0,
-        followingCount: item.followingCount || 0,
-        postsCount: item.postsCount || item.igtvVideoCount || 0,
-        engagementRate: item.engagementRate || 0,
-        isPrivate: item.private || item.isPrivate || false,
-        isVerified: item.verified || item.isVerified || false,
-        isBusinessAccount: item.isBusinessAccount || false,
-        externalUrl: item.externalUrl || item.externalUrls?.[0] || '',
+        username,
+        fullName: item.fullName || item.full_name || item.ownerFullName || item.name || '',
+        biography,
+        followersCount,
+        followingCount: item.followingCount || item.following_count || item.owner?.followingCount || 0,
+        postsCount: item.postsCount || item.post_count || item.igtvVideoCount || 0,
+        engagementRate,
+        isPrivate: item.isPrivate || item.is_private || item.private || false,
+        isVerified: item.isVerified || item.is_verified || item.verified || false,
+        isBusinessAccount: item.isBusinessAccount || item.is_business_account || false,
+        externalUrl,
         platform: 'ig',
-        userId: item.id || item.pk || '',
+        userId: item.id || item.pk || item.ownerId || '',
       };
     }
 
@@ -579,12 +585,9 @@ export default {
         }
 
         // Phase 2 : scraper les détails complets de ces profils
-        const profileUrls = usernames.map(u => `https://www.instagram.com/${u}/`);
         try {
-          const phase2RunId = await apifyStartRun('apify~instagram-scraper', {
-            directUrls: profileUrls,
-            resultsType: 'details',
-            resultsLimit: usernames.length,
+          const phase2RunId = await apifyStartRun('apify~instagram-profile-scraper', {
+            usernames: usernames,
           }, APIFY_TOKEN);
 
           return json({
