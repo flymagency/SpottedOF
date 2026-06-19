@@ -374,7 +374,7 @@ export default {
 
       const platform = (body.platform || 'ig').toLowerCase();
       const resultsLimit = Math.min(body.results_limit || 100, 500);
-      const minScore = body.min_score || 50;
+      const minScore = body.min_score ?? 20;
 
       const APIFY_TOKEN = env.APIFY_TOKEN;
       if (!APIFY_TOKEN) return json({ error: 'APIFY_TOKEN non configuré' }, 500);
