@@ -195,6 +195,29 @@
 
     body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(rgba(79,70,229,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(79,70,229,0.02) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; z-index: 0; }
 
+    /* ── ANALYTICS VIEWS ── */
+    .analytics-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-bottom: 28px; }
+    .analytics-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+    .analytics-card .stat-label { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+    .analytics-card .stat-value { font-size: 26px; font-weight: 800; line-height: 1; }
+    .analytics-card .stat-sub { font-size: 11px; color: var(--muted); margin-top: 6px; }
+    .analytics-section { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px 24px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+    .analytics-title { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 16px; }
+    .funnel-row { display: flex; align-items: center; gap: 14px; margin-bottom: 10px; }
+    .funnel-label { font-size: 12px; font-weight: 600; min-width: 120px; }
+    .funnel-bar-wrap { flex: 1; height: 8px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+    .funnel-bar { height: 100%; border-radius: 4px; transition: width 0.4s; }
+    .funnel-count { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--muted); min-width: 36px; text-align: right; }
+    .funnel-pct { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); min-width: 36px; text-align: right; }
+    .table-analytics { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .table-analytics th { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+    .table-analytics td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+    .table-analytics tr:last-child td { border-bottom: none; }
+    .table-analytics tr:hover td { background: #f8f9ff; }
+    .bl-row { display: flex; align-items: center; gap: 14px; padding: 14px 20px; border-bottom: 1px solid var(--border); transition: background 0.15s; }
+    .bl-row:last-child { border-bottom: none; }
+    .bl-row:hover { background: #f8f9ff; }
+
     @media (max-width: 900px) {
       .sidebar { display: none; }
       .main-area { margin-left: 0; }
@@ -237,20 +260,17 @@
     <button class="nav-item" id="nav-blacklist" onclick="navTo('blacklist')">
       <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
       Blacklist
-      <span class="nav-soon">Bientôt</span>
     </button>
 
     <!-- ANALYSE -->
     <div class="nav-section">Analyse</div>
-    <button class="nav-item" onclick="showComingSoon('Statistiques de conversion')">
+    <button class="nav-item" id="nav-stats" onclick="navTo('stats')">
       <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
       Statistiques
-      <span class="nav-soon">Bientôt</span>
     </button>
-    <button class="nav-item" onclick="showComingSoon('Performance par niche')">
+    <button class="nav-item" id="nav-performance" onclick="navTo('performance')">
       <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
       Performance
-      <span class="nav-soon">Bientôt</span>
     </button>
 
     <!-- OUTILS -->
@@ -325,6 +345,24 @@
 
   <!-- CONTENT -->
   <div class="content">
+
+  <!-- ═══ VUE BLACKLIST ═══ -->
+  <div id="view-blacklist" style="display:none">
+    <div id="blacklist-body"></div>
+  </div>
+
+  <!-- ═══ VUE STATISTIQUES ═══ -->
+  <div id="view-stats" style="display:none">
+    <div id="stats-body"></div>
+  </div>
+
+  <!-- ═══ VUE PERFORMANCE ═══ -->
+  <div id="view-performance" style="display:none">
+    <div id="perf-body"></div>
+  </div>
+
+  <!-- ═══ VUE PROSPECTS (défaut) ═══ -->
+  <div id="view-prospects">
   <div class="stats-row">
     <div class="stat-card accent">
       <div class="stat-label">Prospects scrapés</div>
@@ -401,6 +439,7 @@
     </div>
     <div id="prospectList"></div>
   </div><!-- /.table-wrap -->
+  </div><!-- /#view-prospects -->
   </div><!-- /.content -->
 </div><!-- /.main-area -->
 
@@ -846,6 +885,7 @@ function renderProspects() {
     if (activeTab==='convert' && p.hasOf) return false;
     if (activeTab==='saved' && !savedSet.has(p.id)) return false;
     if (activeTab==='pipeline' && !PIPELINE_STATUSES.includes((p.status||'').toLowerCase())) return false;
+    if ((p.status||'').toLowerCase() === 'blacklistée') return false; // toujours caché dans la vue principale
     if (activePlatforms.size>0 && !activePlatforms.has(p.platform)) return false;
     if (p.score < minScore) return false;
     return true;
@@ -920,6 +960,9 @@ function renderProspects() {
         </div>
         <div class="icon-btn" onclick="openProspect('${p.id}')" title="Détail">
           <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </div>
+        <div class="icon-btn" onclick="blacklistProspect('${p.id}',this)" title="Blacklister" style="color:#6b7280;border-color:rgba(107,114,128,0.25)">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
         </div>
         <div class="icon-btn" onclick="deleteProspect('${p.id}',this)" title="Supprimer" style="color:#e8445a;border-color:rgba(232,68,90,0.25)">
           <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
@@ -2089,13 +2132,16 @@ function showLimitModal(limit) {
 
 /* ─── SIDEBAR NAVIGATION ─── */
 const NAV_TITLES = {
-  prospects: 'Prospects',
-  saved:     'Sauvegardés',
-  private:   'Plateforme privée',
-  contact:   'À contacter',
-  blacklist: 'Blacklist',
+  prospects:   'Prospects',
+  saved:       'Sauvegardés',
+  private:     'Plateforme privée',
+  contact:     'À contacter',
+  blacklist:   'Blacklist',
+  stats:       'Statistiques',
+  performance: 'Performance',
 };
 const NAV_TAB_MAP = { prospects: 'all', saved: 'saved', private: 'of', contact: 'convert' };
+const SEPARATE_VIEWS = new Set(['blacklist', 'stats', 'performance']);
 
 function navTo(section) {
   // Active state sidebar
@@ -2106,12 +2152,330 @@ function navTo(section) {
   // Topbar title
   document.getElementById('topbarTitle').textContent = NAV_TITLES[section] || section;
 
-  if (section === 'blacklist') { showComingSoon('Blacklist'); return; }
+  // Show/hide views
+  const allViews = ['prospects', 'blacklist', 'stats', 'performance'];
+  allViews.forEach(v => {
+    const el = document.getElementById(`view-${v}`);
+    if (el) el.style.display = (v === section || (section === 'all' && v === 'prospects')) ? '' : 'none';
+  });
+
+  if (SEPARATE_VIEWS.has(section)) {
+    // These sections have their own view containers
+    document.getElementById(`view-${section}`).style.display = '';
+    if (section === 'blacklist') renderBlacklist();
+    if (section === 'stats')     renderStats();
+    if (section === 'performance') renderPerformance();
+    return;
+  }
+
+  // For prospect-based views, show the prospects view
+  document.getElementById('view-prospects').style.display = '';
 
   // Map to tab filter
   const tab = NAV_TAB_MAP[section] || 'all';
+  activeTab = tab;
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
   const tabBtn = document.querySelector(`.filter-tab[onclick*="'${tab}'"]`);
-  if (tabBtn) { activeTab = tab; document.querySelectorAll('.filter-tab').forEach(t=>t.classList.remove('active')); tabBtn.classList.add('active'); renderProspects(); }
+  if (tabBtn) tabBtn.classList.add('active');
+  renderProspects();
+}
+
+/* ─── BLACKLIST ─── */
+let blacklistedIds = new Set();
+
+async function blacklistProspect(id, el) {
+  const row = el.closest('.prospect-row');
+  if (row) { row.style.opacity = '0.4'; row.style.pointerEvents = 'none'; }
+  try {
+    await fetch(`${WORKER}/update-status`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, status: 'blacklistée' }),
+    });
+    const p = DATA.find(x => x.id === id);
+    if (p) p.status = 'blacklistée';
+    blacklistedIds.add(id);
+    renderProspects();
+    showToast('Profil blacklisté 🚫', 'error');
+  } catch(e) {
+    if (row) { row.style.opacity = '1'; row.style.pointerEvents = ''; }
+    showToast('Erreur blacklist', 'error');
+  }
+}
+
+async function unblacklistProspect(id) {
+  try {
+    await fetch(`${WORKER}/update-status`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, status: 'nouveau' }),
+    });
+    const p = DATA.find(x => x.id === id);
+    if (p) p.status = 'nouveau';
+    blacklistedIds.delete(id);
+    renderBlacklist();
+    showToast('Profil retiré de la blacklist ✓', 'success');
+  } catch(e) {
+    showToast('Erreur', 'error');
+  }
+}
+
+function renderBlacklist() {
+  const el = document.getElementById('blacklist-body');
+  const list = DATA.filter(p => (p.status || '').toLowerCase() === 'blacklistée');
+  if (!list.length) {
+    el.innerHTML = `<div class="analytics-section"><div class="empty-state"><div class="empty-icon">🚫</div><div class="empty-title">Aucun profil blacklisté</div><div class="empty-sub">Utilise le bouton 🚫 sur un prospect pour l'ajouter à la blacklist</div></div></div>`;
+    return;
+  }
+  el.innerHTML = `
+    <div style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
+      <div style="font-size:13px;color:var(--muted)">${list.length} profil${list.length>1?'s':''} blacklisté${list.length>1?'s':''}</div>
+    </div>
+    <div class="table-wrap">
+      ${list.map(p => `
+        <div class="bl-row">
+          <div class="avatar" style="flex-shrink:0">${avatarHTML(p.handle, p.platform, 40)}</div>
+          <div style="flex:1;min-width:0">
+            <div class="profile-handle" style="font-size:13px;font-weight:700"><span class="platform-dot dot-${p.platform}"></span>${p.handle}</div>
+            <div class="profile-name">${p.name}</div>
+          </div>
+          <div style="font-size:11px;color:var(--muted);font-family:'Space Mono',monospace">${fmt(p.followers)} · ${p.niche}</div>
+          <div class="score-wrap" style="min-width:80px">
+            <div class="score-bar"><div class="score-fill sf-${sc(p.score)}" style="width:${p.score}%"></div></div>
+            <span class="score-num s-${sc(p.score)}">${p.score}%</span>
+          </div>
+          <button onclick="unblacklistProspect('${p.id}')" class="btn btn-ghost" style="font-size:11px;white-space:nowrap">↩ Retirer</button>
+        </div>`).join('')}
+    </div>`;
+}
+
+/* ─── STATISTIQUES ─── */
+function renderStats() {
+  const el = document.getElementById('stats-body');
+  const total = DATA.length;
+  if (!total) {
+    el.innerHTML = `<div class="analytics-section"><div class="empty-state"><div class="empty-icon">📊</div><div class="empty-title">Pas encore de données</div><div class="empty-sub">Lance un scan pour commencer à collecter des statistiques</div></div></div>`;
+    return;
+  }
+
+  // Counts
+  const withPrivPlat = DATA.filter(p => p.hasOf).length;
+  const toContact = DATA.filter(p => !p.hasOf && (p.status||'') !== 'blacklistée').length;
+  const saved = [...savedSet].length;
+  const avgScore = Math.round(DATA.reduce((a,b) => a + b.score, 0) / total);
+
+  // Pipeline funnel
+  const statuses = [
+    { label: 'Tous les prospects', key: 'all',           color: 'var(--accent)' },
+    { label: 'Contactées',         key: 'contactée',     color: 'var(--yellow)' },
+    { label: 'En discussion',      key: 'en discussion', color: '#8b5cf6' },
+    { label: 'Signées',            key: 'signée',        color: 'var(--green)' },
+    { label: 'Refus',              key: 'refus',         color: 'var(--accent2)' },
+    { label: 'Blacklistées',       key: 'blacklistée',   color: 'var(--muted)' },
+  ];
+  const counts = {};
+  counts['all'] = total;
+  statuses.slice(1).forEach(s => {
+    counts[s.key] = DATA.filter(p => (p.status||'').toLowerCase() === s.key).length;
+  });
+
+  // Platform breakdown
+  const platCounts = { ig: 0, tt: 0, th: 0 };
+  DATA.forEach(p => { if (platCounts[p.platform] !== undefined) platCounts[p.platform]++; });
+
+  // Niches top 5
+  const nicheCounts = {};
+  DATA.forEach(p => { if (p.niche) nicheCounts[p.niche] = (nicheCounts[p.niche]||0) + 1; });
+  const topNiches = Object.entries(nicheCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
+
+  // Score distribution
+  const scoreHi = DATA.filter(p => p.score >= 80).length;
+  const scoreMd = DATA.filter(p => p.score >= 65 && p.score < 80).length;
+  const scoreLo = DATA.filter(p => p.score < 65).length;
+
+  el.innerHTML = `
+    <!-- KPIs -->
+    <div class="analytics-grid" style="grid-template-columns:repeat(4,1fr)">
+      <div class="analytics-card accent" style="border-color:rgba(79,70,229,0.25);background:linear-gradient(135deg,rgba(79,70,229,0.06),var(--surface))">
+        <div class="stat-label">Total prospects</div>
+        <div class="stat-value">${total}</div>
+        <div class="stat-sub">base totale</div>
+      </div>
+      <div class="analytics-card">
+        <div class="stat-label">Score moyen</div>
+        <div class="stat-value" style="color:var(--yellow)">${avgScore}<span style="font-size:16px;color:var(--muted)">%</span></div>
+        <div class="stat-sub">tous profils</div>
+      </div>
+      <div class="analytics-card pink" style="border-color:rgba(219,39,119,0.25)">
+        <div class="stat-label">Plateforme privée</div>
+        <div class="stat-value" style="color:var(--pink)">${withPrivPlat}</div>
+        <div class="stat-sub">${total ? Math.round(withPrivPlat/total*100) : 0}% des profils</div>
+      </div>
+      <div class="analytics-card green" style="border-color:rgba(5,150,105,0.25)">
+        <div class="stat-label">Sauvegardés</div>
+        <div class="stat-value" style="color:var(--green)">${saved}</div>
+        <div class="stat-sub">profils sélectionnés</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <!-- Funnel pipeline -->
+      <div class="analytics-section">
+        <div class="analytics-title">Entonnoir de conversion</div>
+        ${statuses.map(s => {
+          const c = counts[s.key] || 0;
+          const pct = total ? Math.round(c / total * 100) : 0;
+          return `<div class="funnel-row">
+            <div class="funnel-label">${s.label}</div>
+            <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:${pct}%;background:${s.color}"></div></div>
+            <div class="funnel-count">${c}</div>
+            <div class="funnel-pct">${pct}%</div>
+          </div>`;
+        }).join('')}
+      </div>
+
+      <!-- Répartition plateforme -->
+      <div class="analytics-section">
+        <div class="analytics-title">Par plateforme</div>
+        ${[
+          { key: 'ig', label: 'Instagram', color: 'var(--accent2)' },
+          { key: 'tt', label: 'TikTok',    color: 'var(--green)' },
+          { key: 'th', label: 'Threads',   color: 'var(--accent)' },
+        ].map(pl => {
+          const c = platCounts[pl.key] || 0;
+          const pct = total ? Math.round(c/total*100) : 0;
+          return `<div class="funnel-row">
+            <div class="funnel-label">${pl.label}</div>
+            <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:${pct}%;background:${pl.color}"></div></div>
+            <div class="funnel-count">${c}</div>
+            <div class="funnel-pct">${pct}%</div>
+          </div>`;
+        }).join('')}
+
+        <div style="margin-top:20px">
+          <div class="analytics-title">Distribution des scores</div>
+          ${[
+            { label: 'Excellent (80%+)', count: scoreHi, color: 'var(--green)' },
+            { label: 'Bon (65-79%)',     count: scoreMd, color: 'var(--yellow)' },
+            { label: 'Moyen (<65%)',     count: scoreLo, color: 'var(--accent2)' },
+          ].map(s => {
+            const pct = total ? Math.round(s.count/total*100) : 0;
+            return `<div class="funnel-row">
+              <div class="funnel-label" style="font-size:11px">${s.label}</div>
+              <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:${pct}%;background:${s.color}"></div></div>
+              <div class="funnel-count">${s.count}</div>
+              <div class="funnel-pct">${pct}%</div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    </div>
+
+    <!-- Top niches -->
+    <div class="analytics-section">
+      <div class="analytics-title">Top niches</div>
+      <table class="table-analytics">
+        <thead><tr><th>Niche</th><th>Prospects</th><th>%</th><th>Score moyen</th></tr></thead>
+        <tbody>
+          ${topNiches.map(([niche, count]) => {
+            const niched = DATA.filter(p => p.niche === niche);
+            const avg = Math.round(niched.reduce((a,b)=>a+b.score,0) / niched.length);
+            const pct = total ? Math.round(count/total*100) : 0;
+            return `<tr>
+              <td><strong>${niche}</strong></td>
+              <td><span style="font-family:'Space Mono',monospace;font-size:12px">${count}</span></td>
+              <td><span style="font-family:'Space Mono',monospace;font-size:12px;color:var(--muted)">${pct}%</span></td>
+              <td><span class="score-num s-${sc(avg)}" style="font-size:12px">${avg}%</span></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+/* ─── PERFORMANCE ─── */
+function renderPerformance() {
+  const el = document.getElementById('perf-body');
+  const total = DATA.length;
+  if (!total) {
+    el.innerHTML = `<div class="analytics-section"><div class="empty-state"><div class="empty-icon">📈</div><div class="empty-title">Pas encore de données</div><div class="empty-sub">Lance un scan pour commencer à mesurer tes performances</div></div></div>`;
+    return;
+  }
+
+  // Groupe par niche
+  const niches = {};
+  DATA.forEach(p => {
+    const k = p.niche || 'Inconnue';
+    if (!niches[k]) niches[k] = { total: 0, signed: 0, contacted: 0, scores: [] };
+    niches[k].total++;
+    niches[k].scores.push(p.score);
+    if ((p.status||'').toLowerCase() === 'signée') niches[k].signed++;
+    if (['contactée','en discussion','signée'].includes((p.status||'').toLowerCase())) niches[k].contacted++;
+  });
+
+  // Groupe par plateforme
+  const plats = { ig: { label: 'Instagram', color: 'var(--accent2)', total: 0, signed: 0, contacted: 0, scores: [] },
+                   tt: { label: 'TikTok',    color: 'var(--green)',   total: 0, signed: 0, contacted: 0, scores: [] },
+                   th: { label: 'Threads',   color: 'var(--accent)',  total: 0, signed: 0, contacted: 0, scores: [] } };
+  DATA.forEach(p => {
+    const pp = plats[p.platform];
+    if (!pp) return;
+    pp.total++;
+    pp.scores.push(p.score);
+    if ((p.status||'').toLowerCase() === 'signée') pp.signed++;
+    if (['contactée','en discussion','signée'].includes((p.status||'').toLowerCase())) pp.contacted++;
+  });
+
+  // Top comptes source
+  // (we don't have scan_source in client DATA currently — skip or show empty)
+
+  const avgScore = n => n.scores.length ? Math.round(n.scores.reduce((a,b)=>a+b,0)/n.scores.length) : 0;
+  const convRate = n => n.total ? Math.round(n.signed / n.total * 100) : 0;
+  const contactRate = n => n.total ? Math.round(n.contacted / n.total * 100) : 0;
+
+  // Sort niches by total
+  const nicheRows = Object.entries(niches).sort((a,b) => b[1].total - a[1].total).slice(0, 8);
+
+  el.innerHTML = `
+    <!-- Par plateforme -->
+    <div class="analytics-section" style="margin-bottom:20px">
+      <div class="analytics-title">Performance par plateforme</div>
+      <table class="table-analytics">
+        <thead><tr><th>Plateforme</th><th>Prospects</th><th>Contactés</th><th>Signés</th><th>Taux signature</th><th>Score moyen</th></tr></thead>
+        <tbody>
+          ${Object.entries(plats).map(([key, p]) => `
+            <tr>
+              <td><span class="platform-dot dot-${key}" style="margin-right:8px"></span><strong>${p.label}</strong></td>
+              <td style="font-family:'Space Mono',monospace;font-size:12px">${p.total}</td>
+              <td style="font-family:'Space Mono',monospace;font-size:12px;color:var(--yellow)">${p.contacted}</td>
+              <td style="font-family:'Space Mono',monospace;font-size:12px;color:var(--green)">${p.signed}</td>
+              <td><span class="score-num s-${convRate(p)>=10?'hi':convRate(p)>=5?'md':'lo'}" style="font-size:12px">${convRate(p)}%</span></td>
+              <td><span class="score-num s-${sc(avgScore(p))}" style="font-size:12px">${avgScore(p)}%</span></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Par niche -->
+    <div class="analytics-section">
+      <div class="analytics-title">Performance par niche</div>
+      <table class="table-analytics">
+        <thead><tr><th>Niche</th><th>Prospects</th><th>Contactés</th><th>Taux contact</th><th>Signés</th><th>Score moyen</th></tr></thead>
+        <tbody>
+          ${nicheRows.map(([niche, n]) => `
+            <tr>
+              <td><strong>${niche}</strong></td>
+              <td style="font-family:'Space Mono',monospace;font-size:12px">${n.total}</td>
+              <td style="font-family:'Space Mono',monospace;font-size:12px;color:var(--yellow)">${n.contacted}</td>
+              <td><div class="funnel-bar-wrap" style="max-width:80px;display:inline-block"><div class="funnel-bar" style="width:${contactRate(n)}%;background:var(--yellow)"></div></div>
+                <span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);margin-left:6px">${contactRate(n)}%</span>
+              </td>
+              <td style="font-family:'Space Mono',monospace;font-size:12px;color:var(--green)">${n.signed}</td>
+              <td><span class="score-num s-${sc(avgScore(n))}" style="font-size:12px">${avgScore(n)}%</span></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
 }
 
 function showComingSoon(feature) {
