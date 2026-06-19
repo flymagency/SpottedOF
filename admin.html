@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SpottedOF — Admin</title>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
@@ -13,7 +13,7 @@
       --pink: #db2777; --text: #0f1117; --muted: #6b7280;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif; min-height: 100vh; }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; }
     body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(rgba(79,70,229,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(79,70,229,0.025) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; z-index: 0; }
     .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
 
@@ -25,7 +25,7 @@
     .logo-text span { color: var(--pink); }
     .admin-badge { font-family: 'Space Mono', monospace; font-size: 10px; background: rgba(252,220,45,0.15); color: var(--yellow); border: 1px solid rgba(217,119,6,0.2); border-radius: 6px; padding: 2px 8px; }
     .header-right { display: flex; align-items: center; gap: 10px; }
-    .btn { padding: 8px 16px; font-size: 12px; border-radius: 10px; font-weight: 700; font-family: 'Syne', sans-serif; cursor: pointer; border: none; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+    .btn { padding: 8px 16px; font-size: 12px; border-radius: 10px; font-weight: 700; font-family: 'Inter', sans-serif; cursor: pointer; border: none; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
     .btn-ghost { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
     .btn-ghost:hover { border-color: var(--accent); color: var(--text); }
     .btn-primary { background: var(--accent); color: white; }
@@ -75,9 +75,9 @@
     .modal-body { padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; }
     .modal-footer { padding: 0 24px 20px; display: flex; gap: 10px; }
     .form-label { font-size: 11px; font-family: 'Space Mono', monospace; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; display: block; }
-    .form-input { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; color: var(--text); font-family: 'Syne', sans-serif; font-size: 13px; outline: none; transition: border-color 0.2s; }
+    .form-input { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; color: var(--text); font-family: 'Inter', sans-serif; font-size: 13px; outline: none; transition: border-color 0.2s; }
     .form-input:focus { border-color: var(--accent); }
-    .form-select { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; color: var(--text); font-family: 'Syne', sans-serif; font-size: 13px; outline: none; cursor: pointer; }
+    .form-select { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; color: var(--text); font-family: 'Inter', sans-serif; font-size: 13px; outline: none; cursor: pointer; }
 
     /* TICKETS */
     .ticket-row { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr 2fr 100px; padding: 14px 20px; border-bottom: 1px solid var(--border); align-items: center; gap: 12px; font-size: 13px; }
@@ -390,9 +390,9 @@ async function loadTickets() {
         <div style="font-size:12px;color:#0f1117;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${t.message}">${t.message}</div>
         <div style="display:flex;gap:6px;justify-content:flex-end">
           ${t.status === 'open'
-            ? `<button onclick="resolveTicket('${t.id}')" style="background:rgba(5,150,105,0.08);color:#059669;border:1px solid rgba(5,150,105,0.2);padding:5px 10px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Syne',sans-serif">✓ Résolu</button>`
+            ? `<button onclick="resolveTicket('${t.id}')" style="background:rgba(5,150,105,0.08);color:#059669;border:1px solid rgba(5,150,105,0.2);padding:5px 10px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif">✓ Résolu</button>`
             : `<span class="status-resolved">✓ Résolu</span>`}
-          <button onclick="replyTicket('${t.email}','${(t.agency_name||'').replace(/'/g,"\\'")}','${t.category}')" style="background:#f0f1f6;color:#6b7280;border:1px solid #e2e4ec;padding:5px 10px;border-radius:7px;font-size:11px;cursor:pointer;font-family:'Syne',sans-serif">↩ Répondre</button>
+          <button onclick="replyTicket('${t.email}','${(t.agency_name||'').replace(/'/g,"\\'")}','${t.category}')" style="background:#f0f1f6;color:#6b7280;border:1px solid #e2e4ec;padding:5px 10px;border-radius:7px;font-size:11px;cursor:pointer;font-family:'Inter',sans-serif">↩ Répondre</button>
         </div>
       </div>`;
     }).join('')}`;
