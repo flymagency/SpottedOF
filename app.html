@@ -3607,7 +3607,7 @@ async function initTeam() {
   let { data: owned } = await sb.from('teams').select('*').eq('owner_id', currentUser.id).single();
 
   if (!owned) {
-    // Chercher si membre d'une équipe
+    // Chercher si membre d'une équipe (via invitation)
     const { data: membership } = await sb.from('team_members').select('team_id').eq('user_id', currentUser.id).single();
     if (membership) {
       const { data: t } = await sb.from('teams').select('*').eq('id', membership.team_id).single();
@@ -3615,22 +3615,27 @@ async function initTeam() {
     }
   }
 
-  if (!owned) {
-    // Créer une équipe par défaut pour ce user
-    const email = currentUser.email || '';
-    const name = email.split('@')[0] || 'Mon équipe';
-    const { data: created } = await sb.from('teams').insert({ name, owner_id: currentUser.id }).select().single();
-    owned = created;
-    if (owned) {
-      // Se joindre en tant qu'admin
-      await sb.from('team_members').insert({
-        team_id: owned.id, user_id: currentUser.id, email: currentUser.email, role: 'admin', invited_by: currentUser.id,
-      });
-    }
-  }
+  // On NE crée PAS d'équipe automatiquement — l'utilisateur le fait lui-même
+  TEAM = owned || null;
+  if (TEAM) await loadTeamData();
+}
 
-  TEAM = owned;
+async function createTeam() {
+  const name = prompt('Nom de ton équipe :', (currentUser?.email || '').split('@')[0] || 'Mon équipe');
+  if (!name || !name.trim()) return;
+
+  const { data: created, error } = await sb.from('teams').insert({ name: name.trim(), owner_id: currentUser.id }).select().single();
+  if (error || !created) { showToast('Erreur création équipe', 'error'); return; }
+
+  // Se joindre en tant qu'admin
+  await sb.from('team_members').insert({
+    team_id: created.id, user_id: currentUser.id, email: currentUser.email, role: 'admin', invited_by: currentUser.id,
+  });
+
+  TEAM = created;
   await loadTeamData();
+  showToast(`Équipe "${name.trim()}" créée ✓`, 'success');
+  renderTeam();
 }
 
 async function loadTeamData() {
@@ -3799,8 +3804,20 @@ async function renderTeam() {
   if (!el) return;
 
   if (!TEAM) {
-    el.innerHTML = `<div class="analytics-section"><div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-title">Chargement…</div></div></div>`;
-    await initTeam();
+    el.innerHTML = `
+      <div style="max-width:480px;margin:60px auto;text-align:center">
+        <div style="font-size:56px;margin-bottom:20px">👥</div>
+        <h2 style="font-size:22px;font-weight:800;margin-bottom:10px">Pas encore d'équipe</h2>
+        <p style="font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:28px">
+          Tu travailles seul ? Pas besoin de créer une équipe.<br>
+          Si tu veux collaborer avec des collègues, crée une équipe et invite-les par lien.
+        </p>
+        <button onclick="createTeam()" class="btn btn-primary" style="padding:13px 28px;font-size:14px">
+          + Créer une équipe
+        </button>
+      </div>
+    `;
+    return;
   }
 
   const isOwner = isTeamOwner();
