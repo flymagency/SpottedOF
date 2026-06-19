@@ -472,11 +472,11 @@ export default {
 
       try {
         if (platform === 'ig' || platform === 'instagram') {
-          // Phase 1 : récupérer la liste des following (usernames + is_private)
-          // Actor : datadoping~instagram-following-scraper
-          const followingRunId = await apifyStartRun('datadoping~instagram-following-scraper', {
-            usernames: [handle],
-            max_count: Math.max(50, resultsLimit),
+          // Phase 1 : récupérer la liste des following via l'acteur officiel Apify
+          const followingRunId = await apifyStartRun('apify~instagram-scraper', {
+            directUrls: [`https://www.instagram.com/${handle}/`],
+            resultsType: 'following',
+            resultsLimit: Math.min(resultsLimit, 200),
           }, APIFY_TOKEN);
 
           return json({
@@ -570,7 +570,7 @@ export default {
 
         // Extraire les usernames (on exclut les privés et le compte de référence)
         const usernames = items
-          .filter(p => p.username && !p.is_private && p.username.toLowerCase() !== handle.toLowerCase())
+          .filter(p => p.username && !p.isPrivate && p.username.toLowerCase() !== handle.toLowerCase())
           .map(p => p.username)
           .slice(0, Math.min(resultsLimit, 200)); // max 200 profils à détailler
 

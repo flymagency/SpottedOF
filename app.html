@@ -1215,6 +1215,8 @@ let _scanPollInterval = null;
 let _scanCurrentRunId = null;
 let _scanCurrentPhase = 1;
 let _scanFilters = {};
+let _scanPollCount = 0;
+const SCAN_MAX_POLLS = 120; // 10 minutes max (120 × 5s)
 
 async function launchScan() {
   const h = document.getElementById('refHandle').value.trim().replace(/^[@]+/, '').replace(/\s+/g,'');
@@ -1304,7 +1306,19 @@ async function launchScan() {
     _scanFilters = filters;
 
     // Polling toutes les 5 secondes
+    _scanPollCount = 0;
     _scanPollInterval = setInterval(async () => {
+      _scanPollCount++;
+      // Timeout après 10 minutes (120 polls × 5s)
+      if (_scanPollCount > SCAN_MAX_POLLS) {
+        clearInterval(_scanPollInterval);
+        _showScanError(`Le scan a pris trop de temps (>10 min). Vérifie ton compte Apify ou réessaie avec moins de profils.`);
+        return;
+      }
+      // Afficher le temps écoulé
+      const elapsed = Math.floor(_scanPollCount * 5);
+      const elapsedStr = elapsed < 60 ? `${elapsed}s` : `${Math.floor(elapsed/60)}m${elapsed%60}s`;
+      const subEl = document.getElementById('scanProgressSub');
       try {
         const qs = new URLSearchParams({
           run_id: _scanCurrentRunId,
@@ -1335,7 +1349,7 @@ async function launchScan() {
 
         if (!pollData.done) {
           const label = pollData.label || (pollData.status === 'RUNNING' ? 'En cours…' : pollData.status);
-          document.getElementById('scanProgressSub').textContent = label;
+          if (subEl) subEl.textContent = `${label} (${elapsedStr})`;
           return;
         }
 
