@@ -229,6 +229,33 @@ export default {
       return json({ success: true, id: res.id });
     }
 
+    // DELETE /delete-prospect  — Body: { id }
+    if (request.method === 'POST' && path === '/delete-prospect') {
+      let body;
+      try { body = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
+      const { id } = body;
+      if (!id) return json({ error: 'id requis' }, 400);
+      await airtableRequest(env, 'DELETE', `Prospects/${id}`);
+      return json({ success: true, deleted: id });
+    }
+
+    // POST /delete-all-prospects — supprime tous les prospects (max 10 par batch Airtable)
+    if (request.method === 'POST' && path === '/delete-all-prospects') {
+      const all = await getProspects(env, new URLSearchParams('min_score=0'));
+      const ids = all.map(p => p.id).filter(Boolean);
+      let deleted = 0;
+      for (let i = 0; i < ids.length; i += 10) {
+        const chunk = ids.slice(i, i + 10);
+        const qs = chunk.map(id => `records[]=${id}`).join('&');
+        await fetch(`https://api.airtable.com/v0/${env.AIRTABLE_BASE_ID}/Prospects?${qs}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${env.AIRTABLE_TOKEN}` },
+        });
+        deleted += chunk.length;
+      }
+      return json({ success: true, deleted });
+    }
+
     // POST /find-email
     // Body: { bio, id? }
     // Méthode 1 : regex email dans la bio

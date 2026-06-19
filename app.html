@@ -268,6 +268,9 @@
       <option value="50">Score: 50%+</option>
       <option value="30">Score: 30%+</option>
     </select>
+    <button class="btn btn-ghost" onclick="confirmDeleteAll()" style="color:#fc5c7c;border-color:rgba(252,92,124,0.3);white-space:nowrap" title="Supprimer tous les prospects">
+      🗑️ Vider la liste
+    </button>
     <div class="view-toggle">
       <button class="view-btn active" onclick="setView('list',this)" title="Liste">
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
@@ -598,6 +601,9 @@ function renderProspects() {
         <div class="icon-btn" onclick="openProspect('${p.id}')" title="Détail">
           <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
         </div>
+        <div class="icon-btn" onclick="deleteProspect('${p.id}',this)" title="Supprimer" style="color:#fc5c7c;border-color:rgba(252,92,124,0.3)">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        </div>
       </div>
     </div>`;
   }).join('');
@@ -612,6 +618,43 @@ function togglePlatform(el, plat) {
   if (activePlatforms.has(plat)) { activePlatforms.delete(plat); el.className='plat-btn'; }
   else { activePlatforms.add(plat); el.className=`plat-btn active-${plat}`; }
   loadProspects();
+}
+
+async function deleteProspect(id, el) {
+  // Feedback immédiat — griser la ligne
+  const row = el.closest('.prospect-row');
+  if (row) { row.style.opacity = '0.4'; row.style.pointerEvents = 'none'; }
+  try {
+    await fetch(`${WORKER}/delete-prospect`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+    // Retirer du tableau local
+    DATA = DATA.filter(p => p.id !== id);
+    renderProspects();
+    showToast('Prospect supprimé', 'error');
+  } catch(e) {
+    if (row) { row.style.opacity = '1'; row.style.pointerEvents = ''; }
+    showToast('Erreur suppression', 'error');
+  }
+}
+
+async function confirmDeleteAll() {
+  const n = DATA.length;
+  if (n === 0) { showToast('Aucun prospect à supprimer', 'error'); return; }
+  if (!confirm(`Supprimer les ${n} prospects de la liste ? Cette action est irréversible.`)) return;
+
+  showToast('Suppression en cours…', 'success');
+  try {
+    const res = await fetch(`${WORKER}/delete-all-prospects`, { method: 'POST' });
+    const data = await res.json();
+    DATA = [];
+    renderProspects();
+    showToast(`${data.deleted} prospects supprimés 🗑️`, 'success');
+  } catch(e) {
+    showToast('Erreur suppression globale', 'error');
+  }
 }
 
 function toggleSave(id, el) {
