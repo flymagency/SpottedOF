@@ -383,10 +383,10 @@ export default {
         if (platform === 'ig' || platform === 'instagram') {
           // Phase 1 : scrape les posts du profil de référence pour extraire ses hashtags
           // Scrape directement les "following" du compte de référence
-          // Actor dédié : apify~instagram-following-scraper
-          const followingRunId = await apifyStartRun('apify~instagram-following-scraper', {
-            username: handle,
-            resultsLimit: resultsLimit,
+          // Actor : datadoping~instagram-following-scraper
+          const followingRunId = await apifyStartRun('datadoping~instagram-following-scraper', {
+            usernames: [handle],
+            max_count: Math.max(50, resultsLimit),
           }, APIFY_TOKEN);
 
           return json({
