@@ -363,30 +363,20 @@
           </div>
         </div>
 
-        <!-- Section : Profil -->
-        <div class="scan-section-title" style="margin-top:16px;">👤 Type de profil</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          <label class="scan-check-label">
-            <input type="checkbox" id="filterPublicOnly" checked>
-            <span>Compte public uniquement</span>
-          </label>
-          <label class="scan-check-label">
-            <input type="checkbox" id="filterNoOf">
-            <span>Pas encore sur OF/Fansly</span>
-          </label>
-          <label class="scan-check-label">
-            <input type="checkbox" id="filterHasOf">
-            <span>Déjà sur OF/Fansly/Mym</span>
-          </label>
-          <label class="scan-check-label">
-            <input type="checkbox" id="filterVerified">
-            <span>Non vérifié seulement</span>
-          </label>
+        <!-- ═══ INSTAGRAM ═══════════════════════════════════════════════ -->
+
+        <!-- IG : Type de profil -->
+        <div class="scan-section-title scan-filter-block" data-platforms="ig" style="margin-top:16px;">👤 Type de profil</div>
+        <div class="scan-filter-block" data-platforms="ig" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <label class="scan-check-label"><input type="checkbox" id="filterPublicOnly" checked><span>Compte public uniquement</span></label>
+          <label class="scan-check-label"><input type="checkbox" id="filterNoOf"><span>Pas encore sur OF/Fansly</span></label>
+          <label class="scan-check-label"><input type="checkbox" id="filterHasOf"><span>Déjà sur OF/Fansly/Mym</span></label>
+          <label class="scan-check-label"><input type="checkbox" id="filterVerified"><span>Non vérifié seulement</span></label>
         </div>
 
-        <!-- Section : Taille du compte -->
-        <div class="scan-section-title" style="margin-top:16px;">📊 Taille du compte</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <!-- IG : Taille -->
+        <div class="scan-section-title scan-filter-block" data-platforms="ig" style="margin-top:16px;">📊 Taille du compte</div>
+        <div class="scan-filter-block" data-platforms="ig" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
           <div>
             <label class="form-label">Followers min</label>
             <select class="form-input" id="filterFollowersMin" style="padding:8px 10px;">
@@ -411,26 +401,26 @@
           </div>
         </div>
 
-        <!-- Section : Activité & Profil -->
-        <div class="scan-section-title" style="margin-top:16px;">⚡ Activité & Profil</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <!-- IG : Activité -->
+        <div class="scan-section-title scan-filter-block" data-platforms="ig" style="margin-top:16px;">⚡ Activité & Profil</div>
+        <div class="scan-filter-block" data-platforms="ig" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
           <div>
             <label class="form-label">Posts minimum</label>
             <select class="form-input" id="filterPostsMin" style="padding:8px 10px;">
               <option value="0">Pas de minimum</option>
-              <option value="12">12+ posts</option>
-              <option value="30" selected>30+ posts</option>
-              <option value="50">50+ posts</option>
-              <option value="100">100+ posts</option>
+              <option value="12">12+</option>
+              <option value="30" selected>30+</option>
+              <option value="50">50+</option>
+              <option value="100">100+</option>
             </select>
           </div>
           <div>
             <label class="form-label">Ratio followers/following</label>
             <select class="form-input" id="filterRatio" style="padding:8px 10px;">
               <option value="0">Pas de minimum</option>
-              <option value="1">1x+ (équilibré)</option>
-              <option value="2" selected>2x+ (établie)</option>
-              <option value="5">5x+ (influenceuse)</option>
+              <option value="1">1x+</option>
+              <option value="2" selected>2x+</option>
+              <option value="5">5x+</option>
             </select>
           </div>
           <div>
@@ -440,23 +430,104 @@
               <option value="1">1%+</option>
               <option value="2" selected>2%+</option>
               <option value="4">4%+</option>
-              <option value="6">6%+ (très bon)</option>
+              <option value="6">6%+</option>
             </select>
           </div>
           <div>
             <label class="form-label" style="margin-bottom:8px;">Options</label>
             <div style="display:flex;flex-direction:column;gap:6px;">
-              <label class="scan-check-label" style="font-size:11px;">
-                <input type="checkbox" id="filterHasExternalUrl"> 🔗 Lien externe (Linktree…)
-              </label>
-              <label class="scan-check-label" style="font-size:11px;">
-                <input type="checkbox" id="filterNoBusinessAccount"> 👤 Compte perso (non business)
-              </label>
+              <label class="scan-check-label" style="font-size:11px;"><input type="checkbox" id="filterHasExternalUrl"> 🔗 Lien externe (Linktree…)</label>
+              <label class="scan-check-label" style="font-size:11px;"><input type="checkbox" id="filterNoBusinessAccount"> 👤 Compte perso (non business)</label>
             </div>
           </div>
         </div>
 
-        <!-- Section : Mots-clés bio -->
+        <!-- ═══ TIKTOK ════════════════════════════════════════════════ -->
+
+        <div class="scan-section-title scan-filter-block" data-platforms="tt" style="margin-top:16px;">📊 Taille du compte</div>
+        <div class="scan-filter-block" data-platforms="tt" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div>
+            <label class="form-label">Fans min</label>
+            <select class="form-input" id="filterTTFollowersMin" style="padding:8px 10px;">
+              <option value="0">Pas de minimum</option>
+              <option value="1000">1 000+</option>
+              <option value="5000" selected>5 000+</option>
+              <option value="10000">10 000+</option>
+              <option value="100000">100 000+</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Fans max</label>
+            <select class="form-input" id="filterTTFollowersMax" style="padding:8px 10px;">
+              <option value="0">Pas de maximum</option>
+              <option value="50000">50 000</option>
+              <option value="100000">100 000</option>
+              <option value="500000" selected>500 000</option>
+              <option value="1000000">1M</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="scan-section-title scan-filter-block" data-platforms="tt" style="margin-top:16px;">⚡ Activité</div>
+        <div class="scan-filter-block" data-platforms="tt" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div>
+            <label class="form-label">Vidéos minimum</label>
+            <select class="form-input" id="filterTTPostsMin" style="padding:8px 10px;">
+              <option value="0">Pas de minimum</option>
+              <option value="10">10+</option>
+              <option value="20" selected>20+</option>
+              <option value="50">50+</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Likes totaux min</label>
+            <select class="form-input" id="filterTTLikesMin" style="padding:8px 10px;">
+              <option value="0">Pas de minimum</option>
+              <option value="1000">1 000+</option>
+              <option value="10000" selected>10 000+</option>
+              <option value="100000">100 000+</option>
+            </select>
+          </div>
+        </div>
+        <div class="scan-filter-block" data-platforms="tt" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;">
+          <label class="scan-check-label"><input type="checkbox" id="filterTTNoOf"><span>Pas encore sur OF/Fansly</span></label>
+          <label class="scan-check-label"><input type="checkbox" id="filterTTHasOf"><span>Déjà sur OF/Fansly/Mym</span></label>
+          <label class="scan-check-label"><input type="checkbox" id="filterTTVerified"><span>Non vérifié seulement</span></label>
+        </div>
+
+        <!-- ═══ THREADS ═══════════════════════════════════════════════ -->
+
+        <div class="scan-section-title scan-filter-block" data-platforms="th" style="margin-top:16px;">📊 Taille du compte</div>
+        <div class="scan-filter-block" data-platforms="th" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div>
+            <label class="form-label">Followers min</label>
+            <select class="form-input" id="filterTHFollowersMin" style="padding:8px 10px;">
+              <option value="0">Pas de minimum</option>
+              <option value="500">500+</option>
+              <option value="1000" selected>1 000+</option>
+              <option value="5000">5 000+</option>
+              <option value="10000">10 000+</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Followers max</label>
+            <select class="form-input" id="filterTHFollowersMax" style="padding:8px 10px;">
+              <option value="0">Pas de maximum</option>
+              <option value="10000">10 000</option>
+              <option value="50000" selected>50 000</option>
+              <option value="200000">200 000</option>
+            </select>
+          </div>
+        </div>
+        <div class="scan-filter-block" data-platforms="th" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;">
+          <label class="scan-check-label"><input type="checkbox" id="filterTHNoOf"><span>Pas encore sur OF/Fansly</span></label>
+          <label class="scan-check-label"><input type="checkbox" id="filterTHHasOf"><span>Déjà sur OF/Fansly/Mym</span></label>
+          <label class="scan-check-label"><input type="checkbox" id="filterTHVerified"><span>Non vérifié seulement</span></label>
+        </div>
+
+        <!-- ═══ COMMUN (toutes plateformes) ═══════════════════════════ -->
+
+        <!-- Mots-clés bio -->
         <div class="scan-section-title" style="margin-top:16px;">🔎 Mots-clés dans la bio</div>
         <div>
           <input class="form-input" id="filterKeywordsInclude" placeholder="Mots à inclure : model, booking, collab… (séparés par virgule)">
@@ -928,12 +999,20 @@ const PLATFORM_LABELS = { ig: 'Instagram', tt: 'TikTok', th: 'Threads' };
 function openScanModal() {
   resetScanModal();
   document.getElementById('refHandle').value = '';
+  // Init platform filter visibility (default = IG selected)
+  const selBtn = document.querySelector('#scanPlatformPick .plat-pick-btn.sel');
+  if (selBtn) pickScanPlatform(selBtn);
   document.getElementById('scanModal').classList.add('open');
 }
 
 function pickScanPlatform(el) {
   document.querySelectorAll('#scanPlatformPick .plat-pick-btn').forEach(b => b.classList.remove('sel'));
   el.classList.add('sel');
+  const plat = el.dataset.platform;
+  document.querySelectorAll('.scan-filter-block').forEach(block => {
+    const platforms = block.dataset.platforms;
+    block.style.display = (!platforms || platforms === plat) ? '' : 'none';
+  });
 }
 
 function pickPlatform(el) { document.querySelectorAll('.plat-pick-btn').forEach(b=>b.classList.remove('sel')); el.classList.add('sel'); }
@@ -954,21 +1033,51 @@ async function launchScan() {
   const platformLabel = PLATFORM_LABELS[platform] || platform;
 
   // Collecter les critères de filtrage
-  const parseKw = id => document.getElementById(id).value.split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
-  const filters = {
-    public_only:          document.getElementById('filterPublicOnly').checked,
-    no_of:                document.getElementById('filterNoOf').checked,
-    has_of:               document.getElementById('filterHasOf').checked,
-    no_verified:          document.getElementById('filterVerified').checked,
-    followers_min:        parseInt(document.getElementById('filterFollowersMin').value) || 0,
-    followers_max:        parseInt(document.getElementById('filterFollowersMax').value) || 0,
-    posts_min:            parseInt(document.getElementById('filterPostsMin').value) || 0,
-    ratio_min:            parseFloat(document.getElementById('filterRatio').value) || 0,
-    engagement_min:       parseFloat(document.getElementById('filterEngagement').value) || 0,
-    has_external_url:     document.getElementById('filterHasExternalUrl').checked,
-    no_business_account:  document.getElementById('filterNoBusinessAccount').checked,
-    keywords_include:     parseKw('filterKeywordsInclude'),
-    keywords_exclude:     parseKw('filterKeywordsExclude'),
+  const parseKw = id => { const el = document.getElementById(id); return el ? el.value.split(',').map(s=>s.trim().toLowerCase()).filter(Boolean) : []; };
+  const getInt = id => { const el = document.getElementById(id); return el ? (parseInt(el.value) || 0) : 0; };
+  const getFloat = id => { const el = document.getElementById(id); return el ? (parseFloat(el.value) || 0) : 0; };
+  const getChecked = id => { const el = document.getElementById(id); return el ? el.checked : false; };
+
+  const filters = { platform };
+
+  if (platform === 'ig') {
+    Object.assign(filters, {
+      public_only:         getChecked('filterPublicOnly'),
+      no_of:               getChecked('filterNoOf'),
+      has_of:              getChecked('filterHasOf'),
+      no_verified:         getChecked('filterVerified'),
+      followers_min:       getInt('filterFollowersMin'),
+      followers_max:       getInt('filterFollowersMax'),
+      posts_min:           getInt('filterPostsMin'),
+      ratio_min:           getFloat('filterRatio'),
+      engagement_min:      getFloat('filterEngagement'),
+      has_external_url:    getChecked('filterHasExternalUrl'),
+      no_business_account: getChecked('filterNoBusinessAccount'),
+    });
+  } else if (platform === 'tt') {
+    Object.assign(filters, {
+      followers_min:  getInt('filterTTFollowersMin'),
+      followers_max:  getInt('filterTTFollowersMax'),
+      posts_min:      getInt('filterTTPostsMin'),
+      likes_min:      getInt('filterTTLikesMin'),
+      no_of:          getChecked('filterTTNoOf'),
+      has_of:         getChecked('filterTTHasOf'),
+      no_verified:    getChecked('filterTTVerified'),
+    });
+  } else if (platform === 'th') {
+    Object.assign(filters, {
+      followers_min:  getInt('filterTHFollowersMin'),
+      followers_max:  getInt('filterTHFollowersMax'),
+      no_of:          getChecked('filterTHNoOf'),
+      has_of:         getChecked('filterTHHasOf'),
+      no_verified:    getChecked('filterTHVerified'),
+    });
+  }
+
+  // Critères communs (toutes plateformes)
+  Object.assign(filters, {
+    keywords_include: parseKw('filterKeywordsInclude'),
+    keywords_exclude: parseKw('filterKeywordsExclude'),
     langs: (() => {
       const anyChecked = document.querySelector('#filterLangs input[value="any"]')?.checked;
       if (anyChecked) return [];
@@ -979,7 +1088,7 @@ async function launchScan() {
       if (anyChecked) return [];
       return [...document.querySelectorAll('#filterNiches input:checked:not([value="any"])')].map(i => i.value);
     })(),
-  };
+  });
 
   // Passer en mode "loading"
   document.getElementById('scanFormFields').style.display = 'none';
@@ -1086,6 +1195,12 @@ function resetScanModal() {
   document.getElementById('scanResult').style.display = 'none';
   document.getElementById('scanLaunchBtn').disabled = false;
   document.getElementById('scanFooter').style.display = 'flex';
+  // Reset TT inputs
+  ['filterTTFollowersMin','filterTTFollowersMax','filterTTPostsMin','filterTTLikesMin'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  ['filterTTNoOf','filterTTHasOf','filterTTVerified'].forEach(id => { const el = document.getElementById(id); if(el) el.checked=false; });
+  // Reset TH inputs
+  ['filterTHFollowersMin','filterTHFollowersMax'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  ['filterTHNoOf','filterTHHasOf','filterTHVerified'].forEach(id => { const el = document.getElementById(id); if(el) el.checked=false; });
 }
 
 let currentProspect = null;
