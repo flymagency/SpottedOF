@@ -1016,9 +1016,25 @@ function renderProspects() {
   }).join('');
 }
 
+const TAB_TO_NAV = { all: 'prospects', of: 'private', convert: 'contact', saved: 'saved' };
+const TAB_TITLES  = { all: 'Prospects', of: 'Plateforme privée', convert: 'À contacter', saved: 'Sauvegardés' };
+
 function setTab(el, tab) {
-  document.querySelectorAll('.filter-tab').forEach(t=>t.classList.remove('active'));
-  el.classList.add('active'); activeTab=tab; renderProspects();
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  activeTab = tab;
+
+  // Mettre à jour le titre en haut à gauche
+  const title = TAB_TITLES[tab] || 'Prospects';
+  document.getElementById('topbarTitle').textContent = title;
+
+  // Mettre à jour le nav de gauche
+  const navSection = TAB_TO_NAV[tab] || 'prospects';
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const navBtn = document.getElementById(`nav-${navSection}`);
+  if (navBtn) navBtn.classList.add('active');
+
+  renderProspects();
 }
 
 function togglePlatform(el, plat) {
