@@ -233,7 +233,7 @@
       <div class="stat-sub">seuil actuel : 60%</div>
     </div>
     <div class="stat-card pink">
-      <div class="stat-label">Sur plateforme privée</div>
+      <div class="stat-label">Déjà monétisée</div>
       <div class="stat-value" style="color:var(--pink)">38</div>
       <div class="stat-sub">15% des profils</div>
     </div>
@@ -251,7 +251,7 @@
     </div>
     <div class="filter-tabs">
       <button class="filter-tab active" onclick="setTab(this,'all')">Tous</button>
-      <button class="filter-tab" onclick="setTab(this,'of')">Sur privé</button>
+      <button class="filter-tab" onclick="setTab(this,'of')">Monétisées</button>
       <button class="filter-tab" onclick="setTab(this,'convert')">À contacter</button>
       <button class="filter-tab" onclick="setTab(this,'saved')">Sauvegardés</button>
     </div>
@@ -762,7 +762,7 @@ function renderProspects() {
           <span class="card-stat">${fmt(p.followers)} followers</span>
           <span class="card-stat" style="color:var(--yellow)">${p.engagement}% eng.</span>
         </div>
-        ${p.hasOf?'<span class="badge badge-of">Sur privé</span>':'<span class="badge badge-convert">À contacter</span>'}
+        ${p.hasOf?'<span class="badge badge-of">Monétisée</span>':'<span class="badge badge-convert">À contacter</span>'}
       </div>`;
     }).join('');
     return;
@@ -884,7 +884,7 @@ function openProspect(id) {
       <div>
         <div class="modal-handle">${p.handle}</div>
         <div class="modal-meta">${p.name} · ${p.niche} · <span class="platform-dot dot-${p.platform}" style="margin-left:4px"></span>${p.platform.toUpperCase()}</div>
-        <div style="margin-top:8px">${p.hasOf?'<span class="badge badge-of">Sur privé</span>':'<span class="badge badge-convert">À contacter</span>'}</div>
+        <div style="margin-top:8px">${p.hasOf?'<span class="badge badge-of">Monétisée</span>':'<span class="badge badge-convert">À contacter</span>'}</div>
       </div>
     </div>
     <div class="modal-bio">${p.bio || '<em style="color:var(--muted)">Pas de bio disponible</em>'}</div>
@@ -1221,7 +1221,7 @@ function statusBadge(p) {
   if (s === 'en discussion') return '<span class="badge" style="background:rgba(79,70,229,0.1);color:#4f46e5;border:1px solid rgba(79,70,229,0.25)">En discussion</span>';
   if (s === 'signée') return '<span class="badge" style="background:rgba(5,150,105,0.1);color:#059669;border:1px solid rgba(5,150,105,0.25)">✓ Signée</span>';
   if (s === 'refus') return '<span class="badge" style="background:rgba(232,68,90,0.1);color:#e8445a;border:1px solid rgba(232,68,90,0.25)">Refus</span>';
-  if (p.hasOf) return '<span class="badge badge-of">Sur privé</span>';
+  if (p.hasOf) return '<span class="badge badge-of">Monétisée</span>';
   return '<span class="badge badge-convert">À contacter</span>';
 }
 
