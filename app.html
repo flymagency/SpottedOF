@@ -411,6 +411,62 @@
           </div>
         </div>
 
+        <!-- Section : Activité & Profil -->
+        <div class="scan-section-title" style="margin-top:16px;">⚡ Activité & Profil</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div>
+            <label class="form-label">Posts minimum</label>
+            <select class="form-input" id="filterPostsMin" style="padding:8px 10px;">
+              <option value="0">Pas de minimum</option>
+              <option value="12">12+ posts</option>
+              <option value="30" selected>30+ posts</option>
+              <option value="50">50+ posts</option>
+              <option value="100">100+ posts</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Ratio followers/following</label>
+            <select class="form-input" id="filterRatio" style="padding:8px 10px;">
+              <option value="0">Pas de minimum</option>
+              <option value="1">1x+ (équilibré)</option>
+              <option value="2" selected>2x+ (établie)</option>
+              <option value="5">5x+ (influenceuse)</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Engagement minimum</label>
+            <select class="form-input" id="filterEngagement" style="padding:8px 10px;">
+              <option value="0">Pas de minimum</option>
+              <option value="1">1%+</option>
+              <option value="2" selected>2%+</option>
+              <option value="4">4%+</option>
+              <option value="6">6%+ (très bon)</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label" style="margin-bottom:8px;">Options</label>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <label class="scan-check-label" style="font-size:11px;">
+                <input type="checkbox" id="filterHasExternalUrl"> 🔗 Lien externe (Linktree…)
+              </label>
+              <label class="scan-check-label" style="font-size:11px;">
+                <input type="checkbox" id="filterNoBusinessAccount"> 👤 Compte perso (non business)
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section : Mots-clés bio -->
+        <div class="scan-section-title" style="margin-top:16px;">🔎 Mots-clés dans la bio</div>
+        <div>
+          <input class="form-input" id="filterKeywordsInclude" placeholder="Mots à inclure : model, booking, collab… (séparés par virgule)">
+          <div style="font-size:11px;color:var(--muted);margin-top:5px;">La bio doit contenir AU MOINS UN de ces mots</div>
+        </div>
+        <div>
+          <input class="form-input" id="filterKeywordsExclude" placeholder="Mots à exclure : kid, baby, famille… (séparés par virgule)">
+          <div style="font-size:11px;color:var(--muted);margin-top:5px;">La bio ne doit contenir AUCUN de ces mots</div>
+        </div>
+
         <!-- Section : Langue -->
         <div class="scan-section-title" style="margin-top:16px;">🌍 Langue de la bio</div>
         <div style="display:flex;flex-wrap:wrap;gap:8px;" id="filterLangs">
@@ -898,13 +954,21 @@ async function launchScan() {
   const platformLabel = PLATFORM_LABELS[platform] || platform;
 
   // Collecter les critères de filtrage
+  const parseKw = id => document.getElementById(id).value.split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
   const filters = {
-    public_only:    document.getElementById('filterPublicOnly').checked,
-    no_of:          document.getElementById('filterNoOf').checked,
-    has_of:         document.getElementById('filterHasOf').checked,
-    no_verified:    document.getElementById('filterVerified').checked,
-    followers_min:  parseInt(document.getElementById('filterFollowersMin').value) || 0,
-    followers_max:  parseInt(document.getElementById('filterFollowersMax').value) || 0,
+    public_only:          document.getElementById('filterPublicOnly').checked,
+    no_of:                document.getElementById('filterNoOf').checked,
+    has_of:               document.getElementById('filterHasOf').checked,
+    no_verified:          document.getElementById('filterVerified').checked,
+    followers_min:        parseInt(document.getElementById('filterFollowersMin').value) || 0,
+    followers_max:        parseInt(document.getElementById('filterFollowersMax').value) || 0,
+    posts_min:            parseInt(document.getElementById('filterPostsMin').value) || 0,
+    ratio_min:            parseFloat(document.getElementById('filterRatio').value) || 0,
+    engagement_min:       parseFloat(document.getElementById('filterEngagement').value) || 0,
+    has_external_url:     document.getElementById('filterHasExternalUrl').checked,
+    no_business_account:  document.getElementById('filterNoBusinessAccount').checked,
+    keywords_include:     parseKw('filterKeywordsInclude'),
+    keywords_exclude:     parseKw('filterKeywordsExclude'),
     langs: (() => {
       const anyChecked = document.querySelector('#filterLangs input[value="any"]')?.checked;
       if (anyChecked) return [];

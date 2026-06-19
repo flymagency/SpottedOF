@@ -350,9 +350,14 @@ export default {
         biography: item.biography || '',
         followersCount: item.followersCount || 0,
         followingCount: item.followingCount || 0,
+        postsCount: item.postsCount || item.igtvVideoCount || 0,
         engagementRate: item.engagementRate || 0,
+        isPrivate: item.private || item.isPrivate || false,
+        isVerified: item.verified || item.isVerified || false,
+        isBusinessAccount: item.isBusinessAccount || false,
+        externalUrl: item.externalUrl || item.externalUrls?.[0] || '',
         platform: 'ig',
-        userId: item.id || '',
+        userId: item.id || item.pk || '',
       };
     }
 
@@ -624,6 +629,33 @@ export default {
         const fc = p.followersCount || 0;
         if (filters.followers_min > 0 && fc < filters.followers_min) return false;
         if (filters.followers_max > 0 && fc > filters.followers_max) return false;
+
+        // 1. Nombre de posts minimum
+        if (filters.posts_min > 0 && (p.postsCount || 0) < filters.posts_min) return false;
+
+        // 2. Compte business
+        if (filters.no_business_account && p.isBusinessAccount) return false;
+
+        // 3. Lien externe présent (Linktree, Beacons, etc.)
+        if (filters.has_external_url && !p.externalUrl) return false;
+
+        // 4. Mots-clés à inclure (bio doit contenir au moins un)
+        if (filters.keywords_include && filters.keywords_include.length > 0) {
+          if (!filters.keywords_include.some(kw => bio.includes(kw))) return false;
+        }
+
+        // 4b. Mots-clés à exclure (bio ne doit contenir aucun)
+        if (filters.keywords_exclude && filters.keywords_exclude.length > 0) {
+          if (filters.keywords_exclude.some(kw => bio.includes(kw))) return false;
+        }
+
+        // 5. Ratio followers/following
+        const following = p.followingCount || 1;
+        const ratio = (p.followersCount || 0) / following;
+        if (filters.ratio_min > 0 && ratio < filters.ratio_min) return false;
+
+        // 6. Taux d'engagement minimum
+        if (filters.engagement_min > 0 && (p.engagementRate || 0) < filters.engagement_min) return false;
 
         // Langue
         if (filters.langs && filters.langs.length > 0) {
