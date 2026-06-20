@@ -22,7 +22,7 @@
     /* ── SIDEBAR ── */
     .sidebar { width: 240px; min-width: 240px; height: 100vh; position: fixed; top: 0; left: 0; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 50; }
     .sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 20px 16px 16px; border-bottom: 1px solid var(--border); }
-    .logo-icon { width: 34px; height: 34px; background: #0f1117; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; overflow: hidden; }
+    .logo-icon { width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; }
     .logo-text { font-size: 17px; font-weight: 800; }
     .logo-text span { color: var(--pink); }
 
@@ -265,7 +265,23 @@
 <!-- ═══ SIDEBAR ═══ -->
 <aside class="sidebar">
   <div class="sidebar-logo">
-    <div class="logo-icon"><img src="favicon.svg" width="34" height="34" style="display:block"></div>
+    <div class="logo-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 34 34" width="34" height="34">
+        <defs>
+          <linearGradient id="lg" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#6366f1"/>
+            <stop offset="100%" style="stop-color:#ec4899"/>
+          </linearGradient>
+        </defs>
+        <rect width="34" height="34" rx="9" fill="#0f1117"/>
+        <circle cx="17" cy="17" r="12" fill="none" stroke="url(#lg)" stroke-width="0.9" opacity="0.4"/>
+        <circle cx="17" cy="17" r="7.5" fill="none" stroke="url(#lg)" stroke-width="0.9" opacity="0.65"/>
+        <circle cx="17" cy="17" r="3" fill="none" stroke="url(#lg)" stroke-width="1.1"/>
+        <line x1="17" y1="17" x2="25.5" y2="8.5" stroke="url(#lg)" stroke-width="1.6" stroke-linecap="round"/>
+        <circle cx="25.5" cy="8.5" r="2.2" fill="#ec4899"/>
+        <text x="17" y="21.5" text-anchor="middle" fill="white" font-family="Inter,Arial,sans-serif" font-weight="900" font-size="8.5">S</text>
+      </svg>
+    </div>
     <div class="logo-text">Spotted<span>OF</span></div>
   </div>
 
