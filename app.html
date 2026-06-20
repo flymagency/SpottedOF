@@ -536,6 +536,27 @@
     <div class="modal-body">
       <div class="scan-form" id="scanFormFields" style="max-height:72vh;overflow-y:auto;padding-right:4px;">
 
+        <!-- Section : Planifier (en haut, bien visible) -->
+        <div style="background:linear-gradient(135deg,rgba(79,70,229,0.07),rgba(219,39,119,0.05));border:2px solid rgba(79,70,229,0.25);border-radius:14px;padding:16px 18px;margin-bottom:4px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;flex:1" id="scheduleToggleWrap">
+              <input type="checkbox" id="scheduleEnabled" style="accent-color:var(--accent);width:17px;height:17px;cursor:pointer;flex-shrink:0" onchange="document.getElementById('scheduleOptions').style.display=this.checked?'flex':'none'">
+              <div>
+                <div style="font-size:13px;font-weight:700;color:var(--accent)">📅 Planifier ce scan automatiquement</div>
+                <div style="font-size:11px;color:var(--muted);margin-top:2px">SpottedOF relancera ce scan à intervalles réguliers</div>
+              </div>
+            </label>
+            <div id="scheduleOptions" style="display:none;align-items:center;gap:10px;flex-wrap:wrap">
+              <label class="form-label" style="margin:0;white-space:nowrap">Fréquence :</label>
+              <select class="form-input" id="scheduleFrequency" style="padding:7px 10px;width:auto;font-size:12px;">
+                <option value="7">Chaque semaine</option>
+                <option value="14">Toutes les 2 semaines</option>
+                <option value="30">Tous les mois</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
         <!-- Section : Cible -->
         <div class="scan-section-title">🎯 Cible</div>
         <div>
@@ -770,23 +791,6 @@
           <label class="scan-check-label"><input type="checkbox" value="gaming"> 🎮 Gaming</label>
           <label class="scan-check-label"><input type="checkbox" value="music"> 🎵 Music</label>
           <label class="scan-check-label" id="filterNicheAny"><input type="checkbox" value="any" checked> 🌐 Toutes</label>
-        </div>
-
-        <!-- Section : Planifier -->
-        <div class="scan-section-title" style="margin-top:16px;">📅 Planifier ce scan</div>
-        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;">
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin-bottom:0" id="scheduleToggleWrap">
-            <input type="checkbox" id="scheduleEnabled" style="accent-color:var(--accent);width:15px;height:15px;cursor:pointer" onchange="document.getElementById('scheduleOptions').style.display=this.checked?'block':'none'">
-            <span style="font-size:13px;font-weight:600">Répéter ce scan automatiquement</span>
-          </label>
-          <div id="scheduleOptions" style="display:none;margin-top:12px;">
-            <label class="form-label">Fréquence</label>
-            <select class="form-input" id="scheduleFrequency" style="padding:8px 10px;">
-              <option value="7">Toutes les semaines</option>
-              <option value="14">Toutes les 2 semaines</option>
-              <option value="30">Tous les mois</option>
-            </select>
-          </div>
         </div>
 
       </div>
