@@ -2,11 +2,14 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SpottedOF — Prospect Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
   <style>
     :root {
       --bg: #f4f5f9; --surface: #ffffff; --surface2: #f0f1f6; --border: #e2e4ec;
@@ -235,6 +238,18 @@
     .gmail-connect-btn:hover { border-color: #EA4335; box-shadow: 0 2px 8px rgba(234,67,53,0.12); }
     .gmail-connected { display: flex; align-items: center; gap: 8px; background: rgba(5,150,105,0.06); border: 1px solid rgba(5,150,105,0.2); border-radius: 12px; padding: 10px 16px; font-size: 12px; font-weight: 600; color: var(--green); }
 
+    /* ── TAGS ── */
+    .tag-chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 100px; font-size: 10px; font-weight: 700; font-family: 'Space Mono', monospace; cursor: default; border: 1px solid transparent; }
+    .tag-chip .tag-del { cursor: pointer; opacity: 0.6; font-size: 10px; margin-left: 2px; }
+    .tag-chip .tag-del:hover { opacity: 1; }
+    .tag-row { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+
+    /* ── PLAN LOCK ── */
+    .plan-lock { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px; text-align: center; gap: 12px; }
+    .plan-lock-icon { font-size: 36px; }
+    .plan-lock-title { font-size: 15px; font-weight: 700; }
+    .plan-lock-sub { font-size: 13px; color: var(--muted); }
+
     @media (max-width: 900px) {
       .sidebar { display: none; }
       .main-area { margin-left: 0; }
@@ -307,6 +322,11 @@
       <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
       Équipe
     </button>
+    <button class="nav-item" id="nav-scheduled" onclick="navTo('scheduled')">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Scans planifiés
+      <span class="nav-badge" id="scheduled-badge" style="display:none"></span>
+    </button>
     <button class="nav-item" onclick="showComingSoon('Détection doublons')">
       <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
       Doublons
@@ -358,6 +378,9 @@
           <div id="notifList" style="max-height:280px;overflow-y:auto"></div>
         </div>
       </div>
+      <button id="pdfExportBtn" class="btn btn-ghost" onclick="exportPDF()" style="display:none" title="Exporter en PDF">
+        📄 PDF
+      </button>
       <button class="btn btn-primary" onclick="openScanModal()">
         <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
         Nouveau scan
@@ -367,6 +390,11 @@
 
   <!-- CONTENT -->
   <div class="content">
+
+  <!-- ═══ VUE SCANS PLANIFIÉS ═══ -->
+  <div id="view-scheduled" style="display:none">
+    <div id="scheduled-body"></div>
+  </div>
 
   <!-- ═══ VUE ÉQUIPE ═══ -->
   <div id="view-team" style="display:none">
@@ -744,6 +772,23 @@
           <label class="scan-check-label" id="filterNicheAny"><input type="checkbox" value="any" checked> 🌐 Toutes</label>
         </div>
 
+        <!-- Section : Planifier -->
+        <div class="scan-section-title" style="margin-top:16px;">📅 Planifier ce scan</div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin-bottom:0" id="scheduleToggleWrap">
+            <input type="checkbox" id="scheduleEnabled" style="accent-color:var(--accent);width:15px;height:15px;cursor:pointer" onchange="document.getElementById('scheduleOptions').style.display=this.checked?'block':'none'">
+            <span style="font-size:13px;font-weight:600">Répéter ce scan automatiquement</span>
+          </label>
+          <div id="scheduleOptions" style="display:none;margin-top:12px;">
+            <label class="form-label">Fréquence</label>
+            <select class="form-input" id="scheduleFrequency" style="padding:8px 10px;">
+              <option value="7">Toutes les semaines</option>
+              <option value="14">Toutes les 2 semaines</option>
+              <option value="30">Tous les mois</option>
+            </select>
+          </div>
+        </div>
+
       </div>
       <!-- État : scan en cours -->
       <div id="scanProgress" style="display:none;text-align:center;padding:24px 0;">
@@ -766,6 +811,38 @@
 <style>
 @keyframes scanPulse { from { width: 20%; } to { width: 80%; } }
 </style>
+
+<!-- MODAL TAGS -->
+<div class="modal-overlay" id="tagsModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <div class="modal-title">🏷️ Tags du prospect</div>
+      <button class="modal-close" onclick="closeModal('tagsModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="tagsModalHandle" style="font-size:13px;font-weight:700;margin-bottom:16px;color:var(--muted)"></div>
+      <div id="tagsCurrentList" style="display:flex;flex-wrap:wrap;gap:6px;min-height:32px;margin-bottom:16px"></div>
+      <div style="display:flex;gap:8px">
+        <input class="form-input" id="tagInput" placeholder="Nouveau tag…" maxlength="20" style="flex:1" onkeydown="if(event.key==='Enter')addTag()">
+        <div style="display:flex;gap:6px;align-items:center">
+          <input type="color" id="tagColorPicker" value="#4f46e5" style="width:36px;height:36px;border:1px solid var(--border);border-radius:8px;cursor:pointer;padding:2px;background:var(--surface)">
+        </div>
+        <button class="btn btn-primary" onclick="addTag()">Ajouter</button>
+      </div>
+      <div style="margin-top:12px">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:8px;font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:0.06em">Tags rapides</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          ${['⭐ Top', '🔥 Chaud', '💤 En attente', '🇫🇷 FR', '🇺🇸 US', '💪 Fitness', '💄 Beauty', '📩 Contactée'].map(t =>
+            `<span class="tag-chip" onclick="quickTag('${t}')" style="background:rgba(79,70,229,0.08);color:var(--accent);border-color:rgba(79,70,229,0.2);cursor:pointer">${t}</span>`
+          ).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('tagsModal')" style="flex:1">Fermer</button>
+    </div>
+  </div>
+</div>
 
 <div class="toast" id="toast"></div>
 
@@ -1013,11 +1090,14 @@ function renderProspects() {
         <div class="icon-btn" onclick="blacklistProspect('${p.id}',this)" title="Blacklister" style="color:#6b7280;border-color:rgba(107,114,128,0.25)">
           <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
         </div>
+        ${isPro() ? `<div class="icon-btn" onclick="openTagsModal('${p.id}','${p.handle}')" title="Tags" style="color:#4f46e5;border-color:rgba(79,70,229,0.25)">🏷️</div>` : ''}
         <div class="icon-btn" onclick="deleteProspect('${p.id}',this)" title="Supprimer" style="color:#e8445a;border-color:rgba(232,68,90,0.25)">
           <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
         </div>
       </div>
-    </div>`;
+    </div>
+    ${isPro() && (TAGS_MAP[p.id]||[]).length > 0 ? `<div style="padding:0 20px 10px;display:flex;flex-wrap:wrap;gap:4px">${(TAGS_MAP[p.id]||[]).map(t => `<span class="tag-chip" style="background:${t.color}18;color:${t.color};border-color:${t.color}40">${t.tag}</span>`).join('')}</div>` : ''}
+    `;
   }).join('');
 }
 
@@ -4068,6 +4148,316 @@ async function renderTeam() {
 
 // ─── VÉRIFIER INVITE AU CHARGEMENT ───────────────────────────────────────────
 // Appelé après auth dans le bloc onAuthStateChange
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ─── PLAN CHECK ───────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+function isPro() {
+  return ['pro', 'agency', 'admin'].includes(userPlan);
+}
+
+function planLockHTML(feature) {
+  return `<div class="plan-lock">
+    <div class="plan-lock-icon">🔒</div>
+    <div class="plan-lock-title">Fonctionnalité Pro</div>
+    <div class="plan-lock-sub">${feature} est disponible à partir du plan Pro.</div>
+    <a href="plan.html" class="btn btn-primary" style="margin-top:8px">Passer au Pro →</a>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ─── TAGS PROSPECTS ───────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+let TAGS_MAP = {}; // prospectId → [{tag, color}]
+let _tagsProspectId = null;
+
+async function loadTags() {
+  if (!isPro()) return;
+  try {
+    const { data } = await sb.from('prospect_tags').select('prospect_id, tag, color').eq('user_id', currentUser.id);
+    TAGS_MAP = {};
+    (data || []).forEach(t => {
+      if (!TAGS_MAP[t.prospect_id]) TAGS_MAP[t.prospect_id] = [];
+      TAGS_MAP[t.prospect_id].push({ tag: t.tag, color: t.color || '#4f46e5' });
+    });
+  } catch(e) {}
+}
+
+function openTagsModal(prospectId, handle) {
+  if (!isPro()) { showToast('Fonctionnalité Pro uniquement 🔒', 'error'); return; }
+  _tagsProspectId = prospectId;
+  document.getElementById('tagsModalHandle').textContent = '@' + handle;
+  renderTagsModal();
+  document.getElementById('tagsModal').classList.add('open');
+}
+
+function renderTagsModal() {
+  const tags = TAGS_MAP[_tagsProspectId] || [];
+  const el = document.getElementById('tagsCurrentList');
+  if (tags.length === 0) {
+    el.innerHTML = `<span style="font-size:12px;color:var(--muted)">Aucun tag pour l'instant</span>`;
+  } else {
+    el.innerHTML = tags.map(t => `
+      <span class="tag-chip" style="background:${t.color}18;color:${t.color};border-color:${t.color}40">
+        ${t.tag}
+        <span class="tag-del" onclick="removeTag('${t.tag.replace(/'/g,"\\'")}')">✕</span>
+      </span>`).join('');
+  }
+}
+
+async function addTag() {
+  const input = document.getElementById('tagInput');
+  const tag = input.value.trim();
+  if (!tag || !_tagsProspectId) return;
+  const color = document.getElementById('tagColorPicker').value;
+  try {
+    await sb.from('prospect_tags').upsert({ prospect_id: _tagsProspectId, user_id: currentUser.id, tag, color }, { onConflict: 'prospect_id,user_id,tag' });
+    if (!TAGS_MAP[_tagsProspectId]) TAGS_MAP[_tagsProspectId] = [];
+    if (!TAGS_MAP[_tagsProspectId].find(t => t.tag === tag)) {
+      TAGS_MAP[_tagsProspectId].push({ tag, color });
+    }
+    input.value = '';
+    renderTagsModal();
+    renderProspects();
+    showToast(`Tag "${tag}" ajouté ✓`, 'success');
+  } catch(e) { showToast('Erreur ajout tag', 'error'); }
+}
+
+async function quickTag(tag) {
+  if (!_tagsProspectId) return;
+  document.getElementById('tagInput').value = tag;
+  await addTag();
+}
+
+async function removeTag(tag) {
+  if (!_tagsProspectId) return;
+  try {
+    await sb.from('prospect_tags').delete().eq('prospect_id', _tagsProspectId).eq('user_id', currentUser.id).eq('tag', tag);
+    TAGS_MAP[_tagsProspectId] = (TAGS_MAP[_tagsProspectId] || []).filter(t => t.tag !== tag);
+    renderTagsModal();
+    renderProspects();
+    showToast(`Tag supprimé`, 'error');
+  } catch(e) { showToast('Erreur suppression tag', 'error'); }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ─── PDF EXPORT ───────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+function exportPDF() {
+  if (!isPro()) { showToast('Fonctionnalité Pro uniquement 🔒', 'error'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+  // Header
+  doc.setFillColor(79, 70, 229);
+  doc.rect(0, 0, 297, 20, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text('SpottedOF — Rapport Prospects', 14, 13);
+  const now = new Date().toLocaleDateString('fr-FR');
+  doc.setFontSize(9);
+  doc.text(`Généré le ${now}`, 280, 13, { align: 'right' });
+
+  // Get current filtered list
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const minScore = parseInt(document.getElementById('scoreFilter')?.value || '0');
+  let list = DATA.filter(p => {
+    if (q && !p.handle.toLowerCase().includes(q)) return false;
+    if (activeTab === 'of' && !p.hasOf) return false;
+    if (activeTab === 'convert' && p.hasOf) return false;
+    if (activeTab === 'saved' && !savedSet.has(p.id)) return false;
+    if ((p.status||'').toLowerCase() === 'blacklistée') return false;
+    if (p.score < minScore) return false;
+    return true;
+  }).sort((a,b) => b.score - a.score);
+
+  // Summary
+  doc.setTextColor(100, 100, 120);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`${list.length} prospects exportés · Score moyen : ${list.length ? Math.round(list.reduce((s,p)=>s+p.score,0)/list.length) : 0}%`, 14, 28);
+
+  // Table
+  doc.autoTable({
+    startY: 33,
+    head: [['Handle', 'Nom', 'Plateforme', 'Followers', 'Engagement', 'Niche', 'Statut', 'Score', 'Tags']],
+    body: list.map(p => [
+      p.handle,
+      p.name || '—',
+      p.platform.toUpperCase(),
+      p.followers >= 1000 ? (p.followers/1000).toFixed(0)+'K' : p.followers,
+      p.engagement + '%',
+      p.niche || '—',
+      p.status || 'nouveau',
+      p.score + '%',
+      (TAGS_MAP[p.id] || []).map(t => t.tag).join(', ') || '—',
+    ]),
+    styles: { fontSize: 8, cellPadding: 3 },
+    headStyles: { fillColor: [79, 70, 229], textColor: 255, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [248, 249, 255] },
+    columnStyles: {
+      0: { fontStyle: 'bold' },
+      7: { fontStyle: 'bold' },
+    },
+  });
+
+  // Footer
+  const pageCount = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(8);
+    doc.setTextColor(150, 150, 170);
+    doc.text(`Page ${i}/${pageCount} · SpottedOF`, 148, 205, { align: 'center' });
+  }
+
+  doc.save(`SpottedOF_Prospects_${now.replace(/\//g,'-')}.pdf`);
+  showToast('PDF exporté ✓', 'success');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ─── SCANS PLANIFIÉS ──────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+let SCHEDULED_SCANS = [];
+
+async function loadScheduledScans() {
+  try {
+    const { data } = await sb.from('scheduled_scans').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+    SCHEDULED_SCANS = data || [];
+    const active = SCHEDULED_SCANS.filter(s => s.is_active).length;
+    const badge = document.getElementById('scheduled-badge');
+    if (active > 0) { badge.textContent = active; badge.style.display = ''; }
+    else { badge.style.display = 'none'; }
+  } catch(e) {}
+}
+
+async function saveScheduledScan(refHandle, platform, scanParams) {
+  const frequencyDays = parseInt(document.getElementById('scheduleFrequency').value);
+  const nextRun = new Date();
+  nextRun.setDate(nextRun.getDate() + frequencyDays);
+  try {
+    await sb.from('scheduled_scans').insert({
+      user_id: currentUser.id,
+      ref_handle: refHandle,
+      platform,
+      frequency_days: frequencyDays,
+      next_run: nextRun.toISOString(),
+      scan_params: scanParams,
+      is_active: true,
+    });
+    showToast(`Scan planifié toutes les ${frequencyDays === 7 ? 'semaines' : frequencyDays === 14 ? '2 semaines' : 'mois'} ✓`, 'success');
+    await loadScheduledScans();
+  } catch(e) { showToast('Erreur planification', 'error'); }
+}
+
+async function toggleScheduledScan(id, currentActive) {
+  await sb.from('scheduled_scans').update({ is_active: !currentActive }).eq('id', id);
+  await loadScheduledScans();
+  renderScheduledScans();
+  showToast(currentActive ? 'Scan désactivé' : 'Scan activé ✓', currentActive ? 'error' : 'success');
+}
+
+async function deleteScheduledScan(id) {
+  if (!confirm('Supprimer ce scan planifié ?')) return;
+  await sb.from('scheduled_scans').delete().eq('id', id);
+  await loadScheduledScans();
+  renderScheduledScans();
+  showToast('Scan planifié supprimé', 'error');
+}
+
+function renderScheduledScans() {
+  const el = document.getElementById('scheduled-body');
+  const FREQ = { 7: 'Chaque semaine', 14: 'Toutes les 2 semaines', 30: 'Tous les mois' };
+  const PLAT = { ig: '📸 Instagram', tt: '🎵 TikTok', th: '🧵 Threads' };
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
+      <div>
+        <h2 style="font-size:18px;font-weight:800;margin-bottom:4px">📅 Scans planifiés</h2>
+        <p style="font-size:13px;color:var(--muted)">${SCHEDULED_SCANS.length} scan${SCHEDULED_SCANS.length !== 1 ? 's' : ''} configuré${SCHEDULED_SCANS.length !== 1 ? 's' : ''}</p>
+      </div>
+      <button class="btn btn-primary" onclick="openScanModal()">+ Nouveau scan planifié</button>
+    </div>
+    ${SCHEDULED_SCANS.length === 0 ? `
+      <div class="analytics-section" style="text-align:center;padding:60px 24px">
+        <div style="font-size:48px;margin-bottom:16px">📅</div>
+        <div style="font-size:16px;font-weight:700;margin-bottom:8px">Aucun scan planifié</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:20px">Lance un scan et active l'option "Planifier ce scan" pour qu'il se répète automatiquement.</div>
+        <button class="btn btn-primary" onclick="openScanModal()">Lancer un scan →</button>
+      </div>
+    ` : `
+      <div class="table-wrap">
+        ${SCHEDULED_SCANS.map(s => {
+          const nextRun = new Date(s.next_run);
+          const daysLeft = Math.ceil((nextRun - new Date()) / 86400000);
+          const freq = FREQ[s.frequency_days] || `${s.frequency_days}j`;
+          const plat = PLAT[s.platform] || s.platform;
+          return `
+          <div style="display:flex;align-items:center;gap:16px;padding:16px 20px;border-bottom:1px solid var(--border)">
+            <div style="width:44px;height:44px;background:${s.is_active ? 'rgba(79,70,229,0.08)' : 'var(--surface2)'};border:1px solid ${s.is_active ? 'rgba(79,70,229,0.2)' : 'var(--border)'};border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">📅</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:14px;font-weight:700">@${s.ref_handle} <span style="font-weight:400;color:var(--muted);font-size:12px">· ${plat}</span></div>
+              <div style="font-size:12px;color:var(--muted);margin-top:3px">${freq} · Prochain scan ${daysLeft <= 0 ? 'aujourd\'hui' : `dans ${daysLeft}j`}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:11px;font-weight:700;font-family:'Space Mono',monospace;padding:3px 10px;border-radius:100px;${s.is_active ? 'background:rgba(5,150,105,0.08);color:#059669;border:1px solid rgba(5,150,105,0.2)' : 'background:var(--surface2);color:var(--muted);border:1px solid var(--border)'}">${s.is_active ? 'Actif' : 'Pausé'}</span>
+              <button onclick="toggleScheduledScan('${s.id}', ${s.is_active})" class="btn btn-ghost" style="font-size:11px;padding:5px 10px">${s.is_active ? '⏸ Pause' : '▶ Activer'}</button>
+              <button onclick="deleteScheduledScan('${s.id}')" class="btn btn-ghost" style="font-size:11px;padding:5px 10px;color:var(--accent2)">🗑️</button>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    `}
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ─── PATCH INIT & NAV ─────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Ajouter "scheduled" dans allViews et SEPARATE_VIEWS
+const _origAllViews = typeof allViews !== 'undefined' ? allViews : null;
+
+// Patch navTo pour inclure scheduled
+const _origNavTo = window.navTo;
+window.navTo = function(view) {
+  if (view === 'scheduled') {
+    document.querySelectorAll('[id^="view-"]').forEach(v => v.style.display = 'none');
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    const navBtn = document.getElementById('nav-scheduled');
+    if (navBtn) navBtn.classList.add('active');
+    document.getElementById('topbarTitle').textContent = 'Scans planifiés';
+    document.getElementById('view-scheduled').style.display = '';
+    renderScheduledScans();
+    return;
+  }
+  if (_origNavTo) _origNavTo(view);
+};
+
+// Init au chargement
+const _origLoadProspects = window.loadProspects;
+window.loadProspects = async function() {
+  if (_origLoadProspects) await _origLoadProspects();
+  if (isPro()) {
+    await loadTags();
+    // Afficher bouton PDF
+    const pdfBtn = document.getElementById('pdfExportBtn');
+    if (pdfBtn) pdfBtn.style.display = '';
+    renderProspects();
+  }
+  await loadScheduledScans();
+};
+
+// Patch launchScan pour sauvegarder le scan planifié si activé
+const _origLaunchScan = window.launchScan;
+window.launchScan = async function() {
+  const scheduleEnabled = document.getElementById('scheduleEnabled')?.checked;
+  const refHandle = document.getElementById('refHandle')?.value?.trim();
+  const platform = document.querySelector('#scanPlatformPick .plat-pick-btn.sel')?.dataset?.platform || 'ig';
+  if (_origLaunchScan) await _origLaunchScan();
+  if (scheduleEnabled && refHandle) {
+    await saveScheduledScan(refHandle, platform, {});
+  }
+};
 </script>
 </body>
 </html>
