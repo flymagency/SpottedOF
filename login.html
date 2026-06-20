@@ -4,44 +4,46 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SpottedOF — Connexion</title>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
-      --bg: #0a0a0f; --surface: #111118; --surface2: #1a1a24; --border: #2a2a3a;
-      --accent: #7c5cfc; --accent2: #fc5c7c; --green: #2dfc8e; --yellow: #fcdc2d;
-      --pink: #fc5cdc; --text: #e8e8f0; --muted: #6b6b88;
+      --bg: #f4f5f9; --surface: #ffffff; --surface2: #f0f1f6; --border: #e2e4ec;
+      --accent: #4f46e5; --accent2: #e8445a; --green: #059669; --yellow: #d97706;
+      --pink: #db2777; --text: #0f1117; --muted: #6b7280;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
-    body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(rgba(124,92,252,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(124,92,252,0.03) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
 
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 24px; padding: 48px; width: 100%; max-width: 420px; position: relative; z-index: 1; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 24px; padding: 48px; width: 100%; max-width: 420px; box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
 
-    .logo { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; }
+    .logo { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; justify-content: center; }
     .logo-icon { width: 44px; height: 44px; background: linear-gradient(135deg, var(--accent), var(--pink)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
     .logo-text { font-size: 26px; font-weight: 800; }
     .logo-text span { color: var(--pink); }
 
     .tab-row { display: flex; gap: 4px; background: var(--surface2); border-radius: 12px; padding: 4px; margin-bottom: 28px; }
-    .tab { flex: 1; padding: 9px; border-radius: 9px; font-size: 13px; font-weight: 700; cursor: pointer; border: none; background: none; color: var(--muted); font-family: 'Syne', sans-serif; transition: all 0.2s; text-align: center; }
-    .tab.active { background: var(--accent); color: white; }
+    .tab { flex: 1; padding: 9px; border-radius: 9px; font-size: 13px; font-weight: 700; cursor: pointer; border: none; background: none; color: var(--muted); font-family: 'Inter', sans-serif; transition: all 0.2s; text-align: center; }
+    .tab.active { background: var(--accent); color: white; box-shadow: 0 2px 8px rgba(79,70,229,0.3); }
 
     .form-group { margin-bottom: 16px; }
     .form-label { font-size: 11px; color: var(--muted); font-family: 'Space Mono', monospace; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; display: block; }
-    .form-input { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 13px 16px; color: var(--text); font-family: 'Syne', sans-serif; font-size: 14px; outline: none; transition: border-color 0.2s; }
-    .form-input:focus { border-color: var(--accent); }
+    .form-input { width: 100%; background: var(--surface2); border: 1.5px solid var(--border); border-radius: 12px; padding: 13px 16px; color: var(--text); font-family: 'Inter', sans-serif; font-size: 14px; outline: none; transition: border-color 0.2s; }
+    .form-input:focus { border-color: var(--accent); background: white; }
+    .form-input::placeholder { color: var(--muted); }
 
-    .btn { width: 100%; padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 700; font-family: 'Syne', sans-serif; cursor: pointer; border: none; transition: all 0.2s; margin-top: 8px; }
-    .btn-primary { background: var(--accent); color: white; }
-    .btn-primary:hover { background: #9b7ffd; }
-    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn { width: 100%; padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 700; font-family: 'Inter', sans-serif; cursor: pointer; border: none; transition: all 0.2s; margin-top: 8px; }
+    .btn-primary { background: linear-gradient(135deg, var(--accent), var(--pink)); color: white; box-shadow: 0 4px 14px rgba(79,70,229,0.3); }
+    .btn-primary:hover { opacity: 0.92; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(79,70,229,0.4); }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
     .alert { border-radius: 10px; padding: 12px 16px; font-size: 13px; margin-bottom: 16px; display: none; }
-    .alert-error { background: rgba(252,92,124,0.1); border: 1px solid rgba(252,92,124,0.3); color: var(--accent2); }
-    .alert-success { background: rgba(45,252,142,0.1); border: 1px solid rgba(45,252,142,0.3); color: var(--green); }
+    .alert-error { background: rgba(232,68,90,0.08); border: 1px solid rgba(232,68,90,0.2); color: var(--accent2); }
+    .alert-success { background: rgba(5,150,105,0.08); border: 1px solid rgba(5,150,105,0.2); color: var(--green); }
 
-    .divider { text-align: center; margin: 20px 0; font-size: 12px; color: var(--muted); font-family: 'Space Mono', monospace; }
+    .divider { text-align: center; margin: 20px 0; font-size: 12px; color: var(--muted); }
+    a { color: var(--accent); font-weight: 600; text-decoration: none; }
+    a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -74,11 +76,11 @@
 
   <button class="btn btn-primary" id="submitBtn" onclick="submit()">Se connecter</button>
 
-  <div class="divider" id="forgotWrap">
-    <a href="#" onclick="forgotPassword()" style="color:var(--muted);text-decoration:none">Mot de passe oublié ?</a>
+  <div class="divider" id="forgotWrap" style="margin-top:16px">
+    <a href="#" onclick="forgotPassword()">Mot de passe oublié ?</a>
   </div>
-  <div style="text-align:center;margin-top:16px;font-size:13px;color:var(--muted)">
-    Pas encore de compte ? <a href="register.html" style="color:var(--accent);font-weight:700;text-decoration:none">Créer mon compte →</a>
+  <div style="text-align:center;margin-top:12px;font-size:13px;color:var(--muted)">
+    Pas encore de compte ? <a href="register.html">Créer mon compte →</a>
   </div>
 </div>
 
@@ -89,7 +91,6 @@
 
   let mode = 'login';
 
-  // Déjà connecté ?
   sb.auth.getSession().then(({ data }) => {
     if (data.session) window.location.href = 'app.html';
   });
