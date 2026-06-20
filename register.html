@@ -280,9 +280,20 @@ const PLAN_LABELS = { starter: 'Starter', pro: 'Pro', agency: 'Agence' };
 let selectedPlan = 'pro';
 let currentStep = 1;
 
+const urlParams = new URLSearchParams(window.location.search);
+const INVITE_TOKEN = urlParams.get('invite');
+const IS_INVITE = !!INVITE_TOKEN;
+
 sb.auth.getSession().then(({ data }) => {
-  if (data.session) window.location.href = 'app.html';
+  if (data.session) window.location.href = 'app.html' + (INVITE_TOKEN ? `?invite=${INVITE_TOKEN}` : '');
 });
+
+if (IS_INVITE) {
+  document.getElementById('groupAgency').style.display = 'none';
+  document.getElementById('sl2').closest('.step-item').style.display = 'none';
+  document.getElementById('line1').style.display = 'none';
+  document.querySelector('.card-sub').textContent = 'Tu as été invité(e) à rejoindre une équipe. Crée ton compte pour accepter.';
+}
 
 function checkPwd(val) {
   const bars = ['pb1','pb2','pb3','pb4'].map(id => document.getElementById(id));
@@ -305,10 +316,14 @@ function setStep(n) {
     document.getElementById(`panel${i}`).classList.toggle('active', i === n);
     const sc = document.getElementById(`sc${i}`);
     const sl = document.getElementById(`sl${i}`);
+    if (IS_INVITE && i === 2) continue; // stepper étape 2 masquée
     sc.className = 'step-circle' + (i < n ? ' done' : i === n ? ' active' : '');
     sc.textContent = i < n ? '✓' : i;
     sl.className = 'step-label' + (i === n ? ' active' : '');
-    if (i < 3) document.getElementById(`line${i}`).className = 'step-line' + (i < n ? ' done' : '');
+    if (i < 3) {
+      const line = document.getElementById(`line${i}`);
+      if (line) line.className = 'step-line' + (i < n ? ' done' : '');
+    }
   }
 }
 
@@ -318,10 +333,11 @@ function step1Next() {
   const pwd = document.getElementById('password').value;
   const pwd2 = document.getElementById('password2').value;
   document.getElementById('alertError1').style.display = 'none';
-  if (!agency) return showError('alertError1', 'Entre le nom de ton agence');
+  if (!IS_INVITE && !agency) return showError('alertError1', 'Entre le nom de ton agence');
   if (!email) return showError('alertError1', 'Entre ton adresse email');
   if (!pwd || pwd.length < 8) return showError('alertError1', 'Le mot de passe doit faire au moins 8 caractères');
   if (pwd !== pwd2) return showError('alertError1', 'Les mots de passe ne correspondent pas');
+  if (IS_INVITE) { step2Next(); return; } // sauter l'étape plan
   setStep(2);
 }
 
@@ -331,36 +347,49 @@ function selectPlan(plan) {
 }
 
 function step2Next() {
-  document.getElementById('recapAgency').textContent = document.getElementById('agency').value.trim();
+  const agency = IS_INVITE ? '(Membre d\'équipe)' : document.getElementById('agency').value.trim();
+  document.getElementById('recapAgency').textContent = agency;
   document.getElementById('recapEmail').textContent = document.getElementById('email').value.trim();
-  document.getElementById('recapPlan').textContent = PLAN_LABELS[selectedPlan];
-  document.getElementById('recapPrice').textContent = PLAN_PRICES[selectedPlan] + '€/mois';
+  if (IS_INVITE) {
+    document.getElementById('recapPlan').textContent = 'Défini par l\'équipe';
+    document.getElementById('recapPrice').textContent = '—';
+    document.getElementById('recapAgency').closest('.recap-row').style.display = 'none';
+    document.querySelector('.stripe-note').style.display = 'none';
+  } else {
+    document.getElementById('recapPlan').textContent = PLAN_LABELS[selectedPlan];
+    document.getElementById('recapPrice').textContent = PLAN_PRICES[selectedPlan] + '€/mois';
+  }
   setStep(3);
 }
 
 async function finalSubmit() {
-  const agency = document.getElementById('agency').value.trim();
+  const agency = IS_INVITE ? '' : document.getElementById('agency').value.trim();
   const email = document.getElementById('email').value.trim();
   const pwd = document.getElementById('password').value;
   const btn = document.getElementById('btn3');
   document.getElementById('alertError3').style.display = 'none';
   btn.disabled = true; btn.textContent = 'Création du compte…';
 
-  const { data, error } = await sb.auth.signUp({
-    email, password: pwd,
-    options: { data: { agency_name: agency, plan: selectedPlan } }
-  });
+  const signUpOptions = IS_INVITE
+    ? { data: { invite_token: INVITE_TOKEN } }
+    : { data: { agency_name: agency, plan: selectedPlan } };
+
+  const { data, error } = await sb.auth.signUp({ email, password: pwd, options: signUpOptions });
   if (error) {
     showError('alertError3', error.message);
     btn.disabled = false; btn.textContent = 'Créer mon compte →';
     return;
   }
-  if (data.user) {
+  if (data.user && !IS_INVITE) {
     await sb.from('profiles').upsert({ id: data.user.id, email, agency_name: agency, plan: selectedPlan, paid: false });
   }
   document.getElementById('panel3').classList.remove('active');
   document.getElementById('panelSuccess').classList.add('active');
   document.querySelector('.stepper').style.opacity = '0';
+  // Rediriger vers app.html avec le token d'invitation pour auto-accepter
+  if (IS_INVITE) {
+    setTimeout(() => { window.location.href = `app.html?invite=${INVITE_TOKEN}`; }, 2500);
+  }
 }
 
 function showError(id, msg) { const el = document.getElementById(id); el.textContent = msg; el.style.display = 'block'; }

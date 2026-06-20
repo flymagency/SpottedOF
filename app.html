@@ -3909,7 +3909,7 @@ async function sendTeamInvite() {
     if (error) throw error;
     TEAM_INVITES.unshift(invite);
 
-    const link = `${location.origin}${location.pathname}?invite=${invite.token}`;
+    const link = `${location.origin}/register.html?invite=${invite.token}`;
     await navigator.clipboard.writeText(link).catch(() => {});
 
     // Envoyer l'email d'invitation
@@ -3946,7 +3946,7 @@ async function sendTeamInvite() {
 }
 
 async function copyInviteLink(token) {
-  const link = `${location.origin}${location.pathname}?invite=${token}`;
+  const link = `${location.origin}/register.html?invite=${token}`;
   await navigator.clipboard.writeText(link);
   showToast('Lien copié ! 📋', 'success');
 }
