@@ -4,31 +4,40 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SpottedOF — Mon plan</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300..900&family=Space+Mono:wght@400;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
-      --bg: #f4f5f9; --surface: #ffffff; --surface2: #f0f1f6; --border: #e2e4ec;
-      --accent: #4f46e5; --accent2: #e8445a; --green: #059669; --yellow: #d97706;
-      --pink: #db2777; --text: #0f1117; --muted: #6b7280;
+      --bg: #060608; --surface: #0C0C0F; --surface2: #111115; --surface3: #18181D;
+      --border: rgba(255,255,255,0.07); --border-light: rgba(255,255,255,0.13);
+      --accent: #4B7FFF; --accent-light: #6B9BFF; --accent-glow: rgba(75,127,255,0.16);
+      --accent2: #F0436C;
+      --green: #1ECA6E; --yellow: #F59E0B; --pink: #F0436C;
+      --text: #FFFFFF; --muted: #9898A8; --text-3: #484858;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; }
-    body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(rgba(79,70,229,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(79,70,229,0.025) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; z-index: 0; }
+    body::before {
+      content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image:
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(75,127,255,0.07) 0%, transparent 65%),
+        radial-gradient(circle, rgba(255,255,255,0.025) 1px, transparent 1px);
+      background-size: 100% 100%, 28px 28px;
+    }
     .container { max-width: 900px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
 
     /* HEADER */
     header { padding: 24px 0 20px; border-bottom: 1px solid var(--border); margin-bottom: 40px; }
     .header-inner { display: flex; align-items: center; justify-content: space-between; }
     .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); }
-    .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, var(--accent), var(--pink)); border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 17px; }
+    .logo-icon { width: 36px; height: 36px; border-radius: 9px; display: flex; align-items: center; justify-content: center; }
     .logo-text { font-size: 20px; font-weight: 800; }
     .logo-text span { color: var(--pink); }
     .btn { padding: 8px 18px; font-size: 13px; border-radius: 10px; font-weight: 700; font-family: 'Inter', sans-serif; cursor: pointer; border: none; transition: all 0.2s; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
-    .btn-ghost { background: var(--surface); color: var(--muted); border: 1px solid var(--border); box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-    .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-ghost { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--text); }
     .btn-primary { background: var(--accent); color: white; }
-    .btn-primary:hover { background: #9b7ffd; }
+    .btn-primary:hover { background: var(--accent-light); }
 
     /* PAGE TITLE */
     .page-title { font-size: 26px; font-weight: 700; margin-bottom: 6px; }
@@ -50,36 +59,35 @@
     .usage-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; }
     .usage-label { font-size: 11px; color: var(--muted); font-family: 'Space Mono', monospace; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
     .usage-value { font-size: 26px; font-weight: 800; margin-bottom: 8px; }
-    .usage-card { box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
-    .usage-bar-track { height: 5px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+    .usage-bar-track { height: 5px; background: var(--surface3); border-radius: 3px; overflow: hidden; }
     .usage-bar-fill { height: 100%; border-radius: 3px; transition: width 0.8s ease; }
     .usage-note { font-size: 11px; color: var(--muted); margin-top: 6px; }
 
     /* FEATURES */
     .features-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 32px; }
     .feature-item { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; font-size: 13px; }
-    .feature-item.locked { opacity: 0.45; }
+    .feature-item.locked { opacity: 0.4; }
     .feature-check { font-size: 15px; flex-shrink: 0; }
 
     /* UPGRADE */
-    .upgrade-section { background: linear-gradient(135deg, rgba(79,70,229,0.05), rgba(219,39,119,0.03)); border: 1px solid rgba(79,70,229,0.2); border-radius: 20px; padding: 28px 32px; margin-bottom: 32px; }
+    .upgrade-section { background: linear-gradient(135deg, rgba(75,127,255,0.06), rgba(240,67,108,0.04)); border: 1px solid rgba(75,127,255,0.2); border-radius: 20px; padding: 28px 32px; margin-bottom: 32px; }
     .upgrade-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
     .upgrade-sub { font-size: 13px; color: var(--muted); margin-bottom: 24px; line-height: 1.6; }
     .plans-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-    .upgrade-plan { background: var(--surface); border: 2px solid var(--border); border-radius: 14px; padding: 18px; text-align: center; transition: all 0.2s; cursor: default; }
-    .upgrade-plan.current { border-color: var(--accent); background: rgba(79,70,229,0.05); }
+    .upgrade-plan { background: var(--surface2); border: 2px solid var(--border); border-radius: 14px; padding: 18px; text-align: center; transition: all 0.2s; cursor: default; }
+    .upgrade-plan.current { border-color: var(--accent); background: rgba(75,127,255,0.07); }
     .upgrade-plan.available { cursor: pointer; }
-    .upgrade-plan.available:hover { border-color: rgba(79,70,229,0.4); transform: translateY(-2px); }
+    .upgrade-plan.available:hover { border-color: rgba(75,127,255,0.5); transform: translateY(-2px); }
     .up-name { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
     .up-price { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
     .up-desc { font-size: 11px; color: var(--muted); margin-bottom: 12px; line-height: 1.5; }
     .up-btn { width: 100%; padding: 9px; border-radius: 8px; font-size: 12px; font-weight: 700; font-family: 'Inter', sans-serif; cursor: pointer; border: none; transition: all 0.2s; }
-    .up-btn-current { background: var(--surface2); color: var(--muted); cursor: default; }
+    .up-btn-current { background: var(--surface3); color: var(--muted); cursor: default; }
     .up-btn-upgrade { background: var(--accent); color: white; }
-    .up-btn-upgrade:hover { background: #9b7ffd; }
+    .up-btn-upgrade:hover { background: var(--accent-light); }
 
     /* CONTACT */
-    .contact-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    .contact-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 40px; }
     .contact-text { font-size: 13px; color: var(--muted); line-height: 1.6; }
     .contact-text strong { color: var(--text); }
 
@@ -97,7 +105,18 @@
   <header>
     <div class="header-inner">
       <a href="app.html" class="logo">
-        <div class="logo-icon">🎯</div>
+        <div class="logo-icon" style="background:none;padding:0;overflow:visible">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" width="36" height="36">
+            <defs><linearGradient id="lg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#4B7FFF"/><stop offset="100%" style="stop-color:#F0436C"/></linearGradient></defs>
+            <rect width="36" height="36" rx="9" fill="#0C0C0F"/>
+            <circle cx="18" cy="18" r="12" fill="none" stroke="url(#lg)" stroke-width="0.9" opacity="0.4"/>
+            <circle cx="18" cy="18" r="7.5" fill="none" stroke="url(#lg)" stroke-width="0.9" opacity="0.65"/>
+            <circle cx="18" cy="18" r="3" fill="none" stroke="url(#lg)" stroke-width="1.1"/>
+            <line x1="18" y1="18" x2="26.5" y2="9.5" stroke="url(#lg)" stroke-width="1.6" stroke-linecap="round"/>
+            <circle cx="26.5" cy="9.5" r="2.2" fill="#F0436C"/>
+            <text x="18" y="22.5" text-anchor="middle" fill="white" font-family="Inter,Arial,sans-serif" font-weight="900" font-size="8.5">S</text>
+          </svg>
+        </div>
         <div class="logo-text">Spotted<span>OF</span></div>
       </a>
       <div style="display:flex;gap:10px;align-items:center">
@@ -106,10 +125,10 @@
         <div style="position:relative">
           <button id="notifBtn" onclick="toggleNotifPanel()" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;position:relative">
             🔔
-            <span id="notifCount" style="display:none;position:absolute;top:-5px;right:-5px;background:#e8445a;color:white;font-size:9px;font-weight:700;font-family:'Space Mono',monospace;min-width:16px;height:16px;border-radius:50%;padding:0 3px;justify-content:center;align-items:center"></span>
+            <span id="notifCount" style="display:none;position:absolute;top:-5px;right:-5px;background:#F0436C;color:white;font-size:9px;font-weight:700;font-family:'Space Mono',monospace;min-width:16px;height:16px;border-radius:50%;padding:0 3px;justify-content:center;align-items:center"></span>
           </button>
-          <div id="notifPanel" style="display:none;position:absolute;right:0;top:44px;background:#ffffff;border:1px solid #e2e4ec;border-radius:16px;width:320px;z-index:200;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.1)">
-            <div style="padding:14px 16px;border-bottom:1px solid #e2e4ec;font-size:13px;font-weight:700">Notifications</div>
+          <div id="notifPanel" style="display:none;position:absolute;right:0;top:44px;background:var(--surface);border:1px solid var(--border-light);border-radius:16px;width:320px;z-index:200;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.5)">
+            <div style="padding:14px 16px;border-bottom:1px solid var(--border);font-size:13px;font-weight:700">Notifications</div>
             <div id="notifList" style="max-height:300px;overflow-y:auto"></div>
           </div>
         </div>
@@ -169,19 +188,19 @@
     <div class="upgrade-sub">Upgrade ton plan pour débloquer plus de prospects et de fonctionnalités avancées.</div>
     <div class="plans-row">
       <div class="upgrade-plan" id="upStarter">
-        <div class="up-name" style="color:#4f46e5">Starter</div>
+        <div class="up-name" style="color:#4B7FFF">Starter</div>
         <div class="up-price">70€</div>
         <div class="up-desc">200 prospects<br>5 langues DM<br>Export CSV</div>
         <button class="up-btn" id="btnStarter">Plan actuel</button>
       </div>
       <div class="upgrade-plan" id="upPro">
-        <div class="up-name" style="color:#059669">Pro</div>
+        <div class="up-name" style="color:#1ECA6E">Pro</div>
         <div class="up-price">100€</div>
         <div class="up-desc">Prospects illimités<br>Stats avancées<br>Notes prospects</div>
         <button class="up-btn" id="btnPro">Choisir Pro</button>
       </div>
       <div class="upgrade-plan" id="upAgency">
-        <div class="up-name" style="color:#db2777">Agency</div>
+        <div class="up-name" style="color:#F0436C">Agency</div>
         <div class="up-price">200€</div>
         <div class="up-desc">Tout le Pro<br>Multi-utilisateurs<br>Support 24/7</div>
         <button class="up-btn" id="btnAgency">Choisir Agency</button>
@@ -200,27 +219,27 @@
 </div>
 
 <!-- MODAL TICKET SUPPORT -->
-<div id="ticketOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);z-index:500;align-items:center;justify-content:center;padding:24px">
-  <div style="background:#ffffff;border:1px solid #e2e4ec;border-radius:20px;padding:32px;max-width:480px;width:100%">
+<div id="ticketOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);backdrop-filter:blur(6px);z-index:500;align-items:center;justify-content:center;padding:24px">
+  <div style="background:var(--surface);border:1px solid var(--border-light);border-radius:20px;padding:32px;max-width:480px;width:100%">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
       <div>
         <div style="font-size:16px;font-weight:700">🎫 Contacter le support</div>
-        <div style="font-size:12px;color:#6b7280;margin-top:3px;font-family:'Space Mono',monospace">On répond sous 24h</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:3px;font-family:'Space Mono',monospace">On répond sous 24h</div>
       </div>
-      <button onclick="closeTicketModal()" style="background:none;border:none;color:#6b7280;font-size:20px;cursor:pointer">✕</button>
+      <button onclick="closeTicketModal()" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer">✕</button>
     </div>
 
     <div id="ticketSuccess" style="display:none;text-align:center;padding:20px 0">
       <div style="font-size:48px;margin-bottom:12px">✅</div>
       <div style="font-size:16px;font-weight:700;margin-bottom:6px">Demande envoyée !</div>
-      <div style="font-size:13px;color:#6b7280">On revient vers toi sous 24h.</div>
-      <button onclick="closeTicketModal()" style="margin-top:20px;background:#4f46e5;color:white;border:none;padding:11px 24px;border-radius:10px;font-size:14px;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer">Fermer</button>
+      <div style="font-size:13px;color:var(--muted)">On revient vers toi sous 24h.</div>
+      <button onclick="closeTicketModal()" style="margin-top:20px;background:var(--accent);color:white;border:none;padding:11px 24px;border-radius:10px;font-size:14px;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer">Fermer</button>
     </div>
 
     <div id="ticketForm">
       <div style="margin-bottom:16px">
-        <label style="font-size:11px;color:#6b7280;font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:0.08em;display:block;margin-bottom:8px">Type de problème</label>
-        <select id="ticketCategory" style="width:100%;background:#f0f1f6;border:1px solid #e2e4ec;border-radius:10px;padding:12px 14px;color:#0f1117;font-family:'Inter',sans-serif;font-size:14px;outline:none;cursor:pointer">
+        <label style="font-size:11px;color:var(--muted);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:0.08em;display:block;margin-bottom:8px">Type de problème</label>
+        <select id="ticketCategory" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:'Inter',sans-serif;font-size:14px;outline:none;cursor:pointer">
           <option value="paiement">💳 Problème de paiement</option>
           <option value="compte">🔐 Problème de compte / connexion</option>
           <option value="bug">🐛 Bug technique</option>
@@ -230,13 +249,13 @@
         </select>
       </div>
       <div style="margin-bottom:20px">
-        <label style="font-size:11px;color:#6b7280;font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:0.08em;display:block;margin-bottom:8px">Décris ton problème</label>
-        <textarea id="ticketMessage" rows="5" placeholder="Explique-nous le problème en détail..." style="width:100%;background:#f0f1f6;border:1px solid #e2e4ec;border-radius:10px;padding:12px 14px;color:#0f1117;font-family:'Inter',sans-serif;font-size:14px;outline:none;resize:vertical;line-height:1.6"></textarea>
+        <label style="font-size:11px;color:var(--muted);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:0.08em;display:block;margin-bottom:8px">Décris ton problème</label>
+        <textarea id="ticketMessage" rows="5" placeholder="Explique-nous le problème en détail..." style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:'Inter',sans-serif;font-size:14px;outline:none;resize:vertical;line-height:1.6"></textarea>
       </div>
-      <div id="ticketError" style="display:none;background:rgba(232,68,90,0.08);border:1px solid rgba(232,68,90,0.25);color:#e8445a;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:14px"></div>
+      <div id="ticketError" style="display:none;background:rgba(240,67,108,0.1);border:1px solid rgba(240,67,108,0.25);color:#F0436C;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:14px"></div>
       <div style="display:flex;gap:10px">
-        <button onclick="submitTicket()" id="ticketSubmitBtn" style="flex:1;background:#4f46e5;color:white;border:none;padding:13px;border-radius:12px;font-size:14px;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer">Envoyer la demande</button>
-        <button onclick="closeTicketModal()" style="background:#f0f1f6;color:#6b7280;border:1px solid #e2e4ec;padding:13px 16px;border-radius:12px;font-size:14px;font-family:'Inter',sans-serif;cursor:pointer">Annuler</button>
+        <button onclick="submitTicket()" id="ticketSubmitBtn" style="flex:1;background:var(--accent);color:white;border:none;padding:13px;border-radius:12px;font-size:14px;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer">Envoyer la demande</button>
+        <button onclick="closeTicketModal()" style="background:var(--surface2);color:var(--muted);border:1px solid var(--border);padding:13px 16px;border-radius:12px;font-size:14px;font-family:'Inter',sans-serif;cursor:pointer">Annuler</button>
       </div>
     </div>
   </div>
@@ -249,10 +268,10 @@ const WORKER = 'https://spottedof-worker.businessflymagency.workers.dev';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const PLANS = {
-  starter: { name: 'Starter', price: '70€', period: '/mois', color: '#4f46e5', icon: '⚡', limit: 200 },
-  pro:     { name: 'Pro',     price: '100€', period: '/mois', color: '#059669', icon: '🚀', limit: Infinity },
-  agency:  { name: 'Agency',  price: '200€', period: '/mois', color: '#db2777', icon: '🏢', limit: Infinity },
-  admin:   { name: 'Admin',   price: '—',    period: '',      color: '#d97706', icon: '⚙️', limit: Infinity },
+  starter: { name: 'Starter', price: '70€', period: '/mois', color: '#4B7FFF', icon: '⚡', limit: 200 },
+  pro:     { name: 'Pro',     price: '100€', period: '/mois', color: '#1ECA6E', icon: '🚀', limit: Infinity },
+  agency:  { name: 'Agency',  price: '200€', period: '/mois', color: '#F0436C', icon: '🏢', limit: Infinity },
+  admin:   { name: 'Admin',   price: '—',    period: '',      color: '#F59E0B', icon: '⚙️', limit: Infinity },
 };
 
 const FEATURES = {
@@ -327,11 +346,11 @@ function renderPlan(plan, paid, createdAt) {
   const card = document.getElementById('currentPlanCard');
 
   // Couleur de la carte
-  card.style.background = `linear-gradient(135deg, ${p.color}12, var(--surface))`;
-  card.style.border = `1px solid ${p.color}44`;
+  card.style.background = `linear-gradient(135deg, ${p.color}10, var(--surface))`;
+  card.style.border = `1px solid ${p.color}30`;
 
   document.getElementById('planIcon').textContent = p.icon;
-  document.getElementById('planIcon').style.background = `${p.color}20`;
+  document.getElementById('planIcon').style.background = `${p.color}18`;
   document.getElementById('planName').textContent = p.name;
   document.getElementById('planName').style.color = p.color;
   document.getElementById('planPriceNum').textContent = p.price;
@@ -339,9 +358,9 @@ function renderPlan(plan, paid, createdAt) {
   document.getElementById('planPricePeriod').textContent = p.period;
 
   if (paid || plan === 'admin') {
-    document.getElementById('planStatus').innerHTML = `<span style="color:#059669">✓ Actif</span>`;
+    document.getElementById('planStatus').innerHTML = `<span style="color:#1ECA6E">✓ Actif</span>`;
   } else {
-    document.getElementById('planStatus').innerHTML = `<span style="color:#e8445a">⚠ Non activé — Contacte-nous pour activer</span>`;
+    document.getElementById('planStatus').innerHTML = `<span style="color:#F0436C">⚠ Non activé — Contacte-nous pour activer</span>`;
   }
 }
 
@@ -357,7 +376,7 @@ async function renderUsage(plan) {
 
     document.getElementById('usageCount').textContent = count;
     document.getElementById('usageBar').style.width = limit === Infinity ? '8%' : `${pct}%`;
-    document.getElementById('usageBar').style.background = pct > 80 ? '#e8445a' : pct > 60 ? '#d97706' : '#4f46e5';
+    document.getElementById('usageBar').style.background = pct > 80 ? '#F0436C' : pct > 60 ? '#F59E0B' : '#4B7FFF';
     document.getElementById('usageNote').textContent = limit === Infinity ? `${count} prospects · Illimité` : `${count} / ${limit} prospects`;
   } catch(e) {
     document.getElementById('usageCount').textContent = '—';
@@ -374,7 +393,7 @@ async function renderUsage(plan) {
   const { data: profile } = await sb.from('profiles').select('paid').eq('id', session.user.id).single();
   const paid = profile?.paid || false;
   document.getElementById('paidStatus').textContent = paid || plan === 'admin' ? '✓ Payé' : '✗ En attente';
-  document.getElementById('paidStatus').style.color = paid || plan === 'admin' ? '#059669' : '#e8445a';
+  document.getElementById('paidStatus').style.color = paid || plan === 'admin' ? '#1ECA6E' : '#F0436C';
   document.getElementById('paidNote').textContent = paid ? 'Renouvellement mensuel' : 'Contacte-nous pour activer';
 }
 
@@ -414,7 +433,7 @@ function _renderNotifBadge() {
   const count = document.getElementById('notifCount');
   if (unread.length > 0) {
     count.textContent = unread.length;
-    count.style.cssText = 'display:flex;position:absolute;top:-5px;right:-5px;background:#e8445a;color:white;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:50%;padding:0 3px;justify-content:center;align-items:center';
+    count.style.cssText = 'display:flex;position:absolute;top:-5px;right:-5px;background:#F0436C;color:white;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:50%;padding:0 3px;justify-content:center;align-items:center';
   } else {
     count.style.display = 'none';
   }
@@ -426,21 +445,21 @@ function _renderNotifPanel() {
   const CAT_LABELS = { paiement:'💳 Paiement', compte:'🔐 Compte', bug:'🐛 Bug', fonctionnalite:'✨ Fonctionnalité', upgrade:'⬆️ Upgrade', autre:'💬 Autre' };
 
   if (!_allNotifTickets.length) {
-    list.innerHTML = `<div style="padding:20px;text-align:center;font-size:12px;color:#6b7280">Aucune notification</div>`;
+    list.innerHTML = `<div style="padding:20px;text-align:center;font-size:12px;color:var(--muted)">Aucune notification</div>`;
     return;
   }
   list.innerHTML = _allNotifTickets.map(t => {
     const isNew = !seen.has(t.id);
     const date = t.resolved_at ? new Date(t.resolved_at).toLocaleDateString('fr-FR', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }) : '';
-    return `<div onclick="markNotifRead('${t.id}',this)" style="padding:14px 16px;border-bottom:1px solid #e2e4ec;display:flex;gap:12px;align-items:flex-start;cursor:pointer;${isNew?'background:rgba(232,68,90,0.05)':''}">
+    return `<div onclick="markNotifRead('${t.id}',this)" style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:flex-start;cursor:pointer;${isNew?'background:rgba(240,67,108,0.05)':''}">
       <div style="font-size:20px;flex-shrink:0">${isNew ? '🔴' : '✅'}</div>
       <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:700;margin-bottom:3px">Ticket résolu${isNew ? ' <span style="color:#e8445a;font-size:9px;background:rgba(232,68,90,0.1);padding:1px 5px;border-radius:4px;">NEW</span>' : ''}</div>
-        <div style="font-size:12px;color:#6b7280;margin-bottom:4px">${CAT_LABELS[t.category] || t.category}</div>
-        <div style="font-size:11px;color:#3a3a4a;font-family:'Space Mono',monospace">${date}</div>
+        <div style="font-size:13px;font-weight:700;margin-bottom:3px">Ticket résolu${isNew ? ' <span style="color:#F0436C;font-size:9px;background:rgba(240,67,108,0.1);padding:1px 5px;border-radius:4px;">NEW</span>' : ''}</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:4px">${CAT_LABELS[t.category] || t.category}</div>
+        <div style="font-size:11px;color:var(--text-3);font-family:'Space Mono',monospace">${date}</div>
       </div>
     </div>`;
-  }).join('') + (_allNotifTickets.some(t => !seen.has(t.id)) ? `<div style="padding:10px;text-align:center;"><button onclick="markAllNotifsRead()" style="font-size:11px;color:#6b7280;background:none;border:none;cursor:pointer;text-decoration:underline;font-family:'Inter',sans-serif;">Tout marquer comme lu</button></div>` : '');
+  }).join('') + (_allNotifTickets.some(t => !seen.has(t.id)) ? `<div style="padding:10px;text-align:center;"><button onclick="markAllNotifsRead()" style="font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;font-family:'Inter',sans-serif;">Tout marquer comme lu</button></div>` : '');
 }
 
 function markNotifRead(id, el) {

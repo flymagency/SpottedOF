@@ -2400,7 +2400,7 @@ function navTo(section) {
   document.getElementById('topbarTitle').textContent = NAV_TITLES[section] || section;
 
   // Show/hide views
-  const allViews = ['prospects', 'blacklist', 'stats', 'performance', 'reminders', 'replies', 'team'];
+  const allViews = ['prospects', 'blacklist', 'stats', 'performance', 'reminders', 'replies', 'team', 'scheduled'];
   allViews.forEach(v => {
     const el = document.getElementById(`view-${v}`);
     if (el) el.style.display = (v === section || (section === 'all' && v === 'prospects')) ? '' : 'none';
