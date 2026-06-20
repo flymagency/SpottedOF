@@ -45,10 +45,58 @@
     .divider { text-align: center; margin: 20px 0; font-size: 12px; color: var(--muted); }
     a { color: var(--accent); font-weight: 600; text-decoration: none; }
     a:hover { text-decoration: underline; }
+
+    /* ── ANIMATIONS ── */
+    /* Blobs de fond */
+    .bg-blobs { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+    .bg-blob {
+      position: absolute; border-radius: 50%; filter: blur(90px); opacity: 0.14;
+      animation: blobDrift ease-in-out infinite;
+    }
+    .bg-blob-1 { width: 520px; height: 520px; background: #6366f1; top: -180px; left: -160px; animation-duration: 14s; }
+    .bg-blob-2 { width: 380px; height: 380px; background: #ec4899; bottom: -100px; right: -120px; animation-duration: 11s; animation-delay: -5s; }
+    @keyframes blobDrift {
+      0%,100% { transform: translate(0,0) scale(1); }
+      50%      { transform: translate(20px,-30px) scale(1.06); }
+    }
+
+    /* Card entrée */
+    .card { animation: cardSlideUp 0.65s cubic-bezier(.22,1,.36,1) both; }
+    @keyframes cardSlideUp {
+      from { opacity: 0; transform: translateY(32px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* Logo float */
+    .logo-icon { animation: logoFloat 3.5s ease-in-out infinite; }
+    @keyframes logoFloat {
+      0%,100% { transform: translateY(0); }
+      50%      { transform: translateY(-5px); }
+    }
+
+    /* Inputs */
+    .form-input { transition: border-color 0.2s, box-shadow 0.2s, background 0.2s; }
+    .form-input:focus { box-shadow: 0 0 0 3px rgba(79,70,229,0.12); }
+
+    /* Bouton shimmer */
+    .btn-primary { position: relative; overflow: hidden; }
+    .btn-primary::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.18) 50%, transparent 60%);
+      transform: translateX(-100%);
+    }
+    .btn-primary:hover::after { animation: shimmer 0.5s ease forwards; }
+    @keyframes shimmer { to { transform: translateX(100%); } }
+
+    body { position: relative; }
   </style>
 </head>
 <body>
-<div class="card">
+<div class="bg-blobs">
+  <div class="bg-blob bg-blob-1"></div>
+  <div class="bg-blob bg-blob-2"></div>
+</div>
+<div class="card" style="position:relative;z-index:1">
   <div class="logo">
     <div class="logo-icon">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 44" width="44" height="44">
