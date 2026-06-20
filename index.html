@@ -39,9 +39,9 @@
     .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
     .nav-logo-icon {
       width: 36px; height: 36px;
-      background: var(--gradient);
+      background: #0f1117;
       border-radius: 10px; display: flex; align-items: center; justify-content: center;
-      font-size: 18px;
+      overflow: hidden;
     }
     .nav-logo-text { font-size: 20px; font-weight: 800; color: var(--text); }
     .nav-logo-text span { color: var(--pink); }
@@ -203,7 +203,7 @@
       display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
     }
     .footer-logo { display: flex; align-items: center; gap: 8px; text-decoration: none; }
-    .footer-logo-icon { width: 28px; height: 28px; background: var(--gradient); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+    .footer-logo-icon { width: 28px; height: 28px; background: #0f1117; border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
     .footer-logo-text { font-size: 16px; font-weight: 800; color: var(--text); }
     .footer-logo-text span { color: var(--pink); }
     .footer-copy { font-size: 13px; color: var(--muted); }
@@ -254,7 +254,7 @@
 <nav>
   <div class="nav-inner">
     <a href="/" class="nav-logo">
-      <div class="nav-logo-icon">🎯</div>
+      <div class="nav-logo-icon"><img src="favicon.svg" width="36" height="36" style="display:block"></div>
       <div class="nav-logo-text">Spotted<span>OF</span></div>
     </a>
     <div class="nav-links">
@@ -472,7 +472,7 @@
 <footer>
   <div class="footer-inner">
     <a href="/" class="footer-logo">
-      <div class="footer-logo-icon">🎯</div>
+      <div class="footer-logo-icon"><img src="favicon.svg" width="28" height="28" style="display:block"></div>
       <div class="footer-logo-text">Spotted<span>OF</span></div>
     </a>
     <div class="footer-copy">© 2025 SpottedOF — Tous droits réservés</div>

@@ -1,12 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <defs>
     <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#4f46e5"/>
-      <stop offset="100%" style="stop-color:#db2777"/>
+      <stop offset="0%" style="stop-color:#6366f1"/>
+      <stop offset="100%" style="stop-color:#ec4899"/>
     </linearGradient>
   </defs>
-  <rect width="32" height="32" rx="8" fill="url(#g)"/>
-  <circle cx="16" cy="16" r="6" fill="none" stroke="white" stroke-width="2.5"/>
-  <circle cx="16" cy="16" r="2" fill="white"/>
-  <line x1="20.5" y1="20.5" x2="24" y2="24" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+  <rect width="32" height="32" rx="8" fill="#0f1117"/>
+  <circle cx="16" cy="16" r="11" fill="none" stroke="url(#g)" stroke-width="0.8" opacity="0.4"/>
+  <circle cx="16" cy="16" r="7" fill="none" stroke="url(#g)" stroke-width="0.8" opacity="0.65"/>
+  <circle cx="16" cy="16" r="3" fill="none" stroke="url(#g)" stroke-width="1"/>
+  <line x1="16" y1="16" x2="24" y2="8" stroke="url(#g)" stroke-width="1.5" stroke-linecap="round"/>
+  <circle cx="24" cy="8" r="2" fill="#ec4899"/>
+  <text x="16" y="20" text-anchor="middle" fill="white" font-family="Inter,Arial,sans-serif" font-weight="900" font-size="8">S</text>
 </svg>
