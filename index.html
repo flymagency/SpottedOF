@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SpottedOF — Trouvez vos prochains créateurs OF</title>
-  <meta name="description" content="SpottedOF scanne Instagram pour identifier automatiquement les créateurs OnlyFans les plus prometteurs pour votre agence OFM.">
+  <title>SpottedOF — Trouvez vos prochains créateurs de contenu</title>
+  <meta name="description" content="SpottedOF scanne Instagram pour identifier automatiquement les créateurs de contenu les plus prometteurs (OF, Mym, Fansly...) pour votre agence.">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -211,6 +211,36 @@
     .footer-links a { font-size: 13px; color: var(--muted); text-decoration: none; font-weight: 500; }
     .footer-links a:hover { color: var(--accent); }
 
+    /* BILLING TOGGLE */
+    .billing-toggle {
+      display: flex; align-items: center; gap: 12px;
+      justify-content: center; margin-top: 32px;
+      font-size: 14px; font-weight: 600;
+    }
+    .toggle-switch {
+      position: relative; width: 52px; height: 28px; cursor: pointer;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute; inset: 0; background: var(--border);
+      border-radius: 100px; transition: 0.3s;
+    }
+    .toggle-slider::before {
+      content: ''; position: absolute;
+      width: 22px; height: 22px; left: 3px; top: 3px;
+      background: white; border-radius: 50%;
+      transition: 0.3s; box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+    }
+    .toggle-switch input:checked + .toggle-slider { background: var(--accent); }
+    .toggle-switch input:checked + .toggle-slider::before { transform: translateX(24px); }
+    .toggle-label { color: var(--muted); transition: color 0.2s; }
+    .toggle-label.active { color: var(--text); }
+    .save-badge {
+      background: rgba(5,150,105,0.1); color: var(--green);
+      font-size: 11px; font-weight: 800; padding: 3px 10px;
+      border-radius: 100px; border: 1px solid rgba(5,150,105,0.2);
+    }
+
     @media (max-width: 640px) {
       .nav-links .nav-link { display: none; }
       .hero { padding: 60px 20px 60px; }
@@ -245,11 +275,11 @@
   </div>
   <h1>
     Trouvez vos prochains<br>
-    <span class="gradient-text">créateurs OnlyFans</span><br>
+    <span class="gradient-text">créateurs de contenu</span><br>
     en quelques clics
   </h1>
   <p class="hero-sub">
-    SpottedOF scanne automatiquement Instagram pour identifier les créatrices OF les plus prometteuses — prêtes à signer avec votre agence.
+    SpottedOF scanne automatiquement Instagram pour identifier les créatrices sur OF, Mym, Fansly et plus — prêtes à signer avec votre agence.
   </p>
   <div class="hero-cta">
     <a href="login.html" class="btn btn-primary btn-xl">Créer mon compte gratuitement →</a>
@@ -285,7 +315,7 @@
       <div class="feature-card">
         <div class="feature-icon purple">🔍</div>
         <div class="feature-title">Scan Instagram intelligent</div>
-        <div class="feature-desc">Entrez un compte Instagram similaire à votre cible. SpottedOF analyse ses abonnés et identifie automatiquement celles qui sont sur OnlyFans.</div>
+        <div class="feature-desc">Entrez un compte Instagram similaire à votre cible. SpottedOF analyse ses abonnés et identifie automatiquement celles qui sont sur OF, Mym, Fansly et autres plateformes.</div>
       </div>
       <div class="feature-card">
         <div class="feature-icon pink">⚡</div>
@@ -331,7 +361,7 @@
       <div class="step">
         <div class="step-num">2</div>
         <div class="step-title">On scanne pour vous</div>
-        <div class="step-desc">SpottedOF analyse les abonnés du compte, détecte les liens OF, calcule un score de pertinence et filtre les profils privés si besoin.</div>
+        <div class="step-desc">SpottedOF analyse les abonnés du compte, détecte les liens vers les plateformes privées (OF, Mym, Fansly...), calcule un score de pertinence et filtre les profils privés si besoin.</div>
       </div>
       <div class="step">
         <div class="step-num">3</div>
@@ -347,29 +377,40 @@
   <div class="section-inner">
     <div class="section-label">Tarifs</div>
     <h2 class="section-title">Simple. Transparent. Sans engagement.</h2>
-    <p class="section-sub">Commencez gratuitement, passez Pro quand votre agence est prête à scaler.</p>
+    <p class="section-sub">Commencez gratuitement, passez à la vitesse supérieure quand votre agence est prête à scaler.</p>
+
+    <div class="billing-toggle">
+      <span class="toggle-label active" id="label-monthly">Mensuel</span>
+      <label class="toggle-switch">
+        <input type="checkbox" id="billingToggle" onchange="toggleBilling()">
+        <span class="toggle-slider"></span>
+      </label>
+      <span class="toggle-label" id="label-annual">Annuel</span>
+      <span class="save-badge">2 mois offerts</span>
+    </div>
+
     <div class="pricing-grid">
 
       <div class="pricing-card">
         <div class="pricing-name">Starter</div>
-        <div class="pricing-price">0€</div>
-        <div class="pricing-period">pour toujours</div>
-        <div class="pricing-desc">Pour tester SpottedOF et trouver vos premiers prospects sans débourser un centime.</div>
+        <div class="pricing-price">49€</div>
+        <div class="pricing-period" id="period-starter">par mois · sans engagement</div>
+        <div class="pricing-desc">Pour les agences qui démarrent et veulent trouver leurs premiers talents qualifiés.</div>
         <ul class="pricing-features">
-          <li><span class="check">✓</span> 3 scans par mois</li>
-          <li><span class="check">✓</span> 50 prospects par scan</li>
+          <li><span class="check">✓</span> 10 scans par mois</li>
+          <li><span class="check">✓</span> 200 prospects par scan</li>
           <li><span class="check">✓</span> Score de pertinence</li>
           <li><span class="check">✓</span> Pipeline de statuts</li>
-          <li><span class="check">✓</span> 1 utilisateur</li>
+          <li><span class="check">✓</span> 2 utilisateurs</li>
         </ul>
-        <a href="login.html" class="btn btn-ghost" style="width:100%;justify-content:center;padding:14px">Commencer gratuitement</a>
+        <a href="login.html" class="btn btn-ghost" style="width:100%;justify-content:center;padding:14px">Commencer →</a>
       </div>
 
       <div class="pricing-card featured">
         <div class="pricing-badge">⭐ Le plus populaire</div>
         <div class="pricing-name">Pro</div>
-        <div class="pricing-price">49€</div>
-        <div class="pricing-period">par mois · sans engagement</div>
+        <div class="pricing-price" id="price-pro">99€</div>
+        <div class="pricing-period" id="period-pro">par mois · sans engagement</div>
         <div class="pricing-desc">Pour les agences sérieuses qui veulent un flux constant de prospects qualifiés.</div>
         <ul class="pricing-features">
           <li><span class="check">✓</span> Scans illimités</li>
@@ -384,8 +425,8 @@
 
       <div class="pricing-card">
         <div class="pricing-name">Agence</div>
-        <div class="pricing-price">149€</div>
-        <div class="pricing-period">par mois · sans engagement</div>
+        <div class="pricing-price" id="price-agency">199€</div>
+        <div class="pricing-period" id="period-agency">par mois · sans engagement</div>
         <div class="pricing-desc">Pour les grandes agences avec plusieurs équipes et un fort volume de prospection.</div>
         <ul class="pricing-features">
           <li><span class="check">✓</span> Tout ce qui est dans Pro</li>
@@ -430,5 +471,18 @@
   </div>
 </footer>
 
+<script>
+  function toggleBilling() {
+    const annual = document.getElementById('billingToggle').checked;
+    document.getElementById('label-monthly').classList.toggle('active', !annual);
+    document.getElementById('label-annual').classList.toggle('active', annual);
+    // Pro: 99€/mois ou 79€/mois (annuel = 79*12=948€)
+    document.getElementById('price-pro').textContent = annual ? '79€' : '99€';
+    document.getElementById('period-pro').textContent = annual ? 'par mois · facturé 948€/an' : 'par mois · sans engagement';
+    // Agence: 199€/mois ou 159€/mois (annuel = 159*12=1908€)
+    document.getElementById('price-agency').textContent = annual ? '159€' : '199€';
+    document.getElementById('period-agency').textContent = annual ? 'par mois · facturé 1908€/an' : 'par mois · sans engagement';
+  }
+</script>
 </body>
 </html>
