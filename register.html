@@ -2,57 +2,58 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SpottedOF — Créer mon compte</title>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
-      --bg: #0a0a0f; --surface: #111118; --surface2: #1a1a24; --border: #2a2a3a;
-      --accent: #7c5cfc; --accent2: #fc5c7c; --green: #2dfc8e; --yellow: #fcdc2d;
-      --pink: #fc5cdc; --text: #e8e8f0; --muted: #6b6b88;
+      --bg: #f4f5f9; --surface: #ffffff; --surface2: #f0f1f6; --border: #e2e4ec;
+      --accent: #4f46e5; --accent2: #e8445a; --green: #059669; --yellow: #d97706;
+      --pink: #db2777; --text: #0f1117; --muted: #6b7280;
+      --gradient: linear-gradient(135deg, #4f46e5, #db2777);
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; }
-    body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(rgba(124,92,252,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(124,92,252,0.03) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; }
 
     /* LOGO */
-    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); margin-bottom: 32px; position: relative; z-index: 1; }
-    .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, var(--accent), var(--pink)); border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 17px; }
-    .logo-text { font-size: 20px; font-weight: 800; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); margin-bottom: 28px; }
+    .logo-icon { width: 38px; height: 38px; background: #0f1117; border-radius: 10px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+    .logo-text { font-size: 22px; font-weight: 800; }
     .logo-text span { color: var(--pink); }
 
     /* STEPPER */
-    .stepper { display: flex; align-items: center; gap: 0; margin-bottom: 32px; position: relative; z-index: 1; }
+    .stepper { display: flex; align-items: center; margin-bottom: 28px; }
     .step-item { display: flex; align-items: center; gap: 8px; }
     .step-circle { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; font-family: 'Space Mono', monospace; border: 2px solid var(--border); color: var(--muted); background: var(--surface); transition: all 0.3s; flex-shrink: 0; }
-    .step-circle.active { border-color: var(--accent); color: var(--accent); background: rgba(124,92,252,0.1); }
-    .step-circle.done { border-color: var(--green); color: var(--bg); background: var(--green); }
-    .step-label { font-size: 12px; font-weight: 700; color: var(--muted); transition: color 0.3s; white-space: nowrap; }
-    .step-label.active { color: var(--text); }
+    .step-circle.active { border-color: var(--accent); color: var(--accent); background: rgba(79,70,229,0.08); }
+    .step-circle.done { border-color: var(--green); color: white; background: var(--green); }
+    .step-label { font-size: 12px; font-weight: 600; color: var(--muted); transition: color 0.3s; white-space: nowrap; }
+    .step-label.active { color: var(--text); font-weight: 700; }
     .step-line { width: 40px; height: 2px; background: var(--border); margin: 0 8px; transition: background 0.3s; flex-shrink: 0; }
     .step-line.done { background: var(--green); }
 
     /* CARD */
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 24px; padding: 40px; width: 100%; max-width: 480px; position: relative; z-index: 1; }
-    .card-title { font-size: 22px; font-weight: 800; margin-bottom: 6px; }
-    .card-sub { font-size: 13px; color: var(--muted); margin-bottom: 28px; line-height: 1.5; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 24px; padding: 40px; width: 100%; max-width: 480px; box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
+    .card-title { font-size: 22px; font-weight: 800; margin-bottom: 6px; letter-spacing: -0.02em; }
+    .card-sub { font-size: 13px; color: var(--muted); margin-bottom: 28px; line-height: 1.6; }
 
     /* FORM */
     .form-group { margin-bottom: 16px; }
     .form-label { font-size: 11px; color: var(--muted); font-family: 'Space Mono', monospace; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; display: block; }
-    .form-input { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 13px 16px; color: var(--text); font-family: 'Syne', sans-serif; font-size: 14px; outline: none; transition: border-color 0.2s; }
-    .form-input:focus { border-color: var(--accent); }
-    .form-hint { font-size: 11px; color: var(--muted); margin-top: 6px; font-family: 'Space Mono', monospace; }
+    .form-input { width: 100%; background: var(--surface2); border: 1.5px solid var(--border); border-radius: 12px; padding: 13px 16px; color: var(--text); font-family: 'Inter', sans-serif; font-size: 14px; outline: none; transition: border-color 0.2s; }
+    .form-input:focus { border-color: var(--accent); background: white; }
+    .form-input::placeholder { color: var(--muted); }
 
-    .btn { width: 100%; padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 700; font-family: 'Syne', sans-serif; cursor: pointer; border: none; transition: all 0.2s; }
-    .btn-primary { background: var(--accent); color: white; }
-    .btn-primary:hover { background: #9b7ffd; }
-    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn { width: 100%; padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 700; font-family: 'Inter', sans-serif; cursor: pointer; border: none; transition: all 0.2s; margin-top: 8px; }
+    .btn-primary { background: var(--gradient); color: white; box-shadow: 0 4px 14px rgba(79,70,229,0.3); }
+    .btn-primary:hover { opacity: 0.92; transform: translateY(-1px); }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
     .alert { border-radius: 10px; padding: 12px 16px; font-size: 13px; margin-bottom: 16px; display: none; }
-    .alert-error { background: rgba(252,92,124,0.1); border: 1px solid rgba(252,92,124,0.3); color: var(--accent2); }
-    .alert-success { background: rgba(45,252,142,0.1); border: 1px solid rgba(45,252,142,0.3); color: var(--green); }
+    .alert-error { background: rgba(232,68,90,0.08); border: 1px solid rgba(232,68,90,0.2); color: var(--accent2); }
+    .alert-success { background: rgba(5,150,105,0.08); border: 1px solid rgba(5,150,105,0.2); color: var(--green); }
 
     .login-link { text-align: center; margin-top: 20px; font-size: 13px; color: var(--muted); }
     .login-link a { color: var(--accent); text-decoration: none; font-weight: 700; }
@@ -63,11 +64,11 @@
     .pwd-bar { height: 3px; flex: 1; border-radius: 2px; background: var(--border); transition: background 0.3s; }
     .pwd-text { font-size: 10px; color: var(--muted); font-family: 'Space Mono', monospace; margin-top: 5px; }
 
-    /* STEP 2 — PLANS */
+    /* PLANS */
     .plans-grid { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
-    .plan-option { border: 2px solid var(--border); border-radius: 16px; padding: 18px 20px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 16px; position: relative; }
-    .plan-option:hover { border-color: rgba(124,92,252,0.4); background: rgba(124,92,252,0.03); }
-    .plan-option.selected { border-color: var(--accent); background: rgba(124,92,252,0.06); }
+    .plan-option { border: 2px solid var(--border); border-radius: 16px; padding: 18px 20px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 16px; background: var(--surface); }
+    .plan-option:hover { border-color: rgba(79,70,229,0.3); background: rgba(79,70,229,0.02); }
+    .plan-option.selected { border-color: var(--accent); background: rgba(79,70,229,0.04); }
     .plan-option input[type=radio] { display: none; }
     .plan-radio { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
     .plan-option.selected .plan-radio { border-color: var(--accent); background: var(--accent); }
@@ -75,35 +76,46 @@
     .plan-info { flex: 1; }
     .plan-name-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
     .plan-name { font-size: 14px; font-weight: 800; }
-    .plan-badge-pop { font-size: 9px; font-family: 'Space Mono', monospace; font-weight: 700; background: var(--accent); color: white; padding: 2px 8px; border-radius: 100px; }
+    .plan-badge-pop { font-size: 9px; font-family: 'Space Mono', monospace; font-weight: 700; background: var(--gradient); color: white; padding: 2px 8px; border-radius: 100px; }
     .plan-desc-short { font-size: 12px; color: var(--muted); }
     .plan-price-tag { font-size: 18px; font-weight: 800; white-space: nowrap; flex-shrink: 0; }
-    .plan-price-sub { font-size: 11px; color: var(--muted); font-weight: 400; }
+    .plan-price-sub { font-size: 11px; color: var(--muted); font-weight: 400; text-align: right; }
 
-    /* STEP 3 — RECAP */
+    /* RECAP */
     .recap-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-bottom: 20px; }
-    .recap-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; padding: 6px 0; }
+    .recap-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; padding: 8px 0; }
     .recap-row:not(:last-child) { border-bottom: 1px solid var(--border); }
     .recap-label { color: var(--muted); }
     .recap-value { font-weight: 700; }
-    .recap-total { font-size: 16px; font-weight: 800; }
+    .recap-total { font-size: 15px; font-weight: 800; }
     .stripe-note { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--muted); font-family: 'Space Mono', monospace; margin-bottom: 20px; justify-content: center; }
 
-    /* STEP PANELS */
+    /* PANELS */
     .step-panel { display: none; }
     .step-panel.active { display: block; }
 
     /* SUCCESS */
     .success-state { text-align: center; padding: 20px 0; }
     .success-icon { font-size: 56px; margin-bottom: 16px; }
-    .success-title { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+    .success-title { font-size: 22px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.02em; }
     .success-sub { font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 28px; }
   </style>
 </head>
 <body>
 
-<a href="landing.html" class="logo">
-  <div class="logo-icon">🎯</div>
+<a href="index.html" class="logo">
+  <div class="logo-icon">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 38 38" width="38" height="38">
+      <defs><linearGradient id="lg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#6366f1"/><stop offset="100%" style="stop-color:#ec4899"/></linearGradient></defs>
+      <rect width="38" height="38" rx="10" fill="#0f1117"/>
+      <circle cx="19" cy="19" r="13" fill="none" stroke="url(#lg)" stroke-width="0.9" opacity="0.4"/>
+      <circle cx="19" cy="19" r="8" fill="none" stroke="url(#lg)" stroke-width="0.9" opacity="0.65"/>
+      <circle cx="19" cy="19" r="3.5" fill="none" stroke="url(#lg)" stroke-width="1.2"/>
+      <line x1="19" y1="19" x2="28.5" y2="9.5" stroke="url(#lg)" stroke-width="1.8" stroke-linecap="round"/>
+      <circle cx="28.5" cy="9.5" r="2.5" fill="#ec4899"/>
+      <text x="19" y="23.5" text-anchor="middle" fill="white" font-family="Inter,Arial,sans-serif" font-weight="900" font-size="9.5">S</text>
+    </svg>
+  </div>
   <div class="logo-text">Spotted<span>OF</span></div>
 </a>
 
@@ -121,19 +133,17 @@
   <div class="step-line" id="line2"></div>
   <div class="step-item">
     <div class="step-circle" id="sc3">3</div>
-    <div class="step-label" id="sl3">Paiement</div>
+    <div class="step-label" id="sl3">Confirmation</div>
   </div>
 </div>
 
 <div class="card">
 
-  <!-- STEP 1 — COMPTE -->
+  <!-- STEP 1 -->
   <div class="step-panel active" id="panel1">
     <div class="card-title">Crée ton compte</div>
     <div class="card-sub">Rejoins les agences OFM qui utilisent SpottedOF pour recruter plus vite.</div>
-
     <div id="alertError1" class="alert alert-error"></div>
-
     <div class="form-group">
       <label class="form-label">Nom de ton agence</label>
       <input type="text" class="form-input" id="agency" placeholder="FlyMagency" autocomplete="organization">
@@ -157,30 +167,25 @@
       <label class="form-label">Confirmer le mot de passe</label>
       <input type="password" class="form-input" id="password2" placeholder="••••••••" autocomplete="new-password" onkeydown="if(event.key==='Enter')step1Next()">
     </div>
-
     <button class="btn btn-primary" id="btn1" onclick="step1Next()">Continuer →</button>
-
     <div class="login-link">Déjà un compte ? <a href="login.html">Se connecter</a></div>
   </div>
 
-  <!-- STEP 2 — PLAN -->
+  <!-- STEP 2 -->
   <div class="step-panel" id="panel2">
     <div class="card-title">Choisis ton plan</div>
     <div class="card-sub">Tu pourras changer de plan à tout moment depuis ton espace.</div>
-
     <div class="plans-grid">
 
       <label class="plan-option" id="opt-starter" onclick="selectPlan('starter')">
         <input type="radio" name="plan" value="starter">
         <div class="plan-radio"></div>
         <div class="plan-info">
-          <div class="plan-name-row">
-            <div class="plan-name">Starter</div>
-          </div>
-          <div class="plan-desc-short">200 prospects · 5 langues · Export CSV</div>
+          <div class="plan-name-row"><div class="plan-name">Starter</div></div>
+          <div class="plan-desc-short">500 profils · 15 scans/mois · 1 utilisateur</div>
         </div>
-        <div>
-          <div class="plan-price-tag">70€</div>
+        <div style="text-align:right">
+          <div class="plan-price-tag">49€</div>
           <div class="plan-price-sub">/mois</div>
         </div>
       </label>
@@ -190,13 +195,13 @@
         <div class="plan-radio"></div>
         <div class="plan-info">
           <div class="plan-name-row">
-            <div class="plan-name" style="color:var(--green)">Pro</div>
-            <div class="plan-badge-pop">⚡ POPULAIRE</div>
+            <div class="plan-name" style="color:var(--accent)">Pro</div>
+            <div class="plan-badge-pop">⭐ POPULAIRE</div>
           </div>
-          <div class="plan-desc-short">Illimité · Stats avancées · Notes prospects</div>
+          <div class="plan-desc-short">Illimité · Tags · PDF · Scan prioritaire · 5 membres</div>
         </div>
-        <div>
-          <div class="plan-price-tag" style="color:var(--green)">100€</div>
+        <div style="text-align:right">
+          <div class="plan-price-tag" style="color:var(--accent)">99€</div>
           <div class="plan-price-sub">/mois</div>
         </div>
       </label>
@@ -205,34 +210,35 @@
         <input type="radio" name="plan" value="agency">
         <div class="plan-radio"></div>
         <div class="plan-info">
-          <div class="plan-name-row">
-            <div class="plan-name" style="color:var(--pink)">Agency</div>
-          </div>
-          <div class="plan-desc-short">Multi-utilisateurs · Support 24/7 · Onboarding</div>
+          <div class="plan-name-row"><div class="plan-name" style="color:var(--pink)">Agence</div></div>
+          <div class="plan-desc-short">Tout Pro + membres illimités · Export CSV · Onboarding</div>
         </div>
-        <div>
-          <div class="plan-price-tag" style="color:var(--pink)">200€</div>
+        <div style="text-align:right">
+          <div class="plan-price-tag" style="color:var(--pink)">199€</div>
           <div class="plan-price-sub">/mois</div>
         </div>
       </label>
 
     </div>
-
-    <button class="btn btn-primary" onclick="step2Next()">Continuer vers le paiement →</button>
+    <button class="btn btn-primary" onclick="step2Next()">Continuer →</button>
+    <div class="login-link" style="margin-top:16px"><a href="#" onclick="setStep(1);return false" style="color:var(--muted)">← Retour</a></div>
   </div>
 
-  <!-- STEP 3 — PAIEMENT -->
+  <!-- STEP 3 -->
   <div class="step-panel" id="panel3">
-    <div class="card-title">Finalise ton inscription</div>
-    <div class="card-sub">Récapitulatif de ta commande</div>
-
+    <div class="card-title">Confirmation</div>
+    <div class="card-sub">Vérifie ton récapitulatif avant de créer ton compte.</div>
     <div class="recap-box">
       <div class="recap-row">
         <span class="recap-label">Agence</span>
         <span class="recap-value" id="recapAgency">—</span>
       </div>
       <div class="recap-row">
-        <span class="recap-label">Plan choisi</span>
+        <span class="recap-label">Email</span>
+        <span class="recap-value" id="recapEmail">—</span>
+      </div>
+      <div class="recap-row">
+        <span class="recap-label">Plan</span>
         <span class="recap-value" id="recapPlan">—</span>
       </div>
       <div class="recap-row">
@@ -240,23 +246,14 @@
         <span class="recap-value">Mensuelle · Sans engagement</span>
       </div>
       <div class="recap-row">
-        <span class="recap-label recap-total">Total aujourd'hui</span>
-        <span class="recap-value recap-total" id="recapPrice" style="color:var(--accent)">—</span>
+        <span class="recap-label recap-total">Total</span>
+        <span class="recap-value recap-total" id="recapPrice" style="background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">—</span>
       </div>
     </div>
-
-    <div class="stripe-note">
-      🔒 Paiement sécurisé via Stripe
-    </div>
-
+    <div class="stripe-note">🔒 Paiement sécurisé via Stripe</div>
     <div id="alertError3" class="alert alert-error"></div>
-    <div id="alertSuccess3" class="alert alert-success"></div>
-
-    <button class="btn btn-primary" id="btn3" onclick="finalSubmit()">Créer mon compte et payer →</button>
-
-    <div class="login-link" style="margin-top:16px">
-      <a href="#" onclick="goBack()" style="color:var(--muted)">← Modifier mon plan</a>
-    </div>
+    <button class="btn btn-primary" id="btn3" onclick="finalSubmit()">Créer mon compte →</button>
+    <div class="login-link" style="margin-top:16px"><a href="#" onclick="setStep(2);return false" style="color:var(--muted)">← Modifier mon plan</a></div>
   </div>
 
   <!-- SUCCESS -->
@@ -278,34 +275,30 @@ const SUPABASE_URL = 'https://nsvrkogwmzrbjrtbphpb.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_x7QwXgNepnb6t_2LCMniqw_zIEZ2LnR';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const PLAN_PRICES = { starter: 70, pro: 100, agency: 200 };
-const PLAN_LABELS = { starter: 'Starter', pro: 'Pro', agency: 'Agency' };
-
+const PLAN_PRICES = { starter: 49, pro: 99, agency: 199 };
+const PLAN_LABELS = { starter: 'Starter', pro: 'Pro', agency: 'Agence' };
 let selectedPlan = 'pro';
 let currentStep = 1;
 
-// Si déjà connecté → app
 sb.auth.getSession().then(({ data }) => {
   if (data.session) window.location.href = 'app.html';
 });
 
-/* ─── PASSWORD STRENGTH ─── */
 function checkPwd(val) {
-  const bars = [document.getElementById('pb1'), document.getElementById('pb2'), document.getElementById('pb3'), document.getElementById('pb4')];
+  const bars = ['pb1','pb2','pb3','pb4'].map(id => document.getElementById(id));
   const txt = document.getElementById('pwdText');
   let score = 0;
   if (val.length >= 8) score++;
   if (/[A-Z]/.test(val)) score++;
   if (/[0-9]/.test(val)) score++;
   if (/[^A-Za-z0-9]/.test(val)) score++;
-  const colors = ['#fc5c7c', '#fc5c7c', '#fcdc2d', '#2dfc8e'];
-  const labels = ['', 'Faible', 'Moyen', 'Bon', 'Fort'];
-  bars.forEach((b, i) => b.style.background = i < score ? colors[score - 1] : 'var(--border)');
+  const colors = ['#e8445a','#e8445a','#d97706','#059669'];
+  const labels = ['','Faible','Moyen','Bon','Fort'];
+  bars.forEach((b, i) => b.style.background = i < score ? colors[score-1] : 'var(--border)');
   txt.textContent = val.length ? labels[score] : '';
-  txt.style.color = score > 0 ? colors[score - 1] : 'var(--muted)';
+  txt.style.color = score > 0 ? colors[score-1] : 'var(--muted)';
 }
 
-/* ─── STEPPER ─── */
 function setStep(n) {
   currentStep = n;
   for (let i = 1; i <= 3; i++) {
@@ -319,91 +312,58 @@ function setStep(n) {
   }
 }
 
-/* ─── STEP 1 ─── */
-async function step1Next() {
+function step1Next() {
   const agency = document.getElementById('agency').value.trim();
   const email = document.getElementById('email').value.trim();
   const pwd = document.getElementById('password').value;
   const pwd2 = document.getElementById('password2').value;
-  const btn = document.getElementById('btn1');
-
-  hideError('alertError1');
-
+  document.getElementById('alertError1').style.display = 'none';
   if (!agency) return showError('alertError1', 'Entre le nom de ton agence');
   if (!email) return showError('alertError1', 'Entre ton adresse email');
   if (!pwd || pwd.length < 8) return showError('alertError1', 'Le mot de passe doit faire au moins 8 caractères');
   if (pwd !== pwd2) return showError('alertError1', 'Les mots de passe ne correspondent pas');
-
   setStep(2);
 }
 
-/* ─── STEP 2 ─── */
 function selectPlan(plan) {
   selectedPlan = plan;
-  ['starter', 'pro', 'agency'].forEach(p => {
-    document.getElementById(`opt-${p}`).classList.toggle('selected', p === plan);
-  });
+  ['starter','pro','agency'].forEach(p => document.getElementById(`opt-${p}`).classList.toggle('selected', p === plan));
 }
 
 function step2Next() {
-  const agency = document.getElementById('agency').value.trim();
-  document.getElementById('recapAgency').textContent = agency;
+  document.getElementById('recapAgency').textContent = document.getElementById('agency').value.trim();
+  document.getElementById('recapEmail').textContent = document.getElementById('email').value.trim();
   document.getElementById('recapPlan').textContent = PLAN_LABELS[selectedPlan];
   document.getElementById('recapPrice').textContent = PLAN_PRICES[selectedPlan] + '€/mois';
   setStep(3);
 }
 
-function goBack() { setStep(2); }
-
-/* ─── STEP 3 — FINAL ─── */
 async function finalSubmit() {
   const agency = document.getElementById('agency').value.trim();
   const email = document.getElementById('email').value.trim();
   const pwd = document.getElementById('password').value;
   const btn = document.getElementById('btn3');
+  document.getElementById('alertError3').style.display = 'none';
+  btn.disabled = true; btn.textContent = 'Création du compte…';
 
-  hideError('alertError3');
-  btn.disabled = true;
-  btn.textContent = 'Création du compte…';
-
-  // 1. Créer le compte Supabase
   const { data, error } = await sb.auth.signUp({
     email, password: pwd,
     options: { data: { agency_name: agency, plan: selectedPlan } }
   });
-
   if (error) {
     showError('alertError3', error.message);
-    btn.disabled = false;
-    btn.textContent = 'Créer mon compte et payer →';
+    btn.disabled = false; btn.textContent = 'Créer mon compte →';
     return;
   }
-
-  // 2. Mettre à jour le profil avec le plan choisi
   if (data.user) {
-    await sb.from('profiles').upsert({
-      id: data.user.id,
-      email: email,
-      agency_name: agency,
-      plan: selectedPlan,
-      paid: false
-    });
+    await sb.from('profiles').upsert({ id: data.user.id, email, agency_name: agency, plan: selectedPlan, paid: false });
   }
-
-  // 3. Succès → afficher l'état de succès
   document.getElementById('panel3').classList.remove('active');
   document.getElementById('panelSuccess').classList.add('active');
-  // Masquer le stepper
   document.querySelector('.stepper').style.opacity = '0';
 }
 
-/* ─── HELPERS ─── */
-function showError(id, msg) {
-  const el = document.getElementById(id);
-  el.textContent = msg;
-  el.style.display = 'block';
-}
-function hideError(id) { document.getElementById(id).style.display = 'none'; }
+function showError(id, msg) { const el = document.getElementById(id); el.textContent = msg; el.style.display = 'block'; }
 </script>
 </body>
 </html>
