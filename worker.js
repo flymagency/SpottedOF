@@ -770,6 +770,71 @@ export default {
       });
     }
 
+    // POST /send-invite-email
+    // Body: { to, inviterEmail, teamName, role, inviteUrl }
+    if (request.method === 'POST' && path === '/send-invite-email') {
+      let body;
+      try { body = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
+      const { to, inviterEmail, teamName, role, inviteUrl } = body;
+      if (!to || !inviteUrl) return json({ error: 'to et inviteUrl requis' }, 400);
+
+      const ROLE_FR = { admin: 'Admin', manager: 'Manager', viewer: 'Viewer' };
+      const roleFr = ROLE_FR[role] || role;
+
+      const html = `
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f4f5f9;font-family:'Inter',Arial,sans-serif">
+  <div style="max-width:520px;margin:40px auto;background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08)">
+    <!-- Header -->
+    <div style="background:linear-gradient(135deg,#4f46e5,#db2777);padding:32px 36px;text-align:center">
+      <div style="font-size:32px;margin-bottom:8px">👥</div>
+      <div style="color:white;font-size:22px;font-weight:800;letter-spacing:-0.5px">SpottedOF</div>
+      <div style="color:rgba(255,255,255,0.8);font-size:13px;margin-top:4px">Invitation à rejoindre une équipe</div>
+    </div>
+    <!-- Body -->
+    <div style="padding:32px 36px">
+      <p style="font-size:15px;color:#0f1117;line-height:1.6;margin:0 0 16px">Bonjour 👋</p>
+      <p style="font-size:15px;color:#0f1117;line-height:1.6;margin:0 0 24px">
+        <strong>${inviterEmail}</strong> t'invite à rejoindre l'équipe <strong>${teamName}</strong> sur SpottedOF avec le rôle <strong>${roleFr}</strong>.
+      </p>
+      <!-- CTA -->
+      <div style="text-align:center;margin:28px 0">
+        <a href="${inviteUrl}" style="display:inline-block;background:linear-gradient(135deg,#4f46e5,#db2777);color:white;text-decoration:none;padding:14px 32px;border-radius:12px;font-size:15px;font-weight:700">
+          Rejoindre l'équipe →
+        </a>
+      </div>
+      <p style="font-size:12px;color:#6b7280;line-height:1.6;margin:0">
+        Ce lien est valable 7 jours. Si tu n'as pas de compte SpottedOF, tu pourras en créer un gratuitement en cliquant sur le bouton ci-dessus.
+      </p>
+    </div>
+    <!-- Footer -->
+    <div style="background:#f4f5f9;padding:16px 36px;text-align:center;border-top:1px solid #e2e4ec">
+      <p style="font-size:11px;color:#9ca3af;margin:0">SpottedOF — Propulsé par FlyMagency · <a href="https://flymagency.github.io/SpottedOF/app.html" style="color:#4f46e5;text-decoration:none">spottedof.com</a></p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from: 'SpottedOF <onboarding@resend.dev>',
+          to: [to],
+          subject: `${inviterEmail} t'invite dans l'équipe ${teamName} sur SpottedOF`,
+          html,
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        return json({ error: err.message || 'Erreur envoi email' }, 502);
+      }
+      return json({ success: true, to });
+    }
+
     return json({ error: 'Route introuvable', routes: ['POST /score-profiles', 'GET /prospects', 'GET /stats', 'POST /update-status', 'POST /find-email', 'POST /scan-similar', 'GET /scan-poll'] }, 404);
   }
 };

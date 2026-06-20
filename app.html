@@ -3742,8 +3742,30 @@ async function sendTeamInvite() {
     const link = `${location.origin}${location.pathname}?invite=${invite.token}`;
     await navigator.clipboard.writeText(link).catch(() => {});
 
+    // Envoyer l'email d'invitation
+    try {
+      const emailRes = await fetch(`${WORKER}/send-invite-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: email,
+          inviterEmail: currentUser.email,
+          teamName: TEAM.name,
+          role,
+          inviteUrl: link,
+        }),
+      });
+      const emailData = await emailRes.json();
+      if (emailData.success) {
+        showToast(`Email d'invitation envoyé à ${email} 📧`, 'success');
+      } else {
+        showToast(`Lien copié ! (email non envoyé : ${emailData.error})`, 'success');
+      }
+    } catch(e) {
+      showToast(`Lien copié dans le presse-papier 📋`, 'success');
+    }
+
     document.getElementById('inviteEmail').value = '';
-    showToast(`Lien copié ! Envoie-le à ${email} 📋`, 'success');
     await logTeamActivity('invite_sent', '', '', { email, role });
     renderTeam();
   } catch(e) {
