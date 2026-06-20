@@ -538,22 +538,35 @@
 
         <!-- Section : Planifier (en haut, bien visible) -->
         <div style="background:linear-gradient(135deg,rgba(79,70,229,0.07),rgba(219,39,119,0.05));border:2px solid rgba(79,70,229,0.25);border-radius:14px;padding:16px 18px;margin-bottom:4px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
-            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;flex:1" id="scheduleToggleWrap">
-              <input type="checkbox" id="scheduleEnabled" style="accent-color:var(--accent);width:17px;height:17px;cursor:pointer;flex-shrink:0" onchange="document.getElementById('scheduleOptions').style.display=this.checked?'flex':'none'">
-              <div>
-                <div style="font-size:13px;font-weight:700;color:var(--accent)">📅 Planifier ce scan automatiquement</div>
-                <div style="font-size:11px;color:var(--muted);margin-top:2px">SpottedOF relancera ce scan à intervalles réguliers</div>
-              </div>
-            </label>
-            <div id="scheduleOptions" style="display:none;align-items:center;gap:10px;flex-wrap:wrap">
-              <label class="form-label" style="margin:0;white-space:nowrap">Fréquence :</label>
-              <select class="form-input" id="scheduleFrequency" style="padding:7px 10px;width:auto;font-size:12px;">
-                <option value="7">Chaque semaine</option>
-                <option value="14">Toutes les 2 semaines</option>
-                <option value="30">Tous les mois</option>
-              </select>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin-bottom:0" id="scheduleToggleWrap">
+            <input type="checkbox" id="scheduleEnabled" style="accent-color:var(--accent);width:17px;height:17px;cursor:pointer;flex-shrink:0" onchange="document.getElementById('scheduleOptions').style.display=this.checked?'block':'none'">
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--accent)">📅 Planifier ce scan automatiquement</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">SpottedOF relancera ce scan aux dates choisies</div>
             </div>
+          </label>
+          <div id="scheduleOptions" style="display:none;margin-top:14px;display:none">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+              <div>
+                <label class="form-label">Fréquence</label>
+                <select class="form-input" id="scheduleFrequency" style="padding:8px 10px;">
+                  <option value="1">Chaque jour</option>
+                  <option value="3">Tous les 3 jours</option>
+                  <option value="7" selected>Chaque semaine</option>
+                  <option value="14">Toutes les 2 semaines</option>
+                  <option value="30">Tous les mois</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label">Heure d'exécution</label>
+                <input type="time" class="form-input" id="scheduleTime" value="08:00" style="padding:8px 10px;">
+              </div>
+            </div>
+            <div>
+              <label class="form-label">Premier lancement</label>
+              <input type="datetime-local" class="form-input" id="scheduleFirstRun" style="padding:8px 10px;">
+            </div>
+            <div id="schedulePreview" style="margin-top:10px;font-size:11px;color:var(--accent);font-weight:600;background:rgba(79,70,229,0.06);border-radius:8px;padding:8px 12px;"></div>
           </div>
         </div>
 
@@ -1298,10 +1311,14 @@ const PLATFORM_LABELS = { ig: 'Instagram', tt: 'TikTok', th: 'Threads' };
 function openScanModal() {
   resetScanModal();
   document.getElementById('refHandle').value = '';
+  // Reset schedule toggle
+  const schedEnabled = document.getElementById('scheduleEnabled');
+  if (schedEnabled) { schedEnabled.checked = false; document.getElementById('scheduleOptions').style.display = 'none'; }
   // Init platform filter visibility (default = IG selected)
   const selBtn = document.querySelector('#scanPlatformPick .plat-pick-btn.sel');
   if (selBtn) pickScanPlatform(selBtn);
   document.getElementById('scanModal').classList.add('open');
+  setTimeout(initScheduleUI, 50);
 }
 
 function pickScanPlatform(el) {
@@ -4335,10 +4352,49 @@ async function loadScheduledScans() {
   } catch(e) {}
 }
 
+function initScheduleUI() {
+  // Pré-remplir la date/heure du premier lancement
+  const now = new Date();
+  now.setHours(8, 0, 0, 0);
+  if (now < new Date()) now.setDate(now.getDate() + 1);
+  const pad = n => String(n).padStart(2, '0');
+  const localDT = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  const firstRunEl = document.getElementById('scheduleFirstRun');
+  if (firstRunEl) firstRunEl.value = localDT;
+  updateSchedulePreview();
+  ['scheduleFrequency','scheduleTime','scheduleFirstRun'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('change', updateSchedulePreview);
+  });
+}
+
+function updateSchedulePreview() {
+  const freq = parseInt(document.getElementById('scheduleFrequency')?.value || '7');
+  const firstRun = document.getElementById('scheduleFirstRun')?.value;
+  const time = document.getElementById('scheduleTime')?.value || '08:00';
+  const FREQ_LABEL = { 1: 'chaque jour', 3: 'tous les 3 jours', 7: 'chaque semaine', 14: 'toutes les 2 semaines', 30: 'tous les mois' };
+  const preview = document.getElementById('schedulePreview');
+  if (!preview) return;
+  if (firstRun) {
+    const d = new Date(firstRun);
+    const dateStr = d.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' });
+    preview.textContent = `⚡ Premier scan le ${dateStr} à ${time} · puis ${FREQ_LABEL[freq] || `tous les ${freq}j`}`;
+  }
+}
+
 async function saveScheduledScan(refHandle, platform, scanParams) {
   const frequencyDays = parseInt(document.getElementById('scheduleFrequency').value);
-  const nextRun = new Date();
-  nextRun.setDate(nextRun.getDate() + frequencyDays);
+  const firstRunVal = document.getElementById('scheduleFirstRun')?.value;
+  const scheduleTime = document.getElementById('scheduleTime')?.value || '08:00';
+  let nextRun;
+  if (firstRunVal) {
+    nextRun = new Date(firstRunVal);
+    const [h, m] = scheduleTime.split(':');
+    nextRun.setHours(parseInt(h), parseInt(m), 0, 0);
+  } else {
+    nextRun = new Date();
+    nextRun.setDate(nextRun.getDate() + frequencyDays);
+  }
   try {
     await sb.from('scheduled_scans').insert({
       user_id: currentUser.id,
