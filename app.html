@@ -829,6 +829,59 @@
 @keyframes scanPulse { from { width: 20%; } to { width: 80%; } }
 </style>
 
+<!-- MODAL GESTION ÉQUIPE -->
+<div class="modal-overlay" id="teamSettingsModal">
+  <div class="modal" style="max-width:580px">
+    <div class="modal-header">
+      <div class="modal-title">⚙️ Gérer l'équipe</div>
+      <button class="modal-close" onclick="closeModal('teamSettingsModal')">✕</button>
+    </div>
+    <div class="modal-body" style="padding:0">
+      <!-- Tabs -->
+      <div style="display:flex;border-bottom:1px solid var(--border);padding:0 4px">
+        <button class="team-settings-tab active" onclick="switchTeamTab('infos',this)" style="padding:12px 20px;border:none;background:none;font-size:13px;font-weight:700;cursor:pointer;border-bottom:2px solid var(--accent);color:var(--accent);font-family:'Inter',sans-serif">📋 Infos</button>
+        <button class="team-settings-tab" onclick="switchTeamTab('membres',this)" style="padding:12px 20px;border:none;background:none;font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;color:var(--muted);font-family:'Inter',sans-serif">👥 Membres</button>
+        <button class="team-settings-tab" onclick="switchTeamTab('roles',this)" style="padding:12px 20px;border:none;background:none;font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;color:var(--muted);font-family:'Inter',sans-serif">🏷️ Rôles</button>
+      </div>
+      <!-- Tab : Infos -->
+      <div id="team-tab-infos" style="padding:24px 28px">
+        <div class="form-group" style="margin-bottom:20px">
+          <label class="form-label">Nom de l'équipe</label>
+          <div style="display:flex;gap:8px">
+            <input type="text" class="form-input" id="teamSettingsName" placeholder="Nom de l'équipe">
+            <button class="btn btn-primary" onclick="saveTeamName()">Enregistrer</button>
+          </div>
+        </div>
+        <div style="border-top:1px solid var(--border);padding-top:20px">
+          <div style="font-size:12px;font-weight:700;margin-bottom:8px;color:var(--muted);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:0.06em">Zone dangereuse</div>
+          <button onclick="dissolveTeam()" class="btn" style="background:rgba(232,68,90,0.06);color:var(--accent2);border:1px solid rgba(232,68,90,0.2);font-size:12px">🗑️ Dissoudre l'équipe</button>
+        </div>
+      </div>
+      <!-- Tab : Membres -->
+      <div id="team-tab-membres" style="display:none;max-height:420px;overflow-y:auto">
+        <div id="teamSettingsMembersList"></div>
+      </div>
+      <!-- Tab : Rôles -->
+      <div id="team-tab-roles" style="display:none;padding:24px 28px">
+        <p style="font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6">Seul le <strong>propriétaire de l'équipe</strong> peut modifier les rôles, renommer l'équipe et exclure des membres. Les autres rôles n'ont pas accès à ces paramètres.</p>
+        ${[
+          { role:'admin', label:'Admin', color:'rgba(217,119,6,0.1)', text:'#d97706', perms:['Scanner des prospects','Contacter des prospects','Modifier les statuts','Voir les stats','Gérer l\'équipe (si propriétaire)'] },
+          { role:'manager', label:'Manager', color:'rgba(79,70,229,0.08)', text:'#4f46e5', perms:['Scanner des prospects','Contacter des prospects','Modifier les statuts','Voir les stats'] },
+          { role:'viewer', label:'Viewer', color:'rgba(5,150,105,0.08)', text:'#059669', perms:['Voir les prospects','Voir les stats'] },
+        ].map(r => `
+          <div style="border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+              <span style="font-size:11px;font-weight:800;font-family:'Space Mono',monospace;padding:4px 12px;border-radius:100px;background:${r.color};color:${r.text}">${r.label}</span>
+            </div>
+            <ul style="list-style:none;display:flex;flex-direction:column;gap:6px">
+              ${r.perms.map(p => `<li style="font-size:12px;color:var(--muted);display:flex;gap:8px"><span style="color:var(--green);font-weight:700">✓</span>${p}</li>`).join('')}
+            </ul>
+          </div>`).join('')}
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL TAGS -->
 <div class="modal-overlay" id="tagsModal">
   <div class="modal" style="max-width:420px">
@@ -4016,15 +4069,12 @@ async function renderTeam() {
       <div style="display:flex;align-items:center;gap:16px">
         <div style="width:52px;height:52px;background:linear-gradient(135deg,var(--accent),var(--pink));border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">👥</div>
         <div>
-          <div style="display:flex;align-items:center;gap:10px">
-            <h2 style="font-size:20px;font-weight:800">${TEAM.name}</h2>
-            ${isOwner ? `<button onclick="renameTeam()" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;padding:2px 6px;border-radius:6px;transition:background 0.15s" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='none'">✏️</button>` : ''}
-          </div>
-          <div style="font-size:13px;color:var(--muted);margin-top:2px">${TEAM_MEMBERS.length} membre${TEAM_MEMBERS.length > 1 ? 's' : ''} · Rôle : <strong style="color:var(--text)">${ROLE_LABELS[myRole]}</strong></div>
+          <h2 style="font-size:20px;font-weight:800">${TEAM.name}</h2>
+          <div style="font-size:13px;color:var(--muted);margin-top:2px">${TEAM_MEMBERS.length} membre${TEAM_MEMBERS.length > 1 ? 's' : ''} · Mon rôle : <strong style="color:var(--text)">${ROLE_LABELS[myRole]}</strong></div>
         </div>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
-        <span style="font-size:11px;font-family:'Space Mono',monospace;color:var(--muted)">ID : ${TEAM.id.slice(0,8)}…</span>
+        ${isOwner ? `<button onclick="openTeamSettings()" class="btn btn-primary" style="gap:8px">⚙️ Gérer l'équipe</button>` : ''}
       </div>
     </div>
 
@@ -4169,6 +4219,90 @@ async function renderTeam() {
 
 // ─── VÉRIFIER INVITE AU CHARGEMENT ───────────────────────────────────────────
 // Appelé après auth dans le bloc onAuthStateChange
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ─── TEAM SETTINGS MODAL ──────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function openTeamSettings() {
+  if (!isTeamOwner()) { showToast('Réservé au propriétaire de l\'équipe', 'error'); return; }
+  // Pré-remplir le nom
+  const nameInput = document.getElementById('teamSettingsName');
+  if (nameInput) nameInput.value = TEAM?.name || '';
+  // Render membres
+  renderTeamSettingsMembers();
+  // Reset sur tab infos
+  switchTeamTab('infos', document.querySelector('.team-settings-tab'));
+  document.getElementById('teamSettingsModal').classList.add('open');
+}
+
+function switchTeamTab(tab, btn) {
+  ['infos','membres','roles'].forEach(t => {
+    document.getElementById(`team-tab-${t}`).style.display = t === tab ? '' : 'none';
+  });
+  document.querySelectorAll('.team-settings-tab').forEach(b => {
+    b.style.borderBottomColor = 'transparent';
+    b.style.color = 'var(--muted)';
+    b.style.fontWeight = '600';
+  });
+  if (btn) {
+    btn.style.borderBottomColor = 'var(--accent)';
+    btn.style.color = 'var(--accent)';
+    btn.style.fontWeight = '700';
+  }
+  if (tab === 'membres') renderTeamSettingsMembers();
+}
+
+function renderTeamSettingsMembers() {
+  const el = document.getElementById('teamSettingsMembersList');
+  if (!el) return;
+  el.innerHTML = TEAM_MEMBERS.map(m => {
+    const isMe = m.user_id === currentUser?.id;
+    const isOwnerRow = m.user_id === TEAM?.owner_id;
+    const initial = (m.email || '?')[0].toUpperCase();
+    return `
+    <div style="display:flex;align-items:center;gap:14px;padding:14px 20px;border-bottom:1px solid var(--border)">
+      <div style="width:40px;height:40px;background:linear-gradient(135deg,var(--accent),var(--pink));border-radius:10px;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:16px;flex-shrink:0">${initial}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          ${m.email}
+          ${isMe ? '<span style="font-size:9px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-family:\'Space Mono\',monospace">Moi</span>' : ''}
+          ${isOwnerRow ? '<span style="font-size:9px;background:rgba(217,119,6,0.1);color:var(--yellow);border:1px solid rgba(217,119,6,0.2);border-radius:4px;padding:1px 5px;font-family:\'Space Mono\',monospace">Propriétaire</span>' : ''}
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        ${!isOwnerRow ? `
+          <select onchange="changeRole('${m.id}',this.value);renderTeamSettingsMembers()" style="font-size:11px;font-family:'Space Mono',monospace;border:1px solid var(--border);border-radius:8px;padding:5px 8px;background:var(--surface);cursor:pointer;font-weight:700">
+            <option value="admin"   ${m.role==='admin'   ?'selected':''}>Admin</option>
+            <option value="manager" ${m.role==='manager' ?'selected':''}>Manager</option>
+            <option value="viewer"  ${m.role==='viewer'  ?'selected':''}>Viewer</option>
+          </select>
+          <button onclick="removeMember('${m.id}');closeModal('teamSettingsModal')" class="btn" style="background:rgba(232,68,90,0.06);color:var(--accent2);border:1px solid rgba(232,68,90,0.2);font-size:11px;padding:5px 10px">Exclure</button>
+        ` : `<span style="font-size:11px;color:var(--muted)">—</span>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function saveTeamName() {
+  const name = document.getElementById('teamSettingsName')?.value?.trim();
+  if (!name) { showToast('Nom invalide', 'error'); return; }
+  await sb.from('teams').update({ name }).eq('id', TEAM.id);
+  TEAM.name = name;
+  showToast('Nom mis à jour ✓', 'success');
+  renderTeam();
+}
+
+async function dissolveTeam() {
+  if (!confirm(`Dissoudre "${TEAM.name}" ? Tous les membres seront retirés. Cette action est irréversible.`)) return;
+  await sb.from('team_members').delete().eq('team_id', TEAM.id);
+  await sb.from('team_invites').delete().eq('team_id', TEAM.id);
+  await sb.from('teams').delete().eq('id', TEAM.id);
+  TEAM = null; TEAM_MEMBERS = []; TEAM_INVITES = []; TEAM_ACTIVITY = [];
+  closeModal('teamSettingsModal');
+  showToast('Équipe dissoute', 'error');
+  renderTeam();
+}
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // ─── PLAN CHECK ───────────────────────────────────────────────────────────────
