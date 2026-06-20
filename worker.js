@@ -821,7 +821,7 @@ export default {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          from: 'SpottedOF <onboarding@resend.dev>',
+          from: 'SpottedOF <noreply@spottedof.com>',
           to: [to],
           subject: `${inviterEmail} t'invite dans l'équipe ${teamName} sur SpottedOF`,
           html,
