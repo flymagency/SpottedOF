@@ -5,157 +5,258 @@
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SpottedOF — Créer mon compte</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300..900&family=Space+Mono:wght@400;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
-      --bg: #f4f5f9; --surface: #ffffff; --surface2: #f0f1f6; --border: #e2e4ec;
-      --accent: #4f46e5; --accent2: #e8445a; --green: #059669; --yellow: #d97706;
-      --pink: #db2777; --text: #0f1117; --muted: #6b7280;
-      --gradient: linear-gradient(135deg, #4f46e5, #db2777);
+      --bg: #060608;
+      --surface: #0C0C0F;
+      --surface2: #111115;
+      --surface3: #18181D;
+      --border: rgba(255,255,255,0.07);
+      --border-light: rgba(255,255,255,0.13);
+      --accent: #4B7FFF;
+      --accent-light: #6B9BFF;
+      --accent-glow: rgba(75,127,255,0.16);
+      --pink: #F0436C;
+      --green: #1ECA6E;
+      --yellow: #F59E0B;
+      --text: #FFFFFF;
+      --text-2: #9898A8;
+      --text-3: #484858;
+      --gradient: linear-gradient(135deg, #4B7FFF, #F0436C);
     }
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background-image:
+        radial-gradient(ellipse 80% 60% at 50% -10%, rgba(75,127,255,0.1) 0%, transparent 70%),
+        radial-gradient(circle, rgba(255,255,255,0.028) 1px, transparent 1px);
+      background-size: 100% 100%, 28px 28px;
+    }
 
     /* LOGO */
     .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); margin-bottom: 28px; }
-    .logo-icon { width: 38px; height: 38px; background: #0f1117; border-radius: 10px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-    .logo-text { font-size: 22px; font-weight: 800; }
+    .logo-icon { width: 38px; height: 38px; border-radius: 10px; overflow: hidden; display: flex; align-items: center; justify-content: center; animation: logoFloat 3.5s ease-in-out infinite; }
+    .logo-text { font-size: 22px; font-weight: 800; font-family: 'Outfit', sans-serif; }
     .logo-text span { color: var(--pink); }
 
     /* STEPPER */
     .stepper { display: flex; align-items: center; margin-bottom: 28px; }
     .step-item { display: flex; align-items: center; gap: 8px; }
-    .step-circle { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; font-family: 'Space Mono', monospace; border: 2px solid var(--border); color: var(--muted); background: var(--surface); transition: all 0.3s; flex-shrink: 0; }
-    .step-circle.active { border-color: var(--accent); color: var(--accent); background: rgba(79,70,229,0.08); }
-    .step-circle.done { border-color: var(--green); color: white; background: var(--green); }
-    .step-label { font-size: 12px; font-weight: 600; color: var(--muted); transition: color 0.3s; white-space: nowrap; }
+    .step-circle {
+      width: 28px; height: 28px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; font-family: 'Space Mono', monospace;
+      border: 2px solid var(--border);
+      color: var(--text-3);
+      background: var(--surface);
+      transition: all 0.3s;
+      flex-shrink: 0;
+    }
+    .step-circle.active { border-color: var(--accent); color: var(--accent); background: rgba(75,127,255,0.1); }
+    .step-circle.done { border-color: var(--green); color: white; background: var(--green); animation: circlePop 0.4s cubic-bezier(.34,1.56,.64,1); }
+    .step-label { font-size: 12px; font-weight: 600; color: var(--text-3); transition: color 0.3s; white-space: nowrap; }
     .step-label.active { color: var(--text); font-weight: 700; }
     .step-line { width: 40px; height: 2px; background: var(--border); margin: 0 8px; transition: background 0.3s; flex-shrink: 0; }
     .step-line.done { background: var(--green); }
 
     /* CARD */
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 24px; padding: 40px; width: 100%; max-width: 480px; box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
-    .card-title { font-size: 22px; font-weight: 800; margin-bottom: 6px; letter-spacing: -0.02em; }
-    .card-sub { font-size: 13px; color: var(--muted); margin-bottom: 28px; line-height: 1.6; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 40px;
+      width: 100%;
+      max-width: 480px;
+      animation: cardIn 0.55s cubic-bezier(0.16,1,0.3,1) both;
+    }
+    @keyframes cardIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+    .card-title { font-size: 22px; font-weight: 800; font-family: 'Outfit', sans-serif; margin-bottom: 6px; letter-spacing: -0.02em; }
+    .card-sub { font-size: 13px; color: var(--text-2); margin-bottom: 28px; line-height: 1.6; }
 
     /* FORM */
     .form-group { margin-bottom: 16px; }
-    .form-label { font-size: 11px; color: var(--muted); font-family: 'Space Mono', monospace; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; display: block; }
-    .form-input { width: 100%; background: var(--surface2); border: 1.5px solid var(--border); border-radius: 12px; padding: 13px 16px; color: var(--text); font-family: 'Inter', sans-serif; font-size: 14px; outline: none; transition: border-color 0.2s; }
-    .form-input:focus { border-color: var(--accent); background: white; }
-    .form-input::placeholder { color: var(--muted); }
+    .form-label {
+      font-size: 10px;
+      color: var(--text-3);
+      font-family: 'Space Mono', monospace;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 8px;
+      display: block;
+    }
+    .form-input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .form-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(75,127,255,0.1);
+    }
+    .form-input::placeholder { color: var(--text-3); }
 
-    .btn { width: 100%; padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 700; font-family: 'Inter', sans-serif; cursor: pointer; border: none; transition: all 0.2s; margin-top: 8px; }
-    .btn-primary { background: var(--gradient); color: white; box-shadow: 0 4px 14px rgba(79,70,229,0.3); }
-    .btn-primary:hover { opacity: 0.92; transform: translateY(-1px); }
-    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+      margin-top: 8px;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-primary::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.18) 50%, transparent 60%);
+      transform: translateX(-100%);
+    }
+    .btn-primary:hover { background: var(--accent-light); transform: translateY(-1px); }
+    .btn-primary:hover::after { animation: shimmer 0.5s ease forwards; }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    @keyframes shimmer { to { transform: translateX(100%); } }
 
     .alert { border-radius: 10px; padding: 12px 16px; font-size: 13px; margin-bottom: 16px; display: none; }
-    .alert-error { background: rgba(232,68,90,0.08); border: 1px solid rgba(232,68,90,0.2); color: var(--accent2); }
-    .alert-success { background: rgba(5,150,105,0.08); border: 1px solid rgba(5,150,105,0.2); color: var(--green); }
+    .alert-error { background: rgba(240,67,108,0.08); border: 1px solid rgba(240,67,108,0.2); color: var(--pink); }
+    .alert-success { background: rgba(30,202,110,0.08); border: 1px solid rgba(30,202,110,0.2); color: var(--green); }
 
-    .login-link { text-align: center; margin-top: 20px; font-size: 13px; color: var(--muted); }
+    .login-link { text-align: center; margin-top: 20px; font-size: 13px; color: var(--text-3); }
     .login-link a { color: var(--accent); text-decoration: none; font-weight: 700; }
     .login-link a:hover { text-decoration: underline; }
 
     /* PASSWORD STRENGTH */
     .pwd-strength { display: flex; gap: 4px; margin-top: 8px; }
     .pwd-bar { height: 3px; flex: 1; border-radius: 2px; background: var(--border); transition: background 0.3s; }
-    .pwd-text { font-size: 10px; color: var(--muted); font-family: 'Space Mono', monospace; margin-top: 5px; }
+    .pwd-text { font-size: 10px; color: var(--text-3); font-family: 'Space Mono', monospace; margin-top: 5px; }
 
     /* PLANS */
     .plans-grid { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
-    .plan-option { border: 2px solid var(--border); border-radius: 16px; padding: 18px 20px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 16px; background: var(--surface); }
-    .plan-option:hover { border-color: rgba(79,70,229,0.3); background: rgba(79,70,229,0.02); }
-    .plan-option.selected { border-color: var(--accent); background: rgba(79,70,229,0.04); }
+    .plan-option {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(.22,1,.36,1);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: var(--surface);
+    }
+    .plan-option:hover { border-color: var(--border-light); transform: translateY(-1px); }
+    .plan-option.selected { border-color: var(--accent); background: rgba(75,127,255,0.06); }
     .plan-option input[type=radio] { display: none; }
-    .plan-radio { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+    .plan-radio {
+      width: 18px; height: 18px; border-radius: 50%;
+      border: 2px solid var(--border);
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+    }
     .plan-option.selected .plan-radio { border-color: var(--accent); background: var(--accent); }
     .plan-option.selected .plan-radio::after { content: ''; width: 6px; height: 6px; border-radius: 50%; background: white; display: block; }
     .plan-info { flex: 1; }
     .plan-name-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
     .plan-name { font-size: 14px; font-weight: 800; }
-    .plan-badge-pop { font-size: 9px; font-family: 'Space Mono', monospace; font-weight: 700; background: var(--gradient); color: white; padding: 2px 8px; border-radius: 100px; }
-    .plan-desc-short { font-size: 12px; color: var(--muted); }
+    .plan-badge-pop {
+      font-size: 9px;
+      font-family: 'Space Mono', monospace;
+      font-weight: 700;
+      background: var(--gradient);
+      color: white;
+      padding: 2px 8px;
+      border-radius: 100px;
+    }
+    .plan-desc-short { font-size: 12px; color: var(--text-2); }
     .plan-price-tag { font-size: 18px; font-weight: 800; white-space: nowrap; flex-shrink: 0; }
-    .plan-price-sub { font-size: 11px; color: var(--muted); font-weight: 400; text-align: right; }
+    .plan-price-sub { font-size: 11px; color: var(--text-2); font-weight: 400; text-align: right; }
 
     /* RECAP */
-    .recap-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-bottom: 20px; }
+    .recap-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
     .recap-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; padding: 8px 0; }
     .recap-row:not(:last-child) { border-bottom: 1px solid var(--border); }
-    .recap-label { color: var(--muted); }
-    .recap-value { font-weight: 700; }
+    .recap-label { color: var(--text-3); }
+    .recap-value { font-weight: 700; color: var(--text); }
     .recap-total { font-size: 15px; font-weight: 800; }
-    .stripe-note { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--muted); font-family: 'Space Mono', monospace; margin-bottom: 20px; justify-content: center; }
+    .stripe-note {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 11px;
+      color: var(--text-3);
+      font-family: 'Inter', sans-serif;
+      margin-bottom: 20px;
+      justify-content: center;
+    }
 
     /* PANELS */
     .step-panel { display: none; opacity: 0; transform: translateX(20px); }
     .step-panel.active { display: block; animation: panelIn 0.4s cubic-bezier(.22,1,.36,1) forwards; }
-    @keyframes panelIn { from{opacity:0;transform:translateX(20px)} to{opacity:1;transform:translateX(0)} }
+    @keyframes panelIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
 
-    /* ── ANIMATIONS ── */
-    /* Blobs */
-    .bg-blobs { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
-    .bg-blob { position: absolute; border-radius: 50%; filter: blur(90px); opacity: 0.13; animation: blobDrift ease-in-out infinite; }
-    .bg-blob-1 { width: 500px; height: 500px; background: #6366f1; top: -150px; left: -150px; animation-duration: 14s; }
-    .bg-blob-2 { width: 360px; height: 360px; background: #ec4899; bottom: -80px; right: -100px; animation-duration: 11s; animation-delay: -5s; }
-    @keyframes blobDrift { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(20px,-28px) scale(1.06)} }
-
-    /* Card */
-    .card { animation: cardIn 0.65s cubic-bezier(.22,1,.36,1) both; }
-    @keyframes cardIn { from{opacity:0;transform:translateY(28px) scale(0.97)} to{opacity:1;transform:none} }
-
-    /* Logo */
-    .logo-icon { animation: logoFloat 3.5s ease-in-out infinite; }
-    @keyframes logoFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
-
-    /* Inputs */
-    .form-input:focus { box-shadow: 0 0 0 3px rgba(79,70,229,0.12); }
-
-    /* Plan option hover scale */
-    .plan-option { transition: all 0.2s cubic-bezier(.22,1,.36,1); }
-    .plan-option:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.08); }
-    .plan-option.selected { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(79,70,229,0.15); }
-
-    /* Bouton shimmer */
-    .btn-primary { position: relative; overflow: hidden; }
-    .btn-primary::after {
-      content: ''; position: absolute; inset: 0;
-      background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.18) 50%, transparent 60%);
-      transform: translateX(-100%);
-    }
-    .btn-primary:hover::after { animation: shimmer 0.5s ease forwards; }
-    @keyframes shimmer { to { transform: translateX(100%); } }
-
-    /* Step circle animation */
-    .step-circle.done { animation: circlePop 0.4s cubic-bezier(.34,1.56,.64,1); }
-    @keyframes circlePop { 0%{transform:scale(0.7)} 100%{transform:scale(1)} }
+    /* ANIMATIONS */
+    @keyframes logoFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+    @keyframes circlePop { 0% { transform: scale(0.7); } 100% { transform: scale(1); } }
 
     /* SUCCESS */
     .success-state { text-align: center; padding: 20px 0; }
     .success-icon { font-size: 56px; margin-bottom: 16px; }
-    .success-title { font-size: 22px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.02em; }
-    .success-sub { font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 28px; }
+    .success-title { font-size: 22px; font-weight: 800; font-family: 'Outfit', sans-serif; margin-bottom: 8px; letter-spacing: -0.02em; }
+    .success-sub { font-size: 14px; color: var(--text-2); line-height: 1.6; margin-bottom: 28px; }
   </style>
 </head>
 <body>
-<div class="bg-blobs">
-  <div class="bg-blob bg-blob-1"></div>
-  <div class="bg-blob bg-blob-2"></div>
-</div>
 
 <a href="index.html" class="logo" style="position:relative;z-index:1">
   <div class="logo-icon">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 38 38" width="38" height="38">
-      <defs><linearGradient id="lg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#6366f1"/><stop offset="100%" style="stop-color:#ec4899"/></linearGradient></defs>
-      <rect width="38" height="38" rx="10" fill="#0f1117"/>
+      <defs><linearGradient id="lg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#4B7FFF"/><stop offset="100%" style="stop-color:#F0436C"/></linearGradient></defs>
+      <rect width="38" height="38" rx="10" fill="#0C0C0F"/>
       <circle cx="19" cy="19" r="13" fill="none" stroke="url(#lg)" stroke-width="0.9" opacity="0.4"/>
       <circle cx="19" cy="19" r="8" fill="none" stroke="url(#lg)" stroke-width="0.9" opacity="0.65"/>
       <circle cx="19" cy="19" r="3.5" fill="none" stroke="url(#lg)" stroke-width="1.2"/>
       <line x1="19" y1="19" x2="28.5" y2="9.5" stroke="url(#lg)" stroke-width="1.8" stroke-linecap="round"/>
-      <circle cx="28.5" cy="9.5" r="2.5" fill="#ec4899"/>
+      <circle cx="28.5" cy="9.5" r="2.5" fill="#F0436C"/>
       <text x="19" y="23.5" text-anchor="middle" fill="white" font-family="Inter,Arial,sans-serif" font-weight="900" font-size="9.5">S</text>
     </svg>
   </div>
@@ -264,7 +365,7 @@
 
     </div>
     <button class="btn btn-primary" onclick="step2Next()">Continuer →</button>
-    <div class="login-link" style="margin-top:16px"><a href="#" onclick="setStep(1);return false" style="color:var(--muted)">← Retour</a></div>
+    <div class="login-link" style="margin-top:16px"><a href="#" onclick="setStep(1);return false" style="color:var(--text-3)">← Retour</a></div>
   </div>
 
   <!-- STEP 3 -->
@@ -296,7 +397,7 @@
     <div class="stripe-note">🔒 Paiement sécurisé via Stripe</div>
     <div id="alertError3" class="alert alert-error"></div>
     <button class="btn btn-primary" id="btn3" onclick="finalSubmit()">Créer mon compte →</button>
-    <div class="login-link" style="margin-top:16px"><a href="#" onclick="setStep(2);return false" style="color:var(--muted)">← Modifier mon plan</a></div>
+    <div class="login-link" style="margin-top:16px"><a href="#" onclick="setStep(2);return false" style="color:var(--text-3)">← Modifier mon plan</a></div>
   </div>
 
   <!-- SUCCESS -->
@@ -346,11 +447,11 @@ function checkPwd(val) {
   if (/[A-Z]/.test(val)) score++;
   if (/[0-9]/.test(val)) score++;
   if (/[^A-Za-z0-9]/.test(val)) score++;
-  const colors = ['#e8445a','#e8445a','#d97706','#059669'];
+  const colors = ['#F0436C','#F0436C','#F59E0B','#1ECA6E'];
   const labels = ['','Faible','Moyen','Bon','Fort'];
   bars.forEach((b, i) => b.style.background = i < score ? colors[score-1] : 'var(--border)');
   txt.textContent = val.length ? labels[score] : '';
-  txt.style.color = score > 0 ? colors[score-1] : 'var(--muted)';
+  txt.style.color = score > 0 ? colors[score-1] : 'var(--text-3)';
 }
 
 function setStep(n) {
