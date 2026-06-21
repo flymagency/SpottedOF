@@ -512,8 +512,8 @@ async function finalSubmit() {
   const agency = IS_INVITE ? '' : document.getElementById('agency').value.trim();
   const email = document.getElementById('email').value.trim();
   const pwd = document.getElementById('password').value;
-  const btn = document.getElementById('btn3') || document.getElementById('btn1');
-  const errEl = document.getElementById('alertError3') || document.getElementById('alertError1');
+  const btn = IS_INVITE ? document.getElementById('btn1') : document.getElementById('btn3');
+  const errEl = IS_INVITE ? document.getElementById('alertError1') : document.getElementById('alertError3');
   errEl.style.display = 'none';
   btn.disabled = true; btn.textContent = 'Création du compte…';
 
@@ -524,7 +524,7 @@ async function finalSubmit() {
   const { data, error } = await sb.auth.signUp({ email, password: pwd, options: signUpOptions });
   if (error) {
     showError(errEl.id, error.message);
-    btn.disabled = false; btn.textContent = IS_INVITE ? 'Créer mon compte →' : 'Créer mon compte →';
+    btn.disabled = false; btn.textContent = 'Créer mon compte →';
     return;
   }
   if (data.user && !IS_INVITE) {
