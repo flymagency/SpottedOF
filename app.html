@@ -3973,10 +3973,9 @@ async function checkInviteToken() {
 
   const { data: invite } = await sb.from('team_invites').select('*').eq('token', token).single();
   if (!invite) { showToast('Invitation invalide ou expirée', 'error'); return; }
-  if (invite.accepted_at) { showToast('Cette invitation a déjà été utilisée', 'error'); return; }
   if (new Date(invite.expires_at) < new Date()) { showToast('Invitation expirée (7 jours max)', 'error'); return; }
 
-  // Rejoindre l'équipe
+  // Rejoindre l'équipe (même si invitation déjà marquée acceptée — cas compte recréé)
   const { error } = await sb.from('team_members').insert({
     team_id: invite.team_id,
     user_id: currentUser.id,
@@ -3985,7 +3984,7 @@ async function checkInviteToken() {
     invited_by: invite.invited_by,
   });
 
-  if (error && error.code !== '23505') { // 23505 = already exists
+  if (error && error.code !== '23505') { // 23505 = already exists → OK
     showToast('Erreur en rejoignant l\'équipe', 'error'); return;
   }
 
