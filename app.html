@@ -959,9 +959,10 @@ sb.auth.getSession().then(async ({ data }) => {
   userPlan = (profile?.plan || 'starter').toLowerCase();
   userPaid = profile?.paid || false;
 
-  // Membre d'une équipe = accès garanti (vérifié en BDD + token URL au 1er accès)
+  // Membre d'une équipe = accès garanti
+  // Triple vérification : token URL (1er accès) + team_members BDD + plan='member' (fallback)
   const hasInviteToken = !!new URLSearchParams(location.search).get('invite');
-  const isTeamMember = !!teamMembership || hasInviteToken;
+  const isTeamMember = !!teamMembership || hasInviteToken || userPlan === 'member';
 
   // Badge plan dans le header
   const badge = document.getElementById('planBadge');
@@ -2362,7 +2363,7 @@ function showUpgradeBanner() {
         Choisis un plan pour accéder à SpottedOF et commencer à recruter les meilleures modèles.
       </div>
       <div style="display:flex;flex-direction:column;gap:10px">
-        <a href="register.html" style="background:#06B6D4;color:white;padding:14px 24px;border-radius:12px;font-size:15px;font-weight:700;font-family:'Inter',sans-serif;text-decoration:none;display:block">Choisir mon plan →</a>
+        <a href="index.html#pricing" style="background:#06B6D4;color:white;padding:14px 24px;border-radius:12px;font-size:15px;font-weight:700;font-family:'Inter',sans-serif;text-decoration:none;display:block">Choisir mon plan →</a>
         <button onclick="sb.auth.signOut().then(()=>window.location.href='index.html')" style="background:var(--surface2);color:var(--muted);border:1px solid var(--border);padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer">Se déconnecter</button>
       </div>
       <div style="margin-top:20px;font-size:11px;color:var(--muted);font-family:'Space Mono',monospace">Tu as déjà payé ? Contacte-nous : businessflymagency@gmail.com</div>
