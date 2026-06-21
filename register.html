@@ -434,9 +434,11 @@ sb.auth.getSession().then(({ data }) => {
 
 if (IS_INVITE) {
   document.getElementById('groupAgency').style.display = 'none';
-  document.getElementById('sl2').closest('.step-item').style.display = 'none';
-  document.getElementById('line1').style.display = 'none';
+  // Cacher le stepper entier — flux simplifié email + mdp uniquement
+  document.querySelector('.stepper').style.display = 'none';
+  document.querySelector('.card-title').textContent = 'Rejoindre l\'équipe';
   document.querySelector('.card-sub').textContent = 'Tu as été invité(e) à rejoindre une équipe. Crée ton compte pour accepter.';
+  document.getElementById('btn1').textContent = 'Créer mon compte →';
 }
 
 function checkPwd(val) {
@@ -481,7 +483,7 @@ function step1Next() {
   if (!email) return showError('alertError1', 'Entre ton adresse email');
   if (!pwd || pwd.length < 8) return showError('alertError1', 'Le mot de passe doit faire au moins 8 caractères');
   if (pwd !== pwd2) return showError('alertError1', 'Les mots de passe ne correspondent pas');
-  if (IS_INVITE) { step2Next(); return; } // sauter l'étape plan
+  if (IS_INVITE) { finalSubmit(); return; } // invite : créer le compte directement, sans plan ni confirmation
   setStep(2);
 }
 
@@ -510,8 +512,9 @@ async function finalSubmit() {
   const agency = IS_INVITE ? '' : document.getElementById('agency').value.trim();
   const email = document.getElementById('email').value.trim();
   const pwd = document.getElementById('password').value;
-  const btn = document.getElementById('btn3');
-  document.getElementById('alertError3').style.display = 'none';
+  const btn = document.getElementById('btn3') || document.getElementById('btn1');
+  const errEl = document.getElementById('alertError3') || document.getElementById('alertError1');
+  errEl.style.display = 'none';
   btn.disabled = true; btn.textContent = 'Création du compte…';
 
   const signUpOptions = IS_INVITE
@@ -520,8 +523,8 @@ async function finalSubmit() {
 
   const { data, error } = await sb.auth.signUp({ email, password: pwd, options: signUpOptions });
   if (error) {
-    showError('alertError3', error.message);
-    btn.disabled = false; btn.textContent = 'Créer mon compte →';
+    showError(errEl.id, error.message);
+    btn.disabled = false; btn.textContent = IS_INVITE ? 'Créer mon compte →' : 'Créer mon compte →';
     return;
   }
   if (data.user && !IS_INVITE) {
