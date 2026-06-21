@@ -10,7 +10,7 @@
     :root {
       --bg: #060608; --surface: #0C0C0F; --surface2: #111115; --surface3: #18181D;
       --border: rgba(255,255,255,0.07); --border-light: rgba(255,255,255,0.13);
-      --accent: #4B7FFF; --accent-light: #6B9BFF; --accent-glow: rgba(75,127,255,0.16);
+      --accent: #06B6D4; --accent-light: #22D3EE; --accent-glow: rgba(6,182,212,0.16);
       --accent2: #F0436C;
       --green: #1ECA6E; --yellow: #F59E0B; --pink: #F0436C;
       --text: #FFFFFF; --muted: #9898A8; --text-3: #484858;
@@ -20,7 +20,7 @@
     body::before {
       content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
       background-image:
-        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(75,127,255,0.07) 0%, transparent 65%),
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(6,182,212,0.07) 0%, transparent 65%),
         radial-gradient(circle, rgba(255,255,255,0.025) 1px, transparent 1px);
       background-size: 100% 100%, 28px 28px;
     }
@@ -70,14 +70,14 @@
     .feature-check { font-size: 15px; flex-shrink: 0; }
 
     /* UPGRADE */
-    .upgrade-section { background: linear-gradient(135deg, rgba(75,127,255,0.06), rgba(240,67,108,0.04)); border: 1px solid rgba(75,127,255,0.2); border-radius: 20px; padding: 28px 32px; margin-bottom: 32px; }
+    .upgrade-section { background: linear-gradient(135deg, rgba(6,182,212,0.06), rgba(240,67,108,0.04)); border: 1px solid rgba(6,182,212,0.2); border-radius: 20px; padding: 28px 32px; margin-bottom: 32px; }
     .upgrade-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
     .upgrade-sub { font-size: 13px; color: var(--muted); margin-bottom: 24px; line-height: 1.6; }
     .plans-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
     .upgrade-plan { background: var(--surface2); border: 2px solid var(--border); border-radius: 14px; padding: 18px; text-align: center; transition: all 0.2s; cursor: default; }
-    .upgrade-plan.current { border-color: var(--accent); background: rgba(75,127,255,0.07); }
+    .upgrade-plan.current { border-color: var(--accent); background: rgba(6,182,212,0.07); }
     .upgrade-plan.available { cursor: pointer; }
-    .upgrade-plan.available:hover { border-color: rgba(75,127,255,0.5); transform: translateY(-2px); }
+    .upgrade-plan.available:hover { border-color: rgba(6,182,212,0.5); transform: translateY(-2px); }
     .up-name { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
     .up-price { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
     .up-desc { font-size: 11px; color: var(--muted); margin-bottom: 12px; line-height: 1.5; }
@@ -107,7 +107,7 @@
       <a href="app.html" class="logo">
         <div class="logo-icon" style="background:none;padding:0;overflow:visible">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" width="36" height="36">
-            <defs><linearGradient id="lg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#4B7FFF"/><stop offset="100%" style="stop-color:#F0436C"/></linearGradient></defs>
+            <defs><linearGradient id="lg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#06B6D4"/><stop offset="100%" style="stop-color:#F0436C"/></linearGradient></defs>
             <rect width="36" height="36" rx="9" fill="#0C0C0F"/>
             <circle cx="18" cy="18" r="12" fill="none" stroke="url(#lg)" stroke-width="0.9" opacity="0.4"/>
             <circle cx="18" cy="18" r="7.5" fill="none" stroke="url(#lg)" stroke-width="0.9" opacity="0.65"/>
@@ -188,7 +188,7 @@
     <div class="upgrade-sub">Upgrade ton plan pour débloquer plus de prospects et de fonctionnalités avancées.</div>
     <div class="plans-row">
       <div class="upgrade-plan" id="upStarter">
-        <div class="up-name" style="color:#4B7FFF">Starter</div>
+        <div class="up-name" style="color:#06B6D4">Starter</div>
         <div class="up-price">70€</div>
         <div class="up-desc">200 prospects<br>5 langues DM<br>Export CSV</div>
         <button class="up-btn" id="btnStarter">Plan actuel</button>
@@ -268,7 +268,7 @@ const WORKER = 'https://spottedof-worker.businessflymagency.workers.dev';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const PLANS = {
-  starter: { name: 'Starter', price: '70€', period: '/mois', color: '#4B7FFF', icon: '⚡', limit: 200 },
+  starter: { name: 'Starter', price: '70€', period: '/mois', color: '#06B6D4', icon: '⚡', limit: 200 },
   pro:     { name: 'Pro',     price: '100€', period: '/mois', color: '#1ECA6E', icon: '🚀', limit: Infinity },
   agency:  { name: 'Agency',  price: '200€', period: '/mois', color: '#F0436C', icon: '🏢', limit: Infinity },
   admin:   { name: 'Admin',   price: '—',    period: '',      color: '#F59E0B', icon: '⚙️', limit: Infinity },
@@ -376,7 +376,7 @@ async function renderUsage(plan) {
 
     document.getElementById('usageCount').textContent = count;
     document.getElementById('usageBar').style.width = limit === Infinity ? '8%' : `${pct}%`;
-    document.getElementById('usageBar').style.background = pct > 80 ? '#F0436C' : pct > 60 ? '#F59E0B' : '#4B7FFF';
+    document.getElementById('usageBar').style.background = pct > 80 ? '#F0436C' : pct > 60 ? '#F59E0B' : '#06B6D4';
     document.getElementById('usageNote').textContent = limit === Infinity ? `${count} prospects · Illimité` : `${count} / ${limit} prospects`;
   } catch(e) {
     document.getElementById('usageCount').textContent = '—';

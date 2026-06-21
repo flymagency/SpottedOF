@@ -10,7 +10,7 @@
     :root {
       --bg: #060608; --surface: #0C0C0F; --surface2: #111115; --surface3: #18181D;
       --border: rgba(255,255,255,0.07); --border-light: rgba(255,255,255,0.13);
-      --accent: #4B7FFF; --accent-light: #6B9BFF; --accent-glow: rgba(75,127,255,0.16);
+      --accent: #06B6D4; --accent-light: #22D3EE; --accent-glow: rgba(6,182,212,0.16);
       --accent2: #F0436C;
       --green: #1ECA6E; --yellow: #F59E0B; --pink: #F0436C;
       --text: #FFFFFF; --muted: #9898A8; --text-3: #484858;
@@ -20,7 +20,7 @@
     body::before {
       content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
       background-image:
-        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(75,127,255,0.07) 0%, transparent 65%),
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(6,182,212,0.07) 0%, transparent 65%),
         radial-gradient(circle, rgba(255,255,255,0.025) 1px, transparent 1px);
       background-size: 100% 100%, 28px 28px;
     }
@@ -63,7 +63,7 @@
     .badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 100px; font-size: 10px; font-family: 'Space Mono', monospace; font-weight: 700; }
     .badge-admin { background: rgba(245,158,11,0.1); color: var(--yellow); border: 1px solid rgba(245,158,11,0.25); }
     .badge-free { background: rgba(152,152,168,0.12); color: var(--muted); border: 1px solid var(--border); }
-    .badge-starter { background: rgba(75,127,255,0.1); color: var(--accent); border: 1px solid rgba(75,127,255,0.25); }
+    .badge-starter { background: rgba(6,182,212,0.1); color: var(--accent); border: 1px solid rgba(6,182,212,0.25); }
     .badge-pro { background: rgba(30,202,110,0.1); color: var(--green); border: 1px solid rgba(30,202,110,0.25); }
     .badge-agency { background: rgba(240,67,108,0.1); color: var(--pink); border: 1px solid rgba(240,67,108,0.25); }
     .badge-paid { background: rgba(30,202,110,0.1); color: var(--green); border: 1px solid rgba(30,202,110,0.25); }
@@ -92,7 +92,7 @@
     .ticket-row:last-child { border-bottom: none; }
     .ticket-row.unread { background: rgba(240,67,108,0.05); }
     .ticket-head { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr 2fr 100px; padding: 10px 20px; border-bottom: 1px solid var(--border); background: var(--surface2); }
-    .cat-badge { font-size:10px;font-family:'Space Mono',monospace;padding:3px 8px;border-radius:6px;font-weight:700;background:rgba(75,127,255,0.1);color:#4B7FFF;border:1px solid rgba(75,127,255,0.25); }
+    .cat-badge { font-size:10px;font-family:'Space Mono',monospace;padding:3px 8px;border-radius:6px;font-weight:700;background:rgba(6,182,212,0.1);color:#06B6D4;border:1px solid rgba(6,182,212,0.25); }
     .status-open { color:#F0436C;font-family:'Space Mono',monospace;font-size:10px;font-weight:700; }
     .status-resolved { color:#1ECA6E;font-family:'Space Mono',monospace;font-size:10px;font-weight:700; }
 
@@ -122,7 +122,7 @@
         <a href="app.html" class="logo">
           <div class="logo-icon" style="background:none;padding:0;overflow:visible">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" width="36" height="36">
-              <defs><linearGradient id="lg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#4B7FFF"/><stop offset="100%" style="stop-color:#F0436C"/></linearGradient></defs>
+              <defs><linearGradient id="lg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#06B6D4"/><stop offset="100%" style="stop-color:#F0436C"/></linearGradient></defs>
               <rect width="36" height="36" rx="9" fill="#0C0C0F"/>
               <circle cx="18" cy="18" r="12" fill="none" stroke="url(#lg)" stroke-width="0.9" opacity="0.4"/>
               <circle cx="18" cy="18" r="7.5" fill="none" stroke="url(#lg)" stroke-width="0.9" opacity="0.65"/>
@@ -146,7 +146,7 @@
 
   <!-- STATS -->
   <div class="stats-row">
-    <div class="stat-card" style="border-color:rgba(75,127,255,0.3)">
+    <div class="stat-card" style="border-color:rgba(6,182,212,0.3)">
       <div class="stat-label">Total clients</div>
       <div class="stat-value" id="statTotal">—</div>
       <div class="stat-sub">comptes actifs</div>
@@ -397,7 +397,7 @@ async function loadTickets() {
     </div>
     ${tickets.map(t => {
       const date = new Date(t.created_at).toLocaleDateString('fr-FR', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
-      const planColor = { starter:'#4B7FFF', pro:'#1ECA6E', agency:'#F0436C', admin:'#F59E0B' }[t.plan?.toLowerCase()] || '#9898A8';
+      const planColor = { starter:'#06B6D4', pro:'#1ECA6E', agency:'#F0436C', admin:'#F59E0B' }[t.plan?.toLowerCase()] || '#9898A8';
       return `<div class="ticket-row ${t.status==='open'?'unread':''}">
         <div>
           <div style="font-weight:700;font-size:12px">${t.agency_name || '—'}</div>
