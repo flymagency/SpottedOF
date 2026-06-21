@@ -523,7 +523,16 @@ async function finalSubmit() {
 
   const { data, error } = await sb.auth.signUp({ email, password: pwd, options: signUpOptions });
   if (error) {
-    showError(errEl.id, error.message);
+    const msg = error.message || error.msg || error.error_description || JSON.stringify(error);
+    // Traduire les erreurs Supabase courantes
+    const translations = {
+      'User already registered': 'Cet email est déjà utilisé. Essaie de te connecter.',
+      'Email rate limit exceeded': 'Trop de tentatives. Attends quelques minutes.',
+      'Password should be at least 6 characters': 'Le mot de passe doit faire au moins 6 caractères.',
+      'Unable to validate email address': 'Adresse email invalide.',
+      'signup_disabled': 'Les inscriptions sont temporairement désactivées.',
+    };
+    showError(errEl.id, translations[msg] || msg);
     btn.disabled = false; btn.textContent = 'Créer mon compte →';
     return;
   }
