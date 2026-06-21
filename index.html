@@ -61,7 +61,7 @@
     .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
     .nav-logo-icon { width: 30px; height: 30px; border-radius: 8px; overflow: hidden; flex-shrink: 0; }
     .nav-logo-text { font-size: 16px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
-    .nav-logo-text span { color: var(--pink); }
+    .nav-logo-text span { color: var(--accent); }
     .nav-links { display: flex; align-items: center; gap: 2px; }
     .nav-link { color: var(--text-2); font-size: 13px; font-weight: 500; text-decoration: none; padding: 6px 12px; border-radius: 7px; transition: color 0.15s; }
     .nav-link:hover { color: var(--text); }
@@ -188,7 +188,7 @@
     .stats-inner { max-width: 1100px; margin: 0 auto; display: flex; padding: 0 24px; }
     .stat-item { display: flex; flex-direction: column; gap: 4px; padding: 28px 0; flex: 1; text-align: center; border-right: 1px solid var(--border); }
     .stat-item:last-child { border-right: none; }
-    .stat-value { font-size: 34px; font-weight: 800; letter-spacing: -0.04em; background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .stat-value { font-size: 34px; font-weight: 800; letter-spacing: -0.04em; background: linear-gradient(90deg, #06B6D4, #22D3EE, #fff, #22D3EE, #06B6D4); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; animation: shimmer 4s linear infinite; }
     .stat-label { font-size: 12px; color: var(--text-3); }
 
     /* ── SECTIONS ── */
@@ -244,6 +244,8 @@
     }
     .how-title { font-size: 15px; font-weight: 600; margin-bottom: 9px; letter-spacing: -0.01em; }
     .how-desc { font-size: 13px; color: var(--text-2); line-height: 1.7; }
+    .how-steps > div { padding: 20px; border-radius: 12px; border: 1px solid transparent; transition: transform 0.25s cubic-bezier(0.16,1,0.3,1), border-color 0.25s, background 0.25s; }
+    .how-steps > div:hover { transform: translateY(-4px); border-color: rgba(6,182,212,0.18); background: rgba(6,182,212,0.03); }
 
     /* ── PRICING ── */
     .billing-toggle { display: flex; align-items: center; gap: 12px; justify-content: center; margin-top: 28px; font-size: 13px; color: var(--text-2); }
@@ -262,7 +264,7 @@
     .pricing-card:hover { border-color: var(--border-light); }
     .pricing-card.featured { border-color: rgba(6,182,212,0.35); box-shadow: 0 0 0 1px rgba(6,182,212,0.1), 0 0 60px rgba(6,182,212,0.08); }
     .pricing-card.featured::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--accent), var(--pink), transparent); }
-    .p-badge { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--accent); font-family: 'Space Mono', monospace; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; padding: 3px 10px; border-radius: 100px; color: white; white-space: nowrap; }
+    .p-badge { position: absolute; top: -13px; left: 50%; transform: translateX(-50%); background: var(--accent); font-family: 'Space Mono', monospace; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; padding: 4px 14px; border-radius: 100px; color: #060608; white-space: nowrap; z-index: 2; box-shadow: 0 0 16px rgba(6,182,212,0.4); }
     .p-name { font-family: 'Space Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-3); margin-bottom: 18px; }
     .p-price { font-size: 44px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; margin-bottom: 3px; }
     .pricing-card.featured .p-price { background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
@@ -286,22 +288,77 @@
     .footer-logo { display: flex; align-items: center; gap: 8px; text-decoration: none; }
     .footer-logo-icon { width: 24px; height: 24px; border-radius: 6px; overflow: hidden; }
     .footer-logo-text { font-size: 14px; font-weight: 700; color: var(--text); }
-    .footer-logo-text span { color: var(--pink); }
+    .footer-logo-text span { color: var(--accent); }
     .footer-copy { font-size: 12px; color: var(--text-3); }
     .footer-links { display: flex; gap: 20px; }
     .footer-links a { font-size: 12px; color: var(--text-3); text-decoration: none; transition: color 0.15s; }
     .footer-links a:hover { color: var(--text-2); }
 
     /* ── SCROLL REVEAL ── */
-    .reveal { opacity: 0; transform: translateY(18px); transition: opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1); }
+    .reveal { opacity: 0; transform: translateY(22px); transition: opacity 0.65s cubic-bezier(0.16,1,0.3,1), transform 0.65s cubic-bezier(0.16,1,0.3,1); }
     .reveal.visible { opacity: 1; transform: none; }
-    .stagger > * { opacity: 0; transform: translateY(14px); transition: opacity 0.5s cubic-bezier(0.16,1,0.3,1), transform 0.5s cubic-bezier(0.16,1,0.3,1); }
-    .stagger.visible > *:nth-child(1) { opacity:1;transform:none;transition-delay:.04s }
-    .stagger.visible > *:nth-child(2) { opacity:1;transform:none;transition-delay:.10s }
-    .stagger.visible > *:nth-child(3) { opacity:1;transform:none;transition-delay:.16s }
-    .stagger.visible > *:nth-child(4) { opacity:1;transform:none;transition-delay:.22s }
-    .stagger.visible > *:nth-child(5) { opacity:1;transform:none;transition-delay:.28s }
-    .stagger.visible > *:nth-child(6) { opacity:1;transform:none;transition-delay:.34s }
+    .reveal-left { opacity: 0; transform: translateX(-24px); transition: opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1); }
+    .reveal-left.visible { opacity: 1; transform: none; }
+    .reveal-scale { opacity: 0; transform: scale(0.94); transition: opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1); }
+    .reveal-scale.visible { opacity: 1; transform: none; }
+    .stagger > * { opacity: 0; transform: translateY(16px); transition: opacity 0.55s cubic-bezier(0.16,1,0.3,1), transform 0.55s cubic-bezier(0.16,1,0.3,1); }
+    .stagger.visible > *:nth-child(1) { opacity:1;transform:none;transition-delay:.05s }
+    .stagger.visible > *:nth-child(2) { opacity:1;transform:none;transition-delay:.12s }
+    .stagger.visible > *:nth-child(3) { opacity:1;transform:none;transition-delay:.19s }
+    .stagger.visible > *:nth-child(4) { opacity:1;transform:none;transition-delay:.26s }
+    .stagger.visible > *:nth-child(5) { opacity:1;transform:none;transition-delay:.33s }
+    .stagger.visible > *:nth-child(6) { opacity:1;transform:none;transition-delay:.40s }
+
+    /* ── FEATURE CARDS HOVER ── */
+    .f-card { transition: transform 0.25s cubic-bezier(0.16,1,0.3,1), box-shadow 0.25s, border-color 0.25s; }
+    .f-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(6,182,212,0.1); border-color: rgba(6,182,212,0.25) !important; }
+    .f-icon { transition: transform 0.3s cubic-bezier(0.16,1,0.3,1); }
+    .f-card:hover .f-icon { transform: scale(1.12) rotate(-4deg); }
+
+    /* ── PRICING CARDS 3D TILT ── */
+    .pricing-card { transition: transform 0.3s cubic-bezier(0.16,1,0.3,1), box-shadow 0.3s; }
+    .pricing-card:hover { transform: translateY(-6px); }
+    .pricing-card.featured:hover { box-shadow: 0 20px 60px rgba(6,182,212,0.18), 0 0 0 1px rgba(6,182,212,0.35); }
+
+    /* ── STATS SHIMMER ── */
+    @keyframes shimmer {
+      0% { background-position: -200% center; }
+      100% { background-position: 200% center; }
+    }
+    .stat-num {
+      background: linear-gradient(90deg, var(--accent) 0%, var(--accent-light) 40%, #fff 50%, var(--accent-light) 60%, var(--accent) 100%);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .stat-num.visible { animation: shimmer 3s linear infinite; }
+
+    /* ── CTA FLOATING GLOW ── */
+    @keyframes floatGlow {
+      0%,100% { box-shadow: 0 0 40px rgba(6,182,212,0.15), 0 0 80px rgba(240,67,108,0.08); }
+      50% { box-shadow: 0 0 60px rgba(6,182,212,0.25), 0 0 120px rgba(240,67,108,0.14); }
+    }
+    .cta-inner { animation: floatGlow 4s ease-in-out infinite; }
+
+    /* ── MOUSE GLOW CURSOR ── */
+    #mouse-glow {
+      position: fixed; pointer-events: none; z-index: 0;
+      width: 400px; height: 400px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(6,182,212,0.06) 0%, transparent 70%);
+      transform: translate(-50%, -50%);
+      transition: left 0.12s ease, top 0.12s ease;
+      will-change: left, top;
+    }
+
+    /* ── STEP CARDS HOVER ── */
+    .step-card { transition: transform 0.25s cubic-bezier(0.16,1,0.3,1), border-color 0.25s; }
+    .step-card:hover { transform: translateY(-3px); border-color: rgba(6,182,212,0.2) !important; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .reveal, .reveal-left, .reveal-scale, .stagger > *, .f-card, .pricing-card, .step-card { transition: none !important; animation: none !important; }
+    }
 
     @media (max-width: 800px) {
       .hero { grid-template-columns: 1fr; padding: 60px 20px; }
@@ -514,7 +571,7 @@
         <a href="register.html" class="btn btn-ghost btn-full">Commencer →</a>
       </div>
       <div class="pricing-card featured">
-        <div class="p-badge">⭐ Le plus populaire</div>
+        <div class="p-badge">LE PLUS POPULAIRE</div>
         <div class="p-name">Pro</div>
         <div class="p-price" id="price-pro">99€</div>
         <div class="p-period" id="period-pro">par mois · sans engagement</div>
@@ -537,13 +594,18 @@
         <div class="p-period" id="period-agency">par mois · sans engagement</div>
         <div class="p-desc">Pour les grandes agences avec plusieurs équipes et un fort volume de prospection.</div>
         <ul class="p-features">
-          <li><span class="p-check">✓</span><span>Tout ce qui est dans Pro</span></li>
-          <li><span class="p-check">✓</span><span>Export CSV</span></li>
+          <li><span class="p-check">✓</span><span><strong>Profils &amp; scans illimités</strong></span></li>
+          <li><span class="p-check">✓</span><span>Scan <strong>ultra-prioritaire</strong></span></li>
           <li><span class="p-check">✓</span><span>Membres d'équipe <strong>illimités</strong></span></li>
-          <li><span class="p-check">✓</span><span>Onboarding dédié</span></li>
-          <li><span class="p-check">✓</span><span>Account manager</span></li>
+          <li><span class="p-check">✓</span><span>Export CSV <strong>automatisé</strong></span></li>
+          <li><span class="p-check">✓</span><span>Multi-comptes (plusieurs agences)</span></li>
+          <li><span class="p-check">✓</span><span>Connexion email multi-boîtes</span></li>
+          <li><span class="p-check">✓</span><span>Rapports & analytics avancés</span></li>
+          <li><span class="p-check">✓</span><span>Onboarding dédié + formation</span></li>
+          <li><span class="p-check">✓</span><span>Account manager attitré</span></li>
+          <li><span class="p-check">✓</span><span>SLA &amp; support <strong>24/7</strong></span></li>
         </ul>
-        <a href="mailto:hello@spottedof.com" class="btn btn-outline-accent btn-full">Nous contacter</a>
+        <a href="register.html" class="btn btn-primary btn-full">Commencer →</a>
       </div>
     </div>
   </div>
@@ -601,9 +663,17 @@ function toggleBilling() {
   document.getElementById('period-agency').textContent = a ? 'par mois · facturé 1908€/an' : 'par mois · sans engagement';
 }
 
+/* Mouse glow */
+const mg = document.createElement('div'); mg.id = 'mouse-glow'; document.body.appendChild(mg);
+document.addEventListener('mousemove', e => { mg.style.left = e.clientX + 'px'; mg.style.top = e.clientY + 'px'; });
+
 /* Scroll reveal */
 const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } }), { threshold: 0.1 });
-document.querySelectorAll('.reveal,.stagger').forEach(el => io.observe(el));
+document.querySelectorAll('.reveal,.reveal-left,.reveal-scale,.stagger').forEach(el => io.observe(el));
+
+/* Stat shimmer trigger */
+const statIO = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); statIO.unobserve(e.target); } }), { threshold: 0.5 });
+document.querySelectorAll('.stat-num').forEach(el => statIO.observe(el));
 
 /* Counters */
 document.querySelectorAll('[data-count]').forEach(el => {
