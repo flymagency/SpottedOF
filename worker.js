@@ -835,6 +835,33 @@ export default {
       return json({ success: true, to });
     }
 
-    return json({ error: 'Route introuvable', routes: ['POST /score-profiles', 'GET /prospects', 'GET /stats', 'POST /update-status', 'POST /find-email', 'POST /scan-similar', 'GET /scan-poll'] }, 404);
+    // POST /delete-user
+    // Body: { userId }
+    if (request.method === 'POST' && path === '/delete-user') {
+      let body;
+      try { body = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
+      const { userId } = body;
+      if (!userId) return json({ error: 'userId requis' }, 400);
+
+      const SUPABASE_URL = 'https://nsvrkogwmzrbjrtbphpb.supabase.co';
+      const serviceKey = env.SUPABASE_SERVICE_KEY;
+      if (!serviceKey) return json({ error: 'SUPABASE_SERVICE_KEY non configuré' }, 500);
+
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${serviceKey}`,
+          'apikey': serviceKey,
+        },
+      });
+
+      if (!res.ok) {
+        let err; try { err = await res.json(); } catch { err = {}; }
+        return json({ error: err.message || `Erreur Supabase (${res.status})` }, res.status);
+      }
+      return json({ success: true, deleted: userId });
+    }
+
+    return json({ error: 'Route introuvable', routes: ['POST /score-profiles', 'GET /prospects', 'GET /stats', 'POST /update-status', 'POST /find-email', 'POST /scan-similar', 'GET /scan-poll', 'POST /delete-user'] }, 404);
   }
 };

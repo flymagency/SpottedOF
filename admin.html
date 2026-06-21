@@ -385,17 +385,16 @@ async function sendPasswordReset() {
 }
 
 async function confirmDeleteClient() {
-  const email = document.getElementById('editEmail').value;
   const id = document.getElementById('editId').value;
-  if (!confirm(`⚠️ Supprimer définitivement le compte de ${email} ?\n\nCette action est irréversible.`)) return;
+  const email = document.getElementById('editEmail').value;
   try {
-    const res = await fetch(WORKER, {
+    const res = await fetch(WORKER + '/delete-user', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'deleteUser', userId: id })
+      body: JSON.stringify({ userId: id })
     });
-    const json = await res.json();
-    if (!res.ok || json.error) throw new Error(json.error || 'Erreur serveur');
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || 'Erreur serveur');
     showToast('🗑️ Compte supprimé', 'success');
     closeModal();
     loadClients();
