@@ -30,7 +30,7 @@
     .header-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
     .logo { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--text); }
     .logo-text { font-size: 20px; font-weight: 800; }
-    .logo-text span { color: var(--pink); }
+    .logo-text span { color: var(--accent); }
     .admin-badge { font-family: 'Space Mono', monospace; font-size: 10px; background: rgba(245,158,11,0.12); color: var(--yellow); border: 1px solid rgba(245,158,11,0.25); border-radius: 6px; padding: 2px 8px; }
     .header-right { display: flex; align-items: center; gap: 10px; }
     .btn { padding: 8px 16px; font-size: 12px; border-radius: 10px; font-weight: 700; font-family: 'Inter', sans-serif; cursor: pointer; border: none; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
@@ -228,6 +228,7 @@
           <option value="starter">Starter</option>
           <option value="pro">Pro</option>
           <option value="agency">Agency</option>
+          <option value="member">Member (invité équipe)</option>
           <option value="admin">Admin</option>
         </select>
       </div>
@@ -241,6 +242,19 @@
       <div>
         <label class="form-label">Notes internes</label>
         <input class="form-input" id="editNotes" placeholder="Remarques, suivi...">
+      </div>
+
+      <!-- ZONE ACTIONS -->
+      <div style="border-top:1px solid var(--border);padding-top:14px;display:flex;flex-direction:column;gap:8px">
+        <div style="font-size:10px;font-family:'Space Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:2px">Actions</div>
+        <button class="btn btn-ghost" style="justify-content:flex-start;gap:8px;font-size:12px" onclick="sendPasswordReset()">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Envoyer un lien de réinitialisation du mot de passe
+        </button>
+        <button class="btn btn-red" style="justify-content:flex-start;gap:8px;font-size:12px" onclick="confirmDeleteClient()">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+          Supprimer le compte
+        </button>
       </div>
     </div>
     <div class="modal-footer">
@@ -359,6 +373,36 @@ async function saveClient() {
 
 function closeModal() { document.getElementById('editModal').classList.remove('open'); }
 async function signOut() { await sb.auth.signOut(); window.location.href = 'login.html'; }
+
+async function sendPasswordReset() {
+  const email = document.getElementById('editEmail').value;
+  if (!email) return;
+  const { error } = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: 'https://spottedof.com/reset-password.html'
+  });
+  if (error) { showToast('Erreur : ' + error.message, 'error'); return; }
+  showToast('📧 Email de réinitialisation envoyé à ' + email, 'success');
+}
+
+async function confirmDeleteClient() {
+  const email = document.getElementById('editEmail').value;
+  const id = document.getElementById('editId').value;
+  if (!confirm(`⚠️ Supprimer définitivement le compte de ${email} ?\n\nCette action est irréversible.`)) return;
+  try {
+    const res = await fetch(WORKER, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'deleteUser', userId: id })
+    });
+    const json = await res.json();
+    if (!res.ok || json.error) throw new Error(json.error || 'Erreur serveur');
+    showToast('🗑️ Compte supprimé', 'success');
+    closeModal();
+    loadClients();
+  } catch (err) {
+    showToast('Erreur suppression : ' + err.message, 'error');
+  }
+}
 
 /* ─── TICKETS SUPPORT ─── */
 const CAT_LABELS = {
