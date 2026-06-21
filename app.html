@@ -965,8 +965,8 @@ sb.auth.getSession().then(async ({ data }) => {
   badge.style.border = `1px solid ${c.border}`;
   badge.style.display = 'inline';
 
-  // Si non payé ET pas admin → banner upgrade
-  if (!userPaid && userPlan !== 'admin') {
+  // Si non payé ET pas admin ET pas membre d'équipe → banner upgrade
+  if (!userPaid && userPlan !== 'admin' && userPlan !== 'member') {
     showUpgradeBanner();
   }
 
@@ -1314,8 +1314,8 @@ async function importCSV(input) {
   if (!file) return;
   input.value = '';
 
-  // Vérifier si non payé
-  if (!userPaid && userPlan !== 'admin') {
+  // Vérifier si non payé (les membres d'équipe ont accès via leur admin)
+  if (!userPaid && userPlan !== 'admin' && userPlan !== 'member') {
     showUpgradeBanner(); return;
   }
 
