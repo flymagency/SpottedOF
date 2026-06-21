@@ -24,7 +24,7 @@
     .sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 20px 16px 16px; border-bottom: 1px solid var(--border); }
     .logo-icon { width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; }
     .logo-text { font-size: 17px; font-weight: 800; }
-    .logo-text span { color: var(--pink); }
+    .logo-text span { color: var(--accent); }
 
     .sidebar-nav { flex: 1; overflow-y: auto; padding: 12px 8px; display: flex; flex-direction: column; gap: 1px; }
     .nav-section { font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; padding: 14px 10px 6px; font-family: 'Space Mono', monospace; }
@@ -56,15 +56,24 @@
     .btn { padding: 8px 16px; font-size: 13px; border-radius: 9px; font-weight: 600; font-family: 'Inter', sans-serif; cursor: pointer; border: none; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; }
     .btn { padding: 8px 16px; font-size: 12px; border-radius: 10px; font-weight: 700; font-family: 'Inter', sans-serif; cursor: pointer; border: none; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; }
     .btn-primary { background: var(--accent); color: white; }
-    .btn-primary:hover { background: #9b7ffd; }
+    .btn-primary:hover { background: var(--accent-light); }
     .btn-ghost { background: var(--surface); color: var(--muted); border: 1px solid var(--border); box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
     .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
 
     /* STATS ROW */
     .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
-    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); transition: transform 0.2s cubic-bezier(0.16,1,0.3,1), box-shadow 0.2s, border-color 0.2s; opacity: 0; transform: translateY(12px); animation: cardIn 0.5s cubic-bezier(0.16,1,0.3,1) forwards; }
+    .stat-card:nth-child(1) { animation-delay: 0.05s; }
+    .stat-card:nth-child(2) { animation-delay: 0.1s; }
+    .stat-card:nth-child(3) { animation-delay: 0.15s; }
+    .stat-card:nth-child(4) { animation-delay: 0.2s; }
+    .stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+    .stat-card.accent:hover { border-color: rgba(6,182,212,0.45); box-shadow: 0 8px 24px rgba(6,182,212,0.1); }
+    .stat-card.green:hover { border-color: rgba(30,202,110,0.4); }
+    .stat-card.pink:hover { border-color: rgba(240,67,108,0.4); }
+    @keyframes cardIn { to { opacity: 1; transform: none; } }
     .stat-label { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
-    .stat-value { font-size: 28px; font-weight: 800; line-height: 1; }
+    .stat-value { font-size: 28px; font-weight: 800; line-height: 1; transition: color 0.3s; }
     .stat-sub { font-size: 11px; color: var(--muted); margin-top: 6px; }
     .stat-card.accent { border-color: rgba(6,182,212,0.25); background: linear-gradient(135deg, rgba(6,182,212,0.06), var(--surface)); }
     .stat-card.green { border-color: rgba(30,202,110,0.25); }
@@ -95,9 +104,11 @@
     .th { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; display: flex; align-items: center; gap: 4px; cursor: pointer; user-select: none; }
     .th:hover { color: var(--text); }
 
-    .prospect-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1.4fr 1.3fr; padding: 14px 20px; border-bottom: 1px solid var(--border); align-items: center; transition: background 0.15s; cursor: pointer; }
+    .prospect-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1.4fr 1.3fr; padding: 14px 20px; border-bottom: 1px solid var(--border); align-items: center; transition: background 0.18s, box-shadow 0.18s, transform 0.18s; cursor: pointer; }
     .prospect-row:last-child { border-bottom: none; }
-    .prospect-row:hover { background: var(--surface2); }
+    .prospect-row:hover { background: rgba(6,182,212,0.04); box-shadow: inset 3px 0 0 var(--accent); }
+    .prospect-row.row-enter { animation: rowSlide 0.3s cubic-bezier(0.16,1,0.3,1) forwards; }
+    @keyframes rowSlide { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: none; } }
 
     .profile-cell { display: flex; align-items: center; gap: 12px; }
     .avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--surface2); border: 2px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; color: var(--accent); overflow: hidden; }
@@ -1110,10 +1121,10 @@ function renderProspects() {
   }
 
   el.className = '';
-  el.innerHTML = list.map(p => {
+  el.innerHTML = list.map((p, idx) => {
     const cl = sc(p.score);
     const sv = savedSet.has(p.id);
-    return `<div class="prospect-row" onclick="openProspect('${p.id}')">
+    return `<div class="prospect-row row-enter" style="animation-delay:${(idx*0.025).toFixed(3)}s" onclick="openProspect('${p.id}')">
       <div class="profile-cell">
         <div class="avatar">${avatarHTML(p.handle, p.platform)}</div>
         <div>
@@ -2222,7 +2233,7 @@ function openIGProfile(handle) {
 
 async function signOut() {
   await sb.auth.signOut();
-  window.location.href = 'login.html';
+  window.location.href = 'index.html';
 }
 
 /* ─── NOTIFICATIONS ─── */
@@ -2345,7 +2356,7 @@ function showUpgradeBanner() {
       </div>
       <div style="display:flex;flex-direction:column;gap:10px">
         <a href="register.html" style="background:#06B6D4;color:white;padding:14px 24px;border-radius:12px;font-size:15px;font-weight:700;font-family:'Inter',sans-serif;text-decoration:none;display:block">Choisir mon plan →</a>
-        <button onclick="sb.auth.signOut().then(()=>window.location.href='login.html')" style="background:var(--surface2);color:var(--muted);border:1px solid var(--border);padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer">Se déconnecter</button>
+        <button onclick="sb.auth.signOut().then(()=>window.location.href='index.html')" style="background:var(--surface2);color:var(--muted);border:1px solid var(--border);padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer">Se déconnecter</button>
       </div>
       <div style="margin-top:20px;font-size:11px;color:var(--muted);font-family:'Space Mono',monospace">Tu as déjà payé ? Contacte-nous : businessflymagency@gmail.com</div>
     </div>
@@ -3392,7 +3403,7 @@ function renderReplies() {
               ].map(m => `
                 <button onclick="showForwardingGuide('${m.id}')" style="display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px 14px;cursor:pointer;font-family:'Inter',sans-serif;transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
                   <span style="font-size:16px">${m.icon}</span>
-                  <span style="font-size:12px;font-weight:600">${m.name}</span>
+                  <span style="font-size:12px;font-weight:600;color:var(--text)">${m.name}</span>
                   <span style="font-size:10px;background:rgba(6,182,212,0.07);color:var(--accent);border-radius:4px;padding:1px 6px;font-weight:700;font-family:'Space Mono',monospace">Guide →</span>
                 </button>`).join('')}
             </div>
@@ -3891,7 +3902,10 @@ async function sendTeamInvite() {
     if (error) throw error;
     TEAM_INVITES.unshift(invite);
 
-    const link = `${location.origin}/register.html?invite=${invite.token}`;
+    const APP_URL = location.hostname === 'localhost' || location.hostname === '127.0.0.1'
+      ? 'https://spottedof.com'
+      : location.origin;
+    const link = `${APP_URL}/register.html?invite=${invite.token}`;
     await navigator.clipboard.writeText(link).catch(() => {});
 
     // Envoyer l'email d'invitation
