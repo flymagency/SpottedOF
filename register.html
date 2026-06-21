@@ -522,8 +522,9 @@ async function finalSubmit() {
     : { data: { agency_name: agency, plan: selectedPlan } };
 
   const { data, error } = await sb.auth.signUp({ email, password: pwd, options: signUpOptions });
+  console.log('signUp result:', { data, error, errorMsg: error?.message, errorStr: error?.toString(), errorKeys: error ? Object.getOwnPropertyNames(error) : [] });
   if (error) {
-    const msg = error.message || error.msg || error.error_description || JSON.stringify(error);
+    const msg = error.message || error.msg || error.error_description || error.toString() || 'Erreur lors de la création du compte';
     // Traduire les erreurs Supabase courantes
     const translations = {
       'User already registered': 'Cet email est déjà utilisé. Essaie de te connecter.',
