@@ -518,7 +518,7 @@ async function finalSubmit() {
   btn.disabled = true; btn.textContent = 'Création du compte…';
 
   const signUpOptions = IS_INVITE
-    ? { data: { invite_token: INVITE_TOKEN } }
+    ? { data: { invite_token: INVITE_TOKEN, agency_name: '', plan: 'member' } }
     : { data: { agency_name: agency, plan: selectedPlan } };
 
   const { data, error } = await sb.auth.signUp({ email, password: pwd, options: signUpOptions });
