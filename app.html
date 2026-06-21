@@ -951,22 +951,29 @@ sb.auth.getSession().then(async ({ data }) => {
   initSidebarUser(currentUser.email);
   if (currentUser.email === 'businessflymagency@gmail.com') document.getElementById('adminLink').style.display = 'flex';
 
-  // Charger le profil pour connaître le plan
-  const { data: profile } = await sb.from('profiles').select('plan, paid').eq('id', currentUser.id).single();
+  // Charger le profil + vérifier appartenance équipe en parallèle
+  const [{ data: profile }, { data: teamMembership }] = await Promise.all([
+    sb.from('profiles').select('plan, paid').eq('id', currentUser.id).single(),
+    sb.from('team_members').select('id').eq('user_id', currentUser.id).limit(1).maybeSingle(),
+  ]);
   userPlan = (profile?.plan || 'starter').toLowerCase();
   userPaid = profile?.paid || false;
+
+  // Membre d'une équipe = accès garanti (vérifié en BDD + token URL au 1er accès)
+  const hasInviteToken = !!new URLSearchParams(location.search).get('invite');
+  const isTeamMember = !!teamMembership || hasInviteToken;
 
   // Badge plan dans le header
   const badge = document.getElementById('planBadge');
   const c = PLAN_COLORS[userPlan] || PLAN_COLORS.starter;
-  badge.textContent = userPlan.toUpperCase();
+  badge.textContent = isTeamMember && userPlan === 'member' ? 'MEMBRE' : userPlan.toUpperCase();
   badge.style.background = c.bg;
   badge.style.color = c.color;
   badge.style.border = `1px solid ${c.border}`;
   badge.style.display = 'inline';
 
-  // Si non payé ET pas admin ET pas membre d'équipe → banner upgrade
-  if (!userPaid && userPlan !== 'admin' && userPlan !== 'member') {
+  // Bloquer uniquement si non payé, pas admin, et pas membre d'équipe
+  if (!userPaid && userPlan !== 'admin' && !isTeamMember) {
     showUpgradeBanner();
   }
 
