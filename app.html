@@ -2642,9 +2642,13 @@ function renderHome() {
   // Prénom ou nom d'agence
   const displayName = userFirstName || profile?.agency_name || '';
 
-  // Scans du jour depuis SCHEDULED_SCANS
-  const todayStr = now.toISOString().slice(0, 10);
-  const todayScans = (window.SCHEDULED_SCANS || []).filter(s => (s.next_run || '').startsWith(todayStr));
+  // Scans des 7 prochains jours depuis SCHEDULED_SCANS
+  const in7days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const upcomingScans = (window.SCHEDULED_SCANS || []).filter(s => {
+    if (!s.next_run) return false;
+    const d = new Date(s.next_run);
+    return d >= now && d <= in7days;
+  }).sort((a, b) => new Date(a.next_run) - new Date(b.next_run));
 
   el.innerHTML = `
     <!-- HEADER -->
@@ -2681,23 +2685,30 @@ function renderHome() {
 
     <!-- PANELS BAS -->
     <div class="home-bottom">
-      <!-- Scans du jour -->
+      <!-- Scans 7 prochains jours -->
       <div class="home-panel">
         <div class="home-panel-head">
-          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          Scans du jour
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Scans — 7 prochains jours
         </div>
         <div class="home-panel-body">
-          ${todayScans.length === 0
-            ? `<div class="home-empty">Aucun scan planifié aujourd'hui</div>`
-            : todayScans.map(s => `
-              <div class="home-panel-row">
-                <div>
-                  <div style="font-weight:600;font-size:12px">${s.handle || '—'}</div>
-                  <div style="font-size:10px;color:var(--muted);font-family:'Space Mono',monospace;margin-top:2px">${s.platform?.toUpperCase() || 'IG'}</div>
-                </div>
-                <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--accent)">${(s.next_run || '').slice(11,16)}</div>
-              </div>`).join('')}
+          ${upcomingScans.length === 0
+            ? `<div class="home-empty">Aucun scan planifié cette semaine</div>`
+            : upcomingScans.map(s => {
+                const d = new Date(s.next_run);
+                const isToday = d.toDateString() === now.toDateString();
+                const dayLabel = isToday ? "Aujourd'hui" : d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
+                return `<div class="home-panel-row">
+                  <div>
+                    <div style="font-weight:600;font-size:12px">${s.handle || '—'}</div>
+                    <div style="font-size:10px;color:var(--muted);font-family:'Space Mono',monospace;margin-top:2px">${s.platform?.toUpperCase() || 'IG'}</div>
+                  </div>
+                  <div style="text-align:right">
+                    <div style="font-family:'Space Mono',monospace;font-size:10px;color:${isToday ? 'var(--accent)' : 'var(--muted)'};font-weight:700">${dayLabel}</div>
+                    <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--text-3);margin-top:2px">${(s.next_run || '').slice(11,16)}</div>
+                  </div>
+                </div>`;
+              }).join('')}
         </div>
       </div>
 
