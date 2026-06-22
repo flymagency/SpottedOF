@@ -961,9 +961,12 @@ sb.auth.getSession().then(async ({ data }) => {
   userPaid = profile?.paid || false;
 
   // Membre d'une équipe = accès garanti
-  // Triple vérification : token URL (1er accès) + team_members BDD + plan='member' (fallback)
+  // Vérification : token URL + team_members BDD + plan='member' + localStorage (persistance reload)
   const hasInviteToken = !!new URLSearchParams(location.search).get('invite');
-  const isTeamMember = !!teamMembership || hasInviteToken || userPlan === 'member';
+  const cachedMember = localStorage.getItem('tm_' + currentUser.id) === '1';
+  const isTeamMember = !!teamMembership || hasInviteToken || userPlan === 'member' || cachedMember;
+  // Mettre à jour le cache si on confirme l'appartenance à l'équipe
+  if (!!teamMembership || userPlan === 'member') localStorage.setItem('tm_' + currentUser.id, '1');
 
   // Badge plan dans le header
   const badge = document.getElementById('planBadge');
@@ -3989,6 +3992,9 @@ async function checkInviteToken() {
   if (error && error.code !== '23505') { // 23505 = already exists → OK
     showToast('Erreur en rejoignant l\'équipe', 'error'); return;
   }
+
+  // Sauvegarder en localStorage pour que les reloads conservent l'accès
+  localStorage.setItem('tm_' + currentUser.id, '1');
 
   // Marquer l'invitation comme acceptée
   await sb.from('team_invites').update({ accepted_at: new Date().toISOString() }).eq('id', invite.id);
