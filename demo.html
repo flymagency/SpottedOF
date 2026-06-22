@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Démo — SpottedOF</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300..900&family=Outfit:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #060608; --surface: #0C0C0F; --surface2: #111115;
+      --border: rgba(255,255,255,0.07); --border-light: rgba(255,255,255,0.13);
+      --accent: #06B6D4; --muted: #9898A8; --text3: #484858;
+    }
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    a, button, [onclick] { cursor: pointer !important; }
+    html { scroll-behavior: smooth; }
+    body { background:var(--bg); color:#fff; font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased; min-height:100vh; }
+
+    /* NAV */
+    nav {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:18px 40px; border-bottom:1px solid var(--border);
+      position:sticky; top:0; background:rgba(6,6,8,0.85); backdrop-filter:blur(12px); z-index:100;
+    }
+    .logo { font-family:'Outfit',sans-serif; font-size:18px; font-weight:800; text-decoration:none; color:#fff; }
+    .logo span { color:var(--accent); }
+    .nav-right { display:flex; align-items:center; gap:16px; }
+    .nav-back { font-size:13px; color:var(--muted); text-decoration:none; }
+    .nav-back:hover { color:#fff; }
+    .nav-cta { background:var(--accent); color:#fff; font-size:13px; font-weight:700; padding:8px 18px; border-radius:9px; text-decoration:none; }
+
+    /* HERO */
+    .hero { text-align:center; padding:72px 24px 48px; }
+    .hero-badge {
+      display:inline-flex; align-items:center; gap:6px;
+      background:rgba(6,182,212,0.08); border:1px solid rgba(6,182,212,0.2);
+      border-radius:100px; padding:5px 14px; font-size:11px;
+      font-family:'Space Mono',monospace; color:var(--accent); margin-bottom:24px;
+    }
+    .hero-badge::before { content:''; width:6px; height:6px; background:var(--accent); border-radius:50%; animation:pulse 1.4s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(6,182,212,0.6);}50%{opacity:.7;box-shadow:0 0 0 5px rgba(6,182,212,0);} }
+    .hero h1 { font-family:'Outfit',sans-serif; font-size:44px; font-weight:900; line-height:1.05; margin-bottom:16px; }
+    .hero h1 em { font-style:normal; color:var(--accent); }
+    .hero p { font-size:15px; color:var(--muted); max-width:520px; margin:0 auto; line-height:1.7; }
+
+    /* DEMO CONTAINER */
+    .demo-wrap { max-width:900px; margin:0 auto; padding:0 24px 80px; }
+
+    /* STEP EXPLAINER */
+    .steps-row {
+      display:grid; grid-template-columns:repeat(3,1fr); gap:1px;
+      background:var(--border); border-radius:16px; overflow:hidden; margin-bottom:48px;
+    }
+    .step-item { background:var(--surface); padding:24px 20px; }
+    .step-num { font-family:'Space Mono',monospace; font-size:11px; color:var(--accent); margin-bottom:10px; }
+    .step-title { font-size:14px; font-weight:700; margin-bottom:6px; }
+    .step-desc { font-size:12px; color:var(--muted); line-height:1.6; }
+
+    /* SCAN SIMULÉ */
+    .scan-block {
+      background:var(--surface); border:1px solid var(--border-light);
+      border-radius:20px; overflow:hidden; margin-bottom:32px;
+    }
+    .scan-header {
+      padding:20px 24px; border-bottom:1px solid var(--border);
+      display:flex; align-items:center; justify-content:space-between;
+    }
+    .scan-header-left { display:flex; align-items:center; gap:12px; }
+    .scan-icon { width:36px; height:36px; border-radius:10px; background:rgba(6,182,212,0.1); display:flex; align-items:center; justify-content:center; font-size:16px; }
+    .scan-title-text { font-size:15px; font-weight:700; }
+    .scan-target { font-size:11px; color:var(--muted); margin-top:2px; font-family:'Space Mono',monospace; }
+    .scan-badge {
+      font-family:'Space Mono',monospace; font-size:10px; font-weight:700;
+      padding:4px 10px; border-radius:100px;
+    }
+    .badge-scanning { background:rgba(6,182,212,0.1); color:var(--accent); }
+    .badge-done { background:rgba(255,255,255,0.06); color:var(--muted); display:none; }
+
+    /* PROGRESS */
+    .scan-progress { padding:20px 24px; border-bottom:1px solid var(--border); }
+    .prog-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+    .prog-label { font-size:12px; color:var(--muted); display:flex; align-items:center; gap:8px; }
+    .prog-label .dot-live { width:6px; height:6px; border-radius:50%; background:var(--accent); animation:pulse 1s ease-in-out infinite; }
+    .prog-count { font-family:'Space Mono',monospace; font-size:11px; color:var(--accent); }
+    .prog-track { height:4px; background:var(--surface2); border-radius:2px; overflow:hidden; }
+    .prog-fill { height:100%; background:var(--accent); border-radius:2px; width:0; transition:width 0.3s ease; }
+
+    /* RÉSULTATS */
+    .results-header {
+      padding:16px 24px; border-bottom:1px solid var(--border);
+      display:flex; align-items:center; justify-content:space-between;
+    }
+    .results-title { font-size:12px; font-weight:700; color:var(--muted); font-family:'Space Mono',monospace; text-transform:uppercase; letter-spacing:.08em; }
+    .results-count { font-family:'Space Mono',monospace; font-size:11px; color:var(--accent); }
+
+    /* PROFIL ROW */
+    .profile-row {
+      display:grid; grid-template-columns:36px 1fr 80px 70px 80px 90px;
+      align-items:center; gap:16px; padding:14px 24px;
+      border-bottom:1px solid var(--border);
+      opacity:0; transform:translateX(-12px);
+      transition:opacity .4s ease, transform .4s cubic-bezier(0.16,1,0.3,1), background .15s;
+    }
+    .profile-row.visible { opacity:1; transform:translateX(0); }
+    .profile-row:last-child { border-bottom:none; }
+    .profile-row:hover { background:rgba(255,255,255,0.02); }
+    .p-avatar { width:36px; height:36px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; color:#fff; }
+    .p-name { font-size:13px; font-weight:600; }
+    .p-handle { font-size:11px; color:var(--muted); font-family:'Space Mono',monospace; margin-top:2px; }
+    .p-followers { font-size:12px; color:var(--muted); }
+    .p-niche { font-size:11px; color:var(--muted); }
+    .p-of { font-size:11px; font-weight:700; }
+    .p-of.yes { color:var(--accent); }
+    .p-of.no { color:var(--text3); }
+    .p-score-wrap { display:flex; align-items:center; gap:8px; }
+    .p-score-bar { flex:1; height:4px; background:var(--surface2); border-radius:2px; overflow:hidden; }
+    .p-score-fill { height:100%; border-radius:2px; width:0; transition:width 0.8s cubic-bezier(0.16,1,0.3,1); }
+    .p-score-num { font-family:'Space Mono',monospace; font-size:11px; font-weight:700; min-width:28px; text-align:right; }
+
+    /* KPI résumé */
+    .kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:32px; opacity:0; transition:opacity .5s ease; }
+    .kpi-row.visible { opacity:1; }
+    .kpi-card {
+      background:var(--surface); border:1px solid var(--border); border-radius:14px;
+      padding:22px 20px;
+      animation: kpiIn 0.6s cubic-bezier(0.16,1,0.3,1) both;
+    }
+    .kpi-card:nth-child(1) { animation-delay:.05s; border-color:rgba(6,182,212,0.2); }
+    .kpi-card:nth-child(2) { animation-delay:.12s; }
+    .kpi-card:nth-child(3) { animation-delay:.19s; }
+    .kpi-card:nth-child(4) { animation-delay:.26s; }
+    @keyframes kpiIn {
+      from { opacity:0; transform:perspective(600px) rotateX(20deg) translateY(20px); }
+      to   { opacity:1; transform:perspective(600px) rotateX(0) translateY(0); }
+    }
+    .kpi-val { font-family:'Outfit',sans-serif; font-size:38px; font-weight:900; line-height:1; margin-bottom:6px; }
+    .kpi-lab { font-family:'Space Mono',monospace; font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; }
+
+    /* EXPLICATION SCORING */
+    .explainer { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:32px; margin-bottom:32px; }
+    .explainer-title { font-family:'Outfit',sans-serif; font-size:18px; font-weight:800; margin-bottom:8px; }
+    .explainer-sub { font-size:13px; color:var(--muted); margin-bottom:28px; line-height:1.6; }
+    .criteria-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
+    .criterion { background:var(--surface2); border-radius:12px; padding:18px 20px; }
+    .crit-header { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+    .crit-icon { font-size:18px; }
+    .crit-name { font-size:13px; font-weight:700; }
+    .crit-weight { font-family:'Space Mono',monospace; font-size:10px; color:var(--accent); margin-left:auto; }
+    .crit-desc { font-size:12px; color:var(--muted); line-height:1.6; }
+
+    /* CTA final */
+    .cta-block {
+      background:linear-gradient(135deg, rgba(6,182,212,0.06), transparent);
+      border:1px solid rgba(6,182,212,0.2); border-radius:20px;
+      padding:48px; text-align:center;
+    }
+    .cta-title { font-family:'Outfit',sans-serif; font-size:32px; font-weight:900; margin-bottom:12px; }
+    .cta-sub { font-size:14px; color:var(--muted); margin-bottom:32px; }
+    .cta-btn {
+      display:inline-block; background:var(--accent); color:#fff;
+      font-size:15px; font-weight:700; padding:14px 36px;
+      border-radius:12px; text-decoration:none;
+      box-shadow:0 0 40px rgba(6,182,212,0.3);
+      transition:transform .2s, box-shadow .2s;
+    }
+    .cta-btn:hover { transform:translateY(-2px); box-shadow:0 0 60px rgba(6,182,212,0.4); }
+
+    /* TABLE HEADER */
+    .table-head {
+      display:grid; grid-template-columns:36px 1fr 80px 70px 80px 90px;
+      gap:16px; padding:10px 24px;
+      font-family:'Space Mono',monospace; font-size:9px; color:var(--text3);
+      text-transform:uppercase; letter-spacing:.08em;
+      border-bottom:1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="logo">Spotted<span>OF</span></a>
+  <div class="nav-right">
+    <a href="index.html" class="nav-back">← Retour</a>
+    <a href="register.html" class="nav-cta">Commencer gratuitement</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="hero-badge">Démo interactive</div>
+  <h1>Voici ce que SpottedOF<br>fait <em>en 2 minutes.</em></h1>
+  <p>On a lancé un scan sur le compte @fitlifestyle_fr. Voici exactement ce que tu aurais reçu — profils, scores, détection OF.</p>
+</div>
+
+<div class="demo-wrap">
+
+  <!-- ÉTAPES -->
+  <div class="steps-row">
+    <div class="step-item">
+      <div class="step-num">ÉTAPE 01</div>
+      <div class="step-title">Tu donnes un compte cible</div>
+      <div class="step-desc">Un compte Instagram public. On analyse tous ses abonnés pour trouver des profils similaires.</div>
+    </div>
+    <div class="step-item">
+      <div class="step-num">ÉTAPE 02</div>
+      <div class="step-title">Notre IA score chaque profil</div>
+      <div class="step-desc">Engagement, followers, bio, présence OF/MYM, niche — chaque signal compte dans le score final.</div>
+    </div>
+    <div class="step-item">
+      <div class="step-num">ÉTAPE 03</div>
+      <div class="step-title">Tu reçois une liste qualifiée</div>
+      <div class="step-desc">Seulement les profils qui matchent tes critères. Plus de temps perdu sur des comptes hors cible.</div>
+    </div>
+  </div>
+
+  <!-- KPI RÉSUMÉ -->
+  <div class="kpi-row" id="kpiRow">
+    <div class="kpi-card">
+      <div class="kpi-val" style="color:var(--accent)" id="kpi1">0</div>
+      <div class="kpi-lab">Profils analysés</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-val" id="kpi2">0</div>
+      <div class="kpi-lab">Score moyen</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-val" id="kpi3">0</div>
+      <div class="kpi-lab">Déjà sur OF/MYM</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-val" id="kpi4">0</div>
+      <div class="kpi-lab">À contacter</div>
+    </div>
+  </div>
+
+  <!-- SCAN EN COURS -->
+  <div class="scan-block">
+    <div class="scan-header">
+      <div class="scan-header-left">
+        <div class="scan-icon">🔍</div>
+        <div>
+          <div class="scan-title-text">Scan automatique</div>
+          <div class="scan-target">@fitlifestyle_fr · Instagram</div>
+        </div>
+      </div>
+      <div>
+        <span class="scan-badge badge-scanning" id="badgeScanning">● Analyse en cours</span>
+        <span class="scan-badge badge-done" id="badgeDone">✓ Terminé</span>
+      </div>
+    </div>
+
+    <div class="scan-progress" id="scanProgress">
+      <div class="prog-row">
+        <div class="prog-label"><div class="dot-live"></div>Analyse des profils…</div>
+        <div class="prog-count" id="progCount">0 / 100</div>
+      </div>
+      <div class="prog-track"><div class="prog-fill" id="progFill"></div></div>
+    </div>
+
+    <div class="results-header">
+      <div class="results-title">Résultats</div>
+      <div class="results-count" id="resultsCount">0 prospect(s) trouvé(s)</div>
+    </div>
+
+    <div class="table-head">
+      <div></div>
+      <div>Profil</div>
+      <div>Followers</div>
+      <div>Niche</div>
+      <div>Plateforme</div>
+      <div>Score IA</div>
+    </div>
+
+    <div id="profilesList"></div>
+  </div>
+
+  <!-- EXPLICATION SCORING -->
+  <div class="explainer">
+    <div class="explainer-title">Comment le score est calculé ?</div>
+    <div class="explainer-sub">Notre IA analyse plusieurs signaux pour attribuer un score de 0 à 100 à chaque profil. Plus le score est élevé, plus le profil a de chances d'être réceptif à une collaboration.</div>
+    <div class="criteria-grid">
+      <div class="criterion">
+        <div class="crit-header">
+          <span class="crit-icon">📊</span>
+          <span class="crit-name">Taux d'engagement</span>
+          <span class="crit-weight">30%</span>
+        </div>
+        <div class="crit-desc">Ratio likes + commentaires / followers. Un bon engagement indique une audience active et convertissable.</div>
+      </div>
+      <div class="criterion">
+        <div class="crit-header">
+          <span class="crit-icon">👥</span>
+          <span class="crit-name">Taille du compte</span>
+          <span class="crit-weight">20%</span>
+        </div>
+        <div class="crit-desc">On privilégie les micro-influenceurs (5K–300K). Trop grand = déjà signé, trop petit = peu de reach.</div>
+      </div>
+      <div class="criterion">
+        <div class="crit-header">
+          <span class="crit-icon">🔍</span>
+          <span class="crit-name">Détection OF / MYM</span>
+          <span class="crit-weight">25%</span>
+        </div>
+        <div class="crit-desc">On détecte via la bio, les liens et les hashtags si le profil est déjà sur une plateforme privée ou si c'est une opportunité vierge.</div>
+      </div>
+      <div class="criterion">
+        <div class="crit-header">
+          <span class="crit-icon">🎯</span>
+          <span class="crit-name">Niche & contenu</span>
+          <span class="crit-weight">25%</span>
+        </div>
+        <div class="crit-desc">Fitness, lifestyle, beauté, mode — certaines niches convertissent mieux. L'IA analyse les posts et la bio pour classifier.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-block">
+    <div class="cta-title">Prêt à trouver tes prochains talents ?</div>
+    <div class="cta-sub">Lance ton premier scan en 2 minutes. Pas de carte bancaire requise.</div>
+    <a href="register.html" class="cta-btn">Commencer gratuitement →</a>
+  </div>
+
+</div>
+
+<script>
+const PROFILES = [
+  { name:'Léa Martin',    handle:'@lea.martin_fit',   followers:'48.2K', niche:'Fitness',   of:true,  score:94, color:'#06B6D4', initials:'LM' },
+  { name:'Camille Roy',   handle:'@cam.lifestyle',     followers:'92.1K', niche:'Lifestyle', of:false, score:87, color:'#0891b2', initials:'CR' },
+  { name:'Sofia Durand',  handle:'@sofiafit_',         followers:'31.7K', niche:'Fitness',   of:true,  score:82, color:'#555',    initials:'SD' },
+  { name:'Nina Leblanc',  handle:'@nina.beauty.co',    followers:'67.4K', niche:'Beauté',    of:false, score:79, color:'#444',    initials:'NL' },
+  { name:'Jade Torres',   handle:'@jade_modellife',    followers:'24.9K', niche:'Mode',      of:false, score:76, color:'#333',    initials:'JT' },
+  { name:'Emma Fontaine', handle:'@emma.wellness',     followers:'55.8K', niche:'Wellness',  of:true,  score:71, color:'#2a2a2a', initials:'EF' },
+  { name:'Inès Moreau',   handle:'@ines.fit.official', followers:'18.3K', niche:'Fitness',   of:false, score:68, color:'#222',    initials:'IM' },
+];
+
+function scoreColor(s) {
+  if(s >= 85) return '#06B6D4';
+  if(s >= 70) return 'rgba(255,255,255,0.8)';
+  return 'rgba(255,255,255,0.45)';
+}
+
+function animCount(el, target, suffix, ms) {
+  const start = performance.now();
+  (function step(now) {
+    const p = Math.min((now-start)/ms,1);
+    const ease = 1-Math.pow(1-p,3);
+    el.textContent = Math.round(ease*target)+suffix;
+    if(p<1) requestAnimationFrame(step);
+  })(performance.now());
+}
+
+function runDemo() {
+  const fill = document.getElementById('progFill');
+  const count = document.getElementById('progCount');
+  const list = document.getElementById('profilesList');
+  const resultsCount = document.getElementById('resultsCount');
+  let prog = 0;
+  let shown = 0;
+
+  const iv = setInterval(() => {
+    prog = Math.min(prog + Math.random()*3 + 1.5, 100);
+    fill.style.width = prog+'%';
+    const scanned = Math.round(prog);
+    count.textContent = scanned+' / 100';
+
+    // Afficher un profil tous les ~14% de progression
+    const shouldShow = Math.floor(prog / (100/PROFILES.length));
+    while(shown < shouldShow && shown < PROFILES.length) {
+      const p = PROFILES[shown];
+      const row = document.createElement('div');
+      row.className = 'profile-row';
+      row.innerHTML = `
+        <div class="p-avatar" style="background:${p.color}">${p.initials}</div>
+        <div><div class="p-name">${p.name}</div><div class="p-handle">${p.handle}</div></div>
+        <div class="p-followers">${p.followers}</div>
+        <div class="p-niche">${p.niche}</div>
+        <div class="p-of ${p.of?'yes':'no'}">${p.of?'✓ Détecté':'—'}</div>
+        <div class="p-score-wrap">
+          <div class="p-score-bar"><div class="p-score-fill" id="bar${shown}" style="background:${scoreColor(p.score)}"></div></div>
+          <div class="p-score-num" style="color:${scoreColor(p.score)}">${p.score}%</div>
+        </div>
+      `;
+      list.appendChild(row);
+      setTimeout(()=>{
+        row.classList.add('visible');
+        const bar = document.getElementById('bar'+shown);
+        if(bar) bar.style.width = p.score+'%';
+      }, 50);
+      shown++;
+      resultsCount.textContent = shown+' prospect(s) trouvé(s)';
+    }
+
+    if(prog >= 100) {
+      clearInterval(iv);
+      // Fin du scan
+      document.getElementById('scanProgress').style.display = 'none';
+      document.getElementById('badgeScanning').style.display = 'none';
+      document.getElementById('badgeDone').style.display = 'inline';
+      // KPIs
+      const kpiRow = document.getElementById('kpiRow');
+      kpiRow.classList.add('visible');
+      setTimeout(()=>{
+        animCount(document.getElementById('kpi1'), 100, '', 900);
+        animCount(document.getElementById('kpi2'), 79, '%', 700);
+        animCount(document.getElementById('kpi3'), 3, '', 600);
+        animCount(document.getElementById('kpi4'), 7, '', 650);
+      }, 300);
+    }
+  }, 60);
+}
+
+// Démarrer après 800ms
+setTimeout(runDemo, 800);
+</script>
+</body>
+</html>
