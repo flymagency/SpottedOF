@@ -13,4 +13,4 @@ AIRTABLE_BASE_ID = "appLemJayGiYhfsI1"
 # Puis remplacer VOTRE_KV_ID ci-dessous par l'id retourné
 [[kv_namespaces]]
 binding = "RATE_LIMIT"
-id = "VOTRE_KV_ID"
+id = "99a2ac4e87e949a4b07cc6d4e918e450"
