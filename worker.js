@@ -266,6 +266,7 @@ async function saveProspects(env, profiles, scanSource) {
     const res = await airtableRequest(env, 'POST', 'Prospects', { records: chunk });
     if (res.error) throw new Error(`Airtable: ${res.error} — ${JSON.stringify(res)}`);
     results.push(...(res.records || []));
+    if (i + 10 < records.length) await new Promise(r => setTimeout(r, 250));
   }
   return results;
 }
