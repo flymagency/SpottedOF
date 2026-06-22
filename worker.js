@@ -37,12 +37,7 @@ async function verifyAuth(request) {
 
 // ─── RATE LIMITING ───────────────────────────────────────────────────────────
 // Limites par IP et par fenêtre glissante d'1 heure
-const RATE_LIMITS = {
-  '/find-email':   { max: 30,  windowSec: 3600 }, // 30 req/h — extraction email
-  '/scan-similar': { max: 50,  windowSec: 3600 }, // 50 scans/h
-  '/delete-user':  { max: 5,   windowSec: 3600 }, // 5 suppressions/h — action destructrice
-  '/score-profiles': { max: 20, windowSec: 3600 }, // 20 req/h
-};
+const RATE_LIMITS = {}; // Pas de rate limiting
 
 async function checkRateLimit(env, ip, path) {
   // Si KV non configuré, on passe sans bloquer
