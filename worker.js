@@ -841,9 +841,11 @@ export default {
         .sort((a, b) => b.score - a.score);
 
       const scanSource = `@${handle} (${platform})`;
-      const saved = scored.length > 0
-        ? await saveProspects(env, scored, scanSource)
-        : [];
+      let saved = [], saveError = null;
+      if (scored.length > 0) {
+        try { saved = await saveProspects(env, scored, scanSource); }
+        catch(e) { saveError = e.message; }
+      }
 
       return json({
         status: 'SUCCEEDED',
@@ -853,7 +855,7 @@ export default {
         scored: scored.length,
         saved: saved.length,
         filtered_out: deduped.length - scored.length,
-        message: `${saved.length} prospects importés (score ≥ ${minScore}%)`,
+        message: saveError ? `Erreur sauvegarde: ${saveError}` : `${saved.length} prospects importés`,
       });
     }
 
