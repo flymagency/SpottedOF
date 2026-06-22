@@ -19,6 +19,11 @@
     }
 
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* Curseur doigt sur tous les éléments cliquables */
+    a, button, [onclick], .nav-cta, .hero-btn, .hero-btn-ghost,
+    .price-card, .price-btn, .feat-item, .feature-card,
+    .nav-link, .footer-link, .step-card { cursor: pointer !important; }
     html { scroll-behavior: smooth; }
 
     body {
@@ -286,7 +291,7 @@
       align-items: center;
       gap: 16px;
       transition: border-color 0.25s, transform 0.25s;
-      cursor: default;
+      cursor: pointer;
       opacity: 0;
       transform: translateY(20px);
     }
