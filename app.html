@@ -74,6 +74,67 @@
     .btn-ghost { background: var(--surface); color: var(--muted); border: 1px solid var(--border); box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
     .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
 
+    /* SONAR BUTTON */
+    .btn-sonar {
+      position: relative; display: inline-flex; align-items: center; gap: 8px;
+      padding: 0 18px; height: 36px;
+      background: linear-gradient(135deg, rgba(6,182,212,0.15), rgba(6,182,212,0.08));
+      border: 1px solid rgba(6,182,212,0.4); border-radius: 10px;
+      color: #06B6D4; font-size: 13px; font-weight: 700; cursor: pointer;
+      font-family: 'Inter', sans-serif; white-space: nowrap; transition: all 0.2s;
+    }
+    .btn-sonar:hover { background: linear-gradient(135deg,rgba(6,182,212,0.25),rgba(6,182,212,0.12)); border-color:rgba(6,182,212,0.7); transform:translateY(-1px); }
+    .btn-sonar::before, .btn-sonar::after {
+      content:''; position:absolute; inset:-1px; border-radius:11px;
+      border:1.5px solid rgba(6,182,212,0.5);
+      animation:sonarRing 2s ease-out infinite; pointer-events:none;
+    }
+    .btn-sonar::after { animation-delay:1s; }
+    @keyframes sonarRing {
+      0%   { transform:scale(1);   opacity:0.6; }
+      100% { transform:scale(1.6); opacity:0; }
+    }
+    .sonar-dot {
+      width:7px; height:7px; border-radius:50%;
+      background:#06B6D4; box-shadow:0 0 6px #06B6D4; flex-shrink:0;
+      animation:dotPulse 2s ease-in-out infinite;
+    }
+    @keyframes dotPulse {
+      0%,100% { transform:scale(1);   opacity:1; }
+      50%     { transform:scale(1.3); opacity:0.7; }
+    }
+    /* SONAR CTA (grands) dans la vue prospects */
+    .scan-cta-wrap {
+      display:flex; align-items:center; justify-content:space-between;
+      background:linear-gradient(135deg,rgba(6,182,212,0.08),rgba(6,182,212,0.03));
+      border:1px solid rgba(6,182,212,0.2); border-radius:14px;
+      padding:20px 24px; margin-bottom:16px; gap:16px;
+    }
+    .scan-cta-text { flex:1; }
+    .scan-cta-title { font-size:15px; font-weight:700; color:white; margin-bottom:4px; }
+    .scan-cta-sub { font-size:12px; color:var(--muted); }
+    .btn-sonar-lg {
+      position:relative; display:inline-flex; align-items:center; gap:10px;
+      padding:0 28px; height:48px; flex-shrink:0;
+      background:linear-gradient(135deg,rgba(6,182,212,0.2),rgba(6,182,212,0.1));
+      border:1px solid rgba(6,182,212,0.5); border-radius:13px;
+      color:#06B6D4; font-size:14px; font-weight:700; cursor:pointer;
+      font-family:'Inter',sans-serif; white-space:nowrap; transition:all 0.2s;
+    }
+    .btn-sonar-lg:hover { background:linear-gradient(135deg,rgba(6,182,212,0.3),rgba(6,182,212,0.15)); border-color:rgba(6,182,212,0.8); transform:translateY(-1px); }
+    .btn-sonar-lg::before, .btn-sonar-lg::after {
+      content:''; position:absolute; inset:-1px; border-radius:14px;
+      border:1.5px solid rgba(6,182,212,0.5);
+      animation:sonarRing 2s ease-out infinite; pointer-events:none;
+    }
+    .btn-sonar-lg::after { animation-delay:1s; }
+    .sonar-dot-lg {
+      width:10px; height:10px; border-radius:50%;
+      background:#06B6D4; box-shadow:0 0 8px #06B6D4; flex-shrink:0;
+      animation:dotPulse 2s ease-in-out infinite;
+    }
+    @media(max-width:600px) { .scan-cta-wrap { flex-direction:column; align-items:flex-start; } .btn-sonar-lg { width:100%; justify-content:center; } }
+
     /* STATS ROW */
     .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
     .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); transition: transform 0.2s cubic-bezier(0.16,1,0.3,1), box-shadow 0.2s, border-color 0.2s; opacity: 0; transform: translateY(12px); animation: cardIn 0.5s cubic-bezier(0.16,1,0.3,1) forwards; }
@@ -644,8 +705,8 @@
       <button id="pdfExportBtn" class="btn btn-ghost" onclick="exportPDF()" style="display:none" title="Exporter en PDF">
         📄 PDF
       </button>
-      <button class="btn btn-primary" onclick="openScanModal()">
-        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <button class="btn-sonar" onclick="openScanModal()">
+        <div class="sonar-dot"></div>
         Nouveau scan
       </button>
     </div>
@@ -732,6 +793,17 @@
       <div class="stat-value" style="color:var(--green)">209</div>
       <div class="stat-sub">haut potentiel</div>
     </div>
+  </div>
+
+  <div class="scan-cta-wrap">
+    <div class="scan-cta-text">
+      <div class="scan-cta-title">Trouver de nouveaux prospects</div>
+      <div class="scan-cta-sub">Scanne un compte similaire pour découvrir des profils à fort potentiel</div>
+    </div>
+    <button class="btn-sonar-lg" onclick="openScanModal()">
+      <div class="sonar-dot-lg"></div>
+      Lancer un scan
+    </button>
   </div>
 
   <div class="filters-bar">
