@@ -378,9 +378,24 @@ function esc(str) { if (str==null) return ''; return String(str).replace(/&/g,'&
 let clients = [];
 
 // Auth + admin check
-sb.auth.getSession().then(({ data }) => {
+sb.auth.getSession().then(async ({ data }) => {
   if (!data.session) { window.location.href = 'login.html'; return; }
+
+  // Couche 1 : vérification email (rapide, côté client)
   if (data.session.user.email !== ADMIN_EMAIL) { window.location.href = 'app.html'; return; }
+
+  // Couche 2 : vérification plan superadmin via Supabase (côté serveur)
+  // Empêche l'accès même si quelqu'un modifie ADMIN_EMAIL dans la console
+  const { data: profile } = await sb
+    .from('profiles')
+    .select('plan')
+    .eq('id', data.session.user.id)
+    .single();
+  if (!profile || !['admin','superadmin'].includes((profile.plan||'').toLowerCase())) {
+    window.location.href = 'app.html';
+    return;
+  }
+
   document.getElementById('adminEmail').textContent = data.session.user.email;
   loadClients();
   loadTickets();

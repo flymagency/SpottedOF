@@ -10,6 +10,31 @@ const CORS = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
 
+// ─── AUTH SUPABASE ───────────────────────────────────────────────────────────
+// Vérifie le JWT Supabase envoyé par le client dans Authorization: Bearer <token>
+const SUPABASE_URL = 'https://nsvrkogwmzrbjrtbphpb.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_x7QwXgNepnb6t_2LCMniqw_zIEZ2LnR';
+
+// Endpoints publics (pas besoin d'être connecté)
+const PUBLIC_PATHS = new Set(['/scan-poll']);
+
+async function verifyAuth(request) {
+  const auth = request.headers.get('Authorization') || '';
+  const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
+  if (!token) return null;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'apikey': SUPABASE_ANON_KEY,
+      },
+    });
+    if (!res.ok) return null;
+    const user = await res.json();
+    return user?.id ? user : null;
+  } catch { return null; }
+}
+
 // ─── RATE LIMITING ───────────────────────────────────────────────────────────
 // Limites par IP et par fenêtre glissante d'1 heure
 const RATE_LIMITS = {
@@ -278,6 +303,12 @@ export default {
     const ip = request.headers.get('CF-Connecting-IP') || request.headers.get('X-Forwarded-For') || 'unknown';
     const rateLimitResponse = await checkRateLimit(env, ip, path);
     if (rateLimitResponse) return rateLimitResponse;
+
+    // ── Auth Supabase (tous les endpoints sauf publics) ────────────────────────
+    if (!PUBLIC_PATHS.has(path)) {
+      const user = await verifyAuth(request);
+      if (!user) return json({ error: 'Non authentifié — connexion requise' }, 401);
+    }
 
     // POST /score-profiles
     // Body: { profiles: [...], scan_source: "@handle" }

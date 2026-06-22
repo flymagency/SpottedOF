@@ -1131,6 +1131,16 @@ const SUPABASE_URL = 'https://nsvrkogwmzrbjrtbphpb.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_x7QwXgNepnb6t_2LCMniqw_zIEZ2LnR';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// ─── WORKER FETCH AUTHENTIFIÉ ────────────────────────────────────────────────
+// Envoie automatiquement le JWT Supabase dans chaque requête Worker
+async function wFetch(url, opts = {}) {
+  const { data } = await sb.auth.getSession();
+  const token = data?.session?.access_token;
+  const headers = { ...(opts.headers || {}) };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  return fetch(url, { ...opts, headers });
+}
+
 // ─── SÉCURITÉ : échappement HTML pour prévenir XSS ───────────────────────────
 function esc(str) {
   if (str == null) return '';
@@ -1256,7 +1266,7 @@ async function loadProspects() {
     const params = new URLSearchParams({ min_score: '0' });
     if (activePlatforms.size === 1) params.set('platform', [...activePlatforms][0]);
 
-    const res = await fetch(`${WORKER}/prospects?${params}`);
+    const res = await wFetch(`${WORKER}/prospects?${params}`);
     const json = await res.json();
     DATA = (json.prospects || []).map(p => ({
       id: p.id,
@@ -1289,7 +1299,7 @@ async function loadProspects() {
 
 async function loadStats() {
   try {
-    const res = await fetch(`${WORKER}/stats`);
+    const res = await wFetch(`${WORKER}/stats`);
     const s = await res.json();
     document.querySelector('.stats-row .stat-card:nth-child(1) .stat-value').textContent = s.total;
     document.querySelector('.stats-row .stat-card:nth-child(1) .stat-sub').textContent = `${DATA.length} chargés`;
@@ -1440,7 +1450,7 @@ async function deleteProspect(id, el) {
   const row = el.closest('.prospect-row');
   if (row) { row.style.opacity = '0.4'; row.style.pointerEvents = 'none'; }
   try {
-    await fetch(`${WORKER}/delete-prospect`, {
+    await wFetch(`${WORKER}/delete-prospect`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id }),
@@ -1462,7 +1472,7 @@ async function confirmDeleteAll() {
 
   showToast('Suppression en cours…', 'success');
   try {
-    const res = await fetch(`${WORKER}/delete-all-prospects`, { method: 'POST' });
+    const res = await wFetch(`${WORKER}/delete-all-prospects`, { method: 'POST' });
     const data = await res.json();
     DATA = [];
     renderProspects();
@@ -1583,7 +1593,7 @@ async function importCSV(input) {
   }));
 
   try {
-    const res = await fetch(`${WORKER}/score-profiles`, {
+    const res = await wFetch(`${WORKER}/score-profiles`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ profiles, scan_source: 'csv-import', min_score: 0 }),
@@ -1716,7 +1726,7 @@ async function launchScan() {
   document.getElementById('scanProgressSub').textContent = 'Récupération des comptes suivis (peut prendre 1-3 min)';
 
   try {
-    const startRes = await fetch(`${WORKER}/scan-similar`, {
+    const startRes = await wFetch(`${WORKER}/scan-similar`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ handle: h, platform, results_limit: resultsLimit, min_score: minScore, filters }),
@@ -1752,7 +1762,7 @@ async function launchScan() {
           results_limit: resultsLimit,
           filters: JSON.stringify(_scanFilters),
         });
-        const pollRes = await fetch(`${WORKER}/scan-poll?${qs}`);
+        const pollRes = await wFetch(`${WORKER}/scan-poll?${qs}`);
         const pollData = await pollRes.json();
 
         if (pollData.error && pollData.done) {
@@ -1900,7 +1910,7 @@ function openNoteModal(id, currentNote) {
 async function saveNote(id) {
   const note = document.getElementById('noteInput').value.trim();
   try {
-    await fetch(`${WORKER}/update-note`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({id, note}) });
+    await wFetch(`${WORKER}/update-note`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({id, note}) });
     const p = DATA.find(x => x.id === id);
     if (p) p.note = note;
     document.getElementById('noteModal').remove();
@@ -1940,7 +1950,7 @@ function openPipelineModal(id, currentStatus) {
 
 async function updatePipelineStatus(id, status) {
   try {
-    await fetch(`${WORKER}/update-status`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({id, status}) });
+    await wFetch(`${WORKER}/update-status`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({id, status}) });
     const p = DATA.find(x => x.id === id);
     if (p) p.status = status;
     const m = document.getElementById('pipelineModal');
@@ -1982,7 +1992,7 @@ async function processNextEmailScan() {
   if (!p || p.email) { processNextEmailScan(); return; } // déjà trouvé entre-temps
 
   try {
-    const res = await fetch(`${WORKER}/find-email`, {
+    const res = await wFetch(`${WORKER}/find-email`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, bio: p.bio }),
@@ -2297,7 +2307,7 @@ async function findEmail(id, bio) {
     Scan de la bio et des liens…
   </div>`;
   try {
-    const res = await fetch(`${WORKER}/find-email`, {
+    const res = await wFetch(`${WORKER}/find-email`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, bio }),
@@ -2911,7 +2921,7 @@ async function blacklistProspect(id, el) {
   const row = el.closest('.prospect-row');
   if (row) { row.style.opacity = '0.4'; row.style.pointerEvents = 'none'; }
   try {
-    await fetch(`${WORKER}/update-status`, {
+    await wFetch(`${WORKER}/update-status`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, status: 'blacklistée' }),
@@ -2929,7 +2939,7 @@ async function blacklistProspect(id, el) {
 
 async function unblacklistProspect(id) {
   try {
-    await fetch(`${WORKER}/update-status`, {
+    await wFetch(`${WORKER}/update-status`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, status: 'nouveau' }),
@@ -3940,7 +3950,7 @@ async function confirmReply(prospectId) {
     document.getElementById('replyModal').remove();
 
     // Passer en "En discussion" automatiquement
-    await fetch(`${WORKER}/update-status`, {
+    await wFetch(`${WORKER}/update-status`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: prospectId, status: 'en discussion' }),
     });
@@ -4219,7 +4229,7 @@ async function scanGmailReplies() {
         REPLIES.unshift(saved);
         newReplies++;
         // Passer en "en discussion"
-        await fetch(`${WORKER}/update-status`, {
+        await wFetch(`${WORKER}/update-status`, {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id: matchedProspect.id, status: 'en discussion' }),
         });
@@ -4553,7 +4563,7 @@ async function sendTeamInvite() {
 
     // Envoyer l'email d'invitation
     try {
-      const emailRes = await fetch(`${WORKER}/send-invite-email`, {
+      const emailRes = await wFetch(`${WORKER}/send-invite-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
