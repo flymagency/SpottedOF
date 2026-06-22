@@ -568,7 +568,7 @@ export default {
         if (platform === 'ig' || platform === 'instagram') {
           // Phase 1 : récupérer les following du compte de référence
           const followingRunId = await apifyStartRun('datadoping~instagram-following-scraper', {
-            username: handle,
+            usernames: [handle],
             resultsLimit: Math.min(resultsLimit, 200),
           }, APIFY_TOKEN);
 
