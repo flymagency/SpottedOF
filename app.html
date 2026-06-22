@@ -1133,12 +1133,27 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ─── WORKER FETCH AUTHENTIFIÉ ────────────────────────────────────────────────
 // Envoie automatiquement le JWT Supabase dans chaque requête Worker
+let _workerToken = null; // Stocké dès le login, rafraîchi automatiquement
+
 async function wFetch(url, opts = {}) {
-  const { data } = await sb.auth.getSession();
-  const token = data?.session?.access_token;
+  // Utilise le token en cache, ou le récupère si absent
+  if (!_workerToken) {
+    const { data } = await sb.auth.getSession();
+    _workerToken = data?.session?.access_token || null;
+  }
   const headers = { ...(opts.headers || {}) };
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-  return fetch(url, { ...opts, headers });
+  if (_workerToken) headers['Authorization'] = `Bearer ${_workerToken}`;
+  const res = await fetch(url, { ...opts, headers });
+  // Si 401, le token a peut-être expiré → rafraîchir et réessayer une fois
+  if (res.status === 401) {
+    const { data } = await sb.auth.refreshSession();
+    _workerToken = data?.session?.access_token || null;
+    if (_workerToken) {
+      headers['Authorization'] = `Bearer ${_workerToken}`;
+      return fetch(url, { ...opts, headers });
+    }
+  }
+  return res;
 }
 
 // ─── SÉCURITÉ : échappement HTML pour prévenir XSS ───────────────────────────
@@ -1165,6 +1180,7 @@ const PLAN_COLORS = {
 sb.auth.getSession().then(async ({ data }) => {
   if (!data.session) { window.location.href = 'login.html'; return; }
   currentUser = data.session.user;
+  _workerToken = data.session.access_token; // Stocker le token dès le départ
   document.getElementById('userEmail').textContent = currentUser.email;
   initSidebarUser(currentUser.email);
   if (currentUser.email === 'businessflymagency@gmail.com') document.getElementById('adminLink').style.display = 'flex';
