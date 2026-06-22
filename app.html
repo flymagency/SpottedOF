@@ -4464,7 +4464,6 @@ async function renderTeam() {
                   <select onchange="changeRole('${m.id}',this.value)" style="font-size:11px;font-family:'Space Mono',monospace;border:1px solid var(--border);border-radius:8px;padding:4px 8px;background:var(--surface);cursor:pointer;font-weight:700;${ROLE_COLORS[m.role]}">
                     <option value="admin"   ${m.role==='admin'   ? 'selected':''}>Admin</option>
                     <option value="manager" ${m.role==='manager' ? 'selected':''}>Manager</option>
-                    <option value="viewer"  ${m.role==='viewer'  ? 'selected':''}>Viewer</option>
                   </select>
                   <button onclick="removeMember('${m.id}')" style="background:none;border:1px solid var(--border);border-radius:8px;padding:4px 8px;cursor:pointer;font-size:11px;color:var(--accent2);transition:all 0.15s" onmouseover="this.style.background='rgba(240,67,108,0.06)'" onmouseout="this.style.background='none'">✕</button>
                 ` : `<span style="font-size:11px;font-family:'Space Mono',monospace;padding:4px 10px;border-radius:8px;font-weight:700;${ROLE_COLORS[m.role]}">${ROLE_LABELS[m.role]}</span>`}
@@ -4537,7 +4536,6 @@ async function renderTeam() {
           <div style="display:flex;flex-direction:column;gap:10px">
             <input id="inviteEmail" type="email" placeholder="email@exemple.com" class="search-input" style="width:100%;padding:10px 14px;font-size:13px">
             <select id="inviteRole" style="padding:10px 14px;border:1px solid var(--border);border-radius:10px;font-size:13px;background:var(--surface);font-family:'Inter',sans-serif;cursor:pointer">
-              <option value="viewer">Viewer — Lecture seule</option>
               <option value="manager">Manager — Peut scanner/contacter</option>
               <option value="admin">Admin — Accès complet</option>
             </select>
@@ -4555,7 +4553,6 @@ async function renderTeam() {
             ${[
               { role: 'admin', label: 'Admin', perms: ['Gérer les membres', 'Scanner', 'Contacter', 'Voir tout', 'Supprimer des prospects'] },
               { role: 'manager', label: 'Manager', perms: ['Scanner', 'Contacter', 'Modifier statuts', 'Voir les prospects'] },
-              { role: 'viewer', label: 'Viewer', perms: ['Voir les prospects', 'Voir les stats'] },
             ].map(r => `
               <div style="background:var(--surface2);border-radius:10px;padding:12px 14px">
                 <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
@@ -4632,7 +4629,6 @@ function renderTeamSettingsMembers() {
           <select onchange="changeRole('${m.id}',this.value);renderTeamSettingsMembers()" style="font-size:11px;font-family:'Space Mono',monospace;border:1px solid var(--border);border-radius:8px;padding:5px 8px;background:var(--surface);cursor:pointer;font-weight:700">
             <option value="admin"   ${m.role==='admin'   ?'selected':''}>Admin</option>
             <option value="manager" ${m.role==='manager' ?'selected':''}>Manager</option>
-            <option value="viewer"  ${m.role==='viewer'  ?'selected':''}>Viewer</option>
           </select>
           <button onclick="removeMember('${m.id}');closeModal('teamSettingsModal')" class="btn" style="background:rgba(240,67,108,0.06);color:var(--accent2);border:1px solid rgba(240,67,108,0.2);font-size:11px;padding:5px 10px">Exclure</button>
         ` : `<span style="font-size:11px;color:var(--muted)">—</span>`}
