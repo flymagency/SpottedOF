@@ -1131,6 +1131,7 @@ const PLAN_COLORS = {
   pro:     { bg: 'rgba(30,202,110,0.08)',  color: '#1ECA6E', border: 'rgba(30,202,110,0.25)' },
   agency:  { bg: 'rgba(240,67,108,0.08)', color: '#F0436C', border: 'rgba(240,67,108,0.25)' },
   admin:   { bg: 'rgba(139,92,246,0.10)',  color: '#8B5CF6', border: 'rgba(139,92,246,0.30)' },
+  superadmin: { bg: 'rgba(139,92,246,0.10)', color: '#8B5CF6', border: 'rgba(139,92,246,0.30)' },
 };
 
 sb.auth.getSession().then(async ({ data }) => {
@@ -1160,7 +1161,7 @@ sb.auth.getSession().then(async ({ data }) => {
   // Badge plan dans le header
   const badge = document.getElementById('planBadge');
   const c = PLAN_COLORS[userPlan] || PLAN_COLORS.starter;
-  const PLAN_DISPLAY = { admin: 'SUPER ADMIN', starter: 'STARTER', pro: 'PRO', agency: 'AGENCE', member: 'MEMBRE' };
+  const PLAN_DISPLAY = { admin: 'SUPER ADMIN', superadmin: 'SUPER ADMIN', starter: 'STARTER', pro: 'PRO', agency: 'AGENCE', member: 'MEMBRE' };
   badge.textContent = isTeamMember && userPlan === 'member' ? 'MEMBRE' : (PLAN_DISPLAY[userPlan] || userPlan.toUpperCase());
   badge.style.background = c.bg;
   badge.style.color = c.color;
@@ -1168,7 +1169,7 @@ sb.auth.getSession().then(async ({ data }) => {
   badge.style.display = 'inline';
 
   // Bloquer uniquement si non payé, pas admin, et pas membre d'équipe
-  if (!userPaid && userPlan !== 'admin' && !isTeamMember) {
+  if (!userPaid && userPlan !== 'admin' && userPlan !== 'superadmin' && !isTeamMember) {
     showUpgradeBanner();
   }
 
@@ -1518,7 +1519,7 @@ async function importCSV(input) {
   input.value = '';
 
   // Vérifier si non payé (les membres d'équipe ont accès via leur admin)
-  if (!userPaid && userPlan !== 'admin' && userPlan !== 'member') {
+  if (!userPaid && userPlan !== 'admin' && userPlan !== 'superadmin' && userPlan !== 'member') {
     showUpgradeBanner(); return;
   }
 
@@ -4948,7 +4949,7 @@ async function dissolveTeam() {
 // ─── PLAN CHECK ───────────────────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════════════════
 function isPro() {
-  return ['pro', 'agency', 'admin'].includes(userPlan);
+  return ['pro', 'agency', 'admin', 'superadmin'].includes(userPlan);
 }
 
 function planLockHTML(feature) {

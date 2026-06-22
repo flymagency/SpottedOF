@@ -285,7 +285,8 @@ const PLANS = {
   starter: { name: 'Starter', price: '49€', period: '49€ / mois', limit: 200 },
   pro:     { name: 'Pro',     price: '99€', period: '99€ / mois', limit: Infinity },
   agency:  { name: 'Agency',  price: '199€', period: '199€ / mois', limit: Infinity },
-  admin:   { name: 'Super Admin', price: '—', period: '—',          limit: Infinity },
+  admin:      { name: 'Super Admin', price: '—', period: '—', limit: Infinity },
+  superadmin: { name: 'Super Admin', price: '—', period: '—', limit: Infinity },
 };
 
 const UPGRADE_NEXT = {
@@ -321,14 +322,15 @@ sb.auth.getSession().then(async ({ data }) => {
 function renderPlan(plan, paid) {
   const p = PLANS[plan] || PLANS.starter;
   document.getElementById('planName').textContent = p.name;
-  document.getElementById('planPrice').textContent = plan !== 'admin' ? p.period : '';
+  const isSuperAdmin = plan === 'admin' || plan === 'superadmin';
+  document.getElementById('planPrice').textContent = isSuperAdmin ? '' : p.period;
 
   const badge = document.getElementById('planBadge');
-  if (paid || plan === 'admin') {
-    badge.textContent = plan === 'admin' ? 'SUPER ADMIN' : 'ACTIF';
-    badge.style.color = plan === 'admin' ? '#8B5CF6' : 'var(--accent)';
-    badge.style.background = plan === 'admin' ? 'rgba(139,92,246,0.1)' : 'rgba(6,182,212,0.1)';
-    badge.style.borderColor = plan === 'admin' ? 'rgba(139,92,246,0.3)' : 'rgba(6,182,212,0.25)';
+  if (paid || isSuperAdmin) {
+    badge.textContent = isSuperAdmin ? 'SUPER ADMIN' : 'ACTIF';
+    badge.style.color = isSuperAdmin ? '#8B5CF6' : 'var(--accent)';
+    badge.style.background = isSuperAdmin ? 'rgba(139,92,246,0.1)' : 'rgba(6,182,212,0.1)';
+    badge.style.borderColor = isSuperAdmin ? 'rgba(139,92,246,0.3)' : 'rgba(6,182,212,0.25)';
   } else {
     badge.textContent = 'EN ATTENTE';
     badge.style.color = '#F0436C';
@@ -361,7 +363,7 @@ async function renderUsage(plan) {
 }
 
 function renderUpgrade(plan) {
-  if (plan === 'admin' || plan === 'agency') return;
+  if (plan === 'admin' || plan === 'superadmin' || plan === 'agency') return;
   const info = UPGRADE_NEXT[plan];
   if (!info) return;
 
