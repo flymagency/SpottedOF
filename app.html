@@ -392,6 +392,43 @@
     .home-quick-btn:last-child { border-bottom: none; }
     .home-quick-btn:hover { background: var(--surface2); }
     .home-quick-icon { width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+    /* ── PAGE HEADER ── */
+    .page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 28px 28px 20px; border-bottom: 1px solid var(--border); }
+    .page-eyebrow { font-size: 10px; font-weight: 700; font-family: 'Space Mono', monospace; letter-spacing: 0.12em; color: var(--accent); margin-bottom: 6px; }
+    .page-title { font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 10px; }
+    .page-count { font-size: 14px; font-weight: 600; font-family: 'Space Mono', monospace; color: var(--muted); background: var(--surface2); border: 1px solid var(--border); padding: 2px 8px; border-radius: 20px; }
+    .page-desc { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+    /* ── SAVED GRID ── */
+    .saved-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; padding: 20px 28px; }
+    .saved-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px; cursor: pointer; transition: border-color 0.15s, transform 0.15s; display: flex; flex-direction: column; gap: 12px; }
+    .saved-card:hover { border-color: rgba(6,182,212,0.3); transform: translateY(-2px); }
+    .saved-card-top { display: flex; align-items: flex-start; gap: 12px; }
+    .saved-avatar { flex-shrink: 0; }
+    .saved-info { flex: 1; min-width: 0; }
+    .saved-handle { font-size: 13px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 5px; }
+    .saved-name { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .saved-score { font-size: 13px; font-weight: 700; font-family: 'Space Mono', monospace; flex-shrink: 0; }
+    .saved-note { font-size: 12px; color: var(--muted); background: var(--surface2); border-radius: 8px; padding: 8px 10px; line-height: 1.4; border-left: 2px solid var(--accent); }
+    .saved-footer { display: flex; align-items: center; gap: 6px; }
+
+    /* ── PIPELINE / CONTACT ── */
+    .pipeline-board { display: flex; gap: 12px; padding: 20px 28px; overflow-x: auto; min-height: calc(100vh - 180px); align-items: flex-start; }
+    .pipeline-col { width: 220px; min-width: 220px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; display: flex; flex-direction: column; overflow: hidden; }
+    .pipeline-col-header { display: flex; align-items: center; gap: 7px; padding: 12px 14px; border-bottom: 1px solid var(--border); background: var(--surface2); }
+    .pipeline-col-icon { font-size: 14px; }
+    .pipeline-col-label { font-size: 12px; font-weight: 700; flex: 1; }
+    .pipeline-col-count { font-size: 11px; font-family: 'Space Mono', monospace; color: var(--muted); background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 1px 6px; }
+    .pipeline-col-body { display: flex; flex-direction: column; gap: 8px; padding: 10px 10px; overflow-y: auto; max-height: calc(100vh - 260px); }
+    .pipeline-empty { font-size: 11px; color: var(--muted); text-align: center; padding: 20px 0; }
+    .pipeline-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 11px 12px; cursor: pointer; transition: border-color 0.15s; display: flex; flex-direction: column; gap: 8px; }
+    .pipeline-card:hover { border-color: rgba(6,182,212,0.3); }
+    .pipeline-card-top { display: flex; align-items: center; gap: 8px; }
+    .pipeline-note { font-size: 11px; color: var(--muted); line-height: 1.4; border-left: 2px solid rgba(6,182,212,0.3); padding-left: 7px; }
+    .pipeline-card-actions { display: flex; }
+    .pipeline-move-btn { display: flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 600; color: var(--muted); background: none; border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; cursor: pointer; transition: color 0.15s, border-color 0.15s; font-family: 'Inter', sans-serif; }
+    .pipeline-move-btn:hover { color: var(--accent); border-color: rgba(6,182,212,0.4); }
   </style>
 </head>
 <body>
@@ -584,6 +621,21 @@
   <!-- ═══ VUE PERFORMANCE ═══ -->
   <div id="view-performance" style="display:none">
     <div id="perf-body"></div>
+  </div>
+
+  <!-- ═══ VUE SAUVEGARDÉS ═══ -->
+  <div id="view-saved" style="display:none">
+    <div id="saved-body"></div>
+  </div>
+
+  <!-- ═══ VUE PLATEFORME PRIVÉE ═══ -->
+  <div id="view-private" style="display:none">
+    <div id="private-body"></div>
+  </div>
+
+  <!-- ═══ VUE À CONTACTER ═══ -->
+  <div id="view-contact" style="display:none">
+    <div id="contact-body"></div>
   </div>
 
   <!-- ═══ VUE PROSPECTS (défaut) ═══ -->
@@ -2560,8 +2612,8 @@ const NAV_TITLES = {
   replies:     'Réponses',
   team:        'Équipe',
 };
-const NAV_TAB_MAP = { prospects: 'all', saved: 'saved', private: 'of', contact: 'convert' };
-const SEPARATE_VIEWS = new Set(['home', 'blacklist', 'stats', 'performance', 'reminders', 'replies', 'team']);
+const NAV_TAB_MAP = { prospects: 'all' };
+const SEPARATE_VIEWS = new Set(['home', 'blacklist', 'stats', 'performance', 'reminders', 'replies', 'team', 'saved', 'private', 'contact']);
 
 function navTo(section) {
   // Active state sidebar
@@ -2573,14 +2625,13 @@ function navTo(section) {
   document.getElementById('topbarTitle').textContent = NAV_TITLES[section] || section;
 
   // Show/hide views
-  const allViews = ['home', 'prospects', 'blacklist', 'stats', 'performance', 'reminders', 'replies', 'team', 'scheduled'];
+  const allViews = ['home', 'prospects', 'blacklist', 'stats', 'performance', 'reminders', 'replies', 'team', 'scheduled', 'saved', 'private', 'contact'];
   allViews.forEach(v => {
     const el = document.getElementById(`view-${v}`);
-    if (el) el.style.display = (v === section || (section === 'all' && v === 'prospects')) ? '' : 'none';
+    if (el) el.style.display = (v === section) ? '' : 'none';
   });
 
   if (SEPARATE_VIEWS.has(section)) {
-    // These sections have their own view containers
     document.getElementById(`view-${section}`).style.display = '';
     if (section === 'home')        renderHome();
     if (section === 'blacklist')   renderBlacklist();
@@ -2589,19 +2640,242 @@ function navTo(section) {
     if (section === 'reminders')   renderReminders();
     if (section === 'replies')     renderReplies();
     if (section === 'team')        renderTeam();
+    if (section === 'saved')       renderSaved();
+    if (section === 'private')     renderPrivate();
+    if (section === 'contact')     renderContact();
     return;
   }
 
   // For prospect-based views, show the prospects view
   document.getElementById('view-prospects').style.display = '';
-
-  // Map to tab filter
-  const tab = NAV_TAB_MAP[section] || 'all';
-  activeTab = tab;
-  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
-  const tabBtn = document.querySelector(`.filter-tab[onclick*="'${tab}'"]`);
-  if (tabBtn) tabBtn.classList.add('active');
+  activeTab = 'all';
   renderProspects();
+}
+
+/* ─── SAUVEGARDÉS ─── */
+function renderSaved() {
+  const el = document.getElementById('saved-body');
+  const list = DATA.filter(p => savedSet.has(p.id));
+  const count = list.length;
+
+  if (!count) {
+    el.innerHTML = `
+      <div class="page-header">
+        <div>
+          <div class="page-eyebrow">SCOUTING</div>
+          <h1 class="page-title">Sauvegardés</h1>
+        </div>
+      </div>
+      <div class="analytics-section">
+        <div class="empty-state">
+          <div class="empty-icon">🔖</div>
+          <div class="empty-title">Aucun profil sauvegardé</div>
+          <div class="empty-sub">Clique sur l'icône marque-page sur un prospect pour le retrouver ici</div>
+        </div>
+      </div>`;
+    return;
+  }
+
+  el.innerHTML = `
+    <div class="page-header">
+      <div>
+        <div class="page-eyebrow">SCOUTING</div>
+        <h1 class="page-title">Sauvegardés <span class="page-count">${count}</span></h1>
+        <p class="page-desc">Profils mis de côté pour y revenir plus tard.</p>
+      </div>
+      <button class="btn btn-primary" onclick="navTo('prospects')">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        Tous les prospects
+      </button>
+    </div>
+    <div class="saved-grid">
+      ${list.map(p => {
+        const cl = sc(p.score);
+        const note = p.note || '';
+        return `
+        <div class="saved-card" onclick="openProspect('${p.id}')">
+          <div class="saved-card-top">
+            <div class="saved-avatar">${avatarHTML(p.handle, p.platform, 48)}</div>
+            <div class="saved-info">
+              <div class="saved-handle"><span class="platform-dot dot-${p.platform}"></span>${p.handle}</div>
+              <div class="saved-name">${p.name}</div>
+              <div style="font-size:11px;color:var(--muted);font-family:'Space Mono',monospace;margin-top:2px">${fmt(p.followers)} · ${p.niche||'—'}</div>
+            </div>
+            <div class="saved-score s-${cl}">${p.score}%</div>
+          </div>
+          ${note ? `<div class="saved-note">💬 ${note}</div>` : ''}
+          <div class="saved-footer" onclick="event.stopPropagation()">
+            ${statusBadge(p)}
+            <button class="icon-btn" onclick="openProspect('${p.id}')" title="Voir le profil" style="margin-left:auto">
+              <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+            <button class="icon-btn saved" onclick="toggleSave('${p.id}',this);renderSaved()" title="Retirer des sauvegardés">
+              <svg width="13" height="13" fill="currentColor" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+            </button>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+/* ─── PLATEFORME PRIVÉE ─── */
+function renderPrivate() {
+  const el = document.getElementById('private-body');
+  const list = DATA.filter(p => p.hasOf && (p.status||'').toLowerCase() !== 'blacklistée');
+  const count = list.length;
+
+  if (!count) {
+    el.innerHTML = `
+      <div class="page-header">
+        <div>
+          <div class="page-eyebrow">SCOUTING</div>
+          <h1 class="page-title">Plateforme privée</h1>
+        </div>
+      </div>
+      <div class="analytics-section">
+        <div class="empty-state">
+          <div class="empty-icon">🔒</div>
+          <div class="empty-title">Aucun profil détecté</div>
+          <div class="empty-sub">Lance un scan pour détecter les créatrices sur OF ou MYM</div>
+        </div>
+      </div>`;
+    return;
+  }
+
+  const contacted = list.filter(p => ['contactée','en discussion','signée'].includes((p.status||'').toLowerCase())).length;
+
+  el.innerHTML = `
+    <div class="page-header">
+      <div>
+        <div class="page-eyebrow">SCOUTING</div>
+        <h1 class="page-title">Plateforme privée <span class="page-count">${count}</span></h1>
+        <p class="page-desc">${contacted} contactée${contacted>1?'s':''} · ${count - contacted} à traiter</p>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <div class="prospect-header">
+        <div class="cell" style="flex:2">Profil</div>
+        <div class="cell">Followers</div>
+        <div class="cell">Engagement</div>
+        <div class="cell">Plateforme</div>
+        <div class="cell">Score</div>
+        <div class="cell">Statut</div>
+        <div class="cell" style="min-width:90px"></div>
+      </div>
+      ${list.sort((a,b) => b.score - a.score).map((p,idx) => `
+        <div class="prospect-row row-enter" style="animation-delay:${(idx*0.025).toFixed(3)}s" onclick="openProspect('${p.id}')">
+          <div class="profile-cell" style="flex:2">
+            <div class="avatar">${avatarHTML(p.handle, p.platform)}</div>
+            <div>
+              <div class="profile-handle"><span class="platform-dot dot-${p.platform}"></span>${p.handle}</div>
+              <div class="profile-name">${p.name}</div>
+            </div>
+          </div>
+          <div class="cell cell-mono">${fmt(p.followers)}</div>
+          <div class="cell cell-mono" style="color:var(--yellow)">${p.engagement}%</div>
+          <div class="cell">${privatePlatformBadge(p)}</div>
+          <div class="cell">
+            <div class="score-wrap">
+              <div class="score-bar"><div class="score-fill sf-${sc(p.score)}" style="width:${p.score}%"></div></div>
+              <span class="score-num s-${sc(p.score)}">${p.score}%</span>
+            </div>
+          </div>
+          <div class="cell">${statusBadge(p)}</div>
+          <div class="actions-cell" onclick="event.stopPropagation()">
+            <div class="icon-btn" onclick="openPipelineModal('${p.id}','${(p.status||'').toLowerCase()}')" title="Changer statut">
+              <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+            </div>
+            <div class="icon-btn" onclick="openNoteModal('${p.id}','${(p.note||'').replace(/'/g,"\\'")}');" title="Note">
+              <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </div>
+            <div class="icon-btn" onclick="openProspect('${p.id}')" title="Détail">
+              <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </div>
+          </div>
+        </div>`).join('')}
+    </div>`;
+}
+
+/* ─── À CONTACTER ─── */
+const PIPELINE_COLS = [
+  { key: 'à contacter', label: 'À contacter', color: 'var(--accent)', icon: '📬' },
+  { key: 'contactée',   label: 'Contactée',   color: 'var(--yellow)', icon: '✉️' },
+  { key: 'en discussion', label: 'En discussion', color: '#8b5cf6', icon: '💬' },
+  { key: 'signée',      label: 'Signée',      color: 'var(--green)', icon: '✅' },
+  { key: 'refus',       label: 'Refus',       color: 'var(--accent2)', icon: '❌' },
+];
+
+function renderContact() {
+  const el = document.getElementById('contact-body');
+  const eligible = DATA.filter(p => !p.hasOf && (p.status||'').toLowerCase() !== 'blacklistée');
+  const total = eligible.length;
+
+  if (!total) {
+    el.innerHTML = `
+      <div class="page-header">
+        <div>
+          <div class="page-eyebrow">SCOUTING</div>
+          <h1 class="page-title">À contacter</h1>
+        </div>
+      </div>
+      <div class="analytics-section">
+        <div class="empty-state">
+          <div class="empty-icon">📬</div>
+          <div class="empty-title">Aucun prospect à contacter</div>
+          <div class="empty-sub">Lance un scan pour trouver des créatrices sans plateforme privée</div>
+        </div>
+      </div>`;
+    return;
+  }
+
+  const signed = eligible.filter(p => (p.status||'').toLowerCase() === 'signée').length;
+
+  el.innerHTML = `
+    <div class="page-header">
+      <div>
+        <div class="page-eyebrow">SCOUTING</div>
+        <h1 class="page-title">Pipeline <span class="page-count">${total}</span></h1>
+        <p class="page-desc">${signed} signée${signed>1?'s':''} · Suivi de tes prospects sans plateforme détectée</p>
+      </div>
+    </div>
+    <div class="pipeline-board">
+      ${PIPELINE_COLS.map(col => {
+        const colList = eligible.filter(p => {
+          const s = (p.status||'').toLowerCase();
+          if (col.key === 'à contacter') return !s || s === 'à contacter';
+          return s === col.key;
+        });
+        return `
+        <div class="pipeline-col">
+          <div class="pipeline-col-header">
+            <span class="pipeline-col-icon">${col.icon}</span>
+            <span class="pipeline-col-label" style="color:${col.color}">${col.label}</span>
+            <span class="pipeline-col-count">${colList.length}</span>
+          </div>
+          <div class="pipeline-col-body">
+            ${colList.length === 0 ? `<div class="pipeline-empty">Aucun</div>` : ''}
+            ${colList.sort((a,b) => b.score - a.score).map(p => `
+              <div class="pipeline-card" onclick="openProspect('${p.id}')">
+                <div class="pipeline-card-top">
+                  <div class="avatar" style="width:32px;height:32px;font-size:11px;flex-shrink:0">${avatarHTML(p.handle, p.platform, 32)}</div>
+                  <div style="flex:1;min-width:0">
+                    <div class="profile-handle" style="font-size:12px"><span class="platform-dot dot-${p.platform}"></span>${p.handle}</div>
+                    <div class="profile-name" style="font-size:11px">${p.name}</div>
+                  </div>
+                  <span class="score-num s-${sc(p.score)}" style="font-size:11px;font-family:'Space Mono',monospace">${p.score}%</span>
+                </div>
+                ${p.note ? `<div class="pipeline-note">${p.note}</div>` : ''}
+                <div class="pipeline-card-actions" onclick="event.stopPropagation()">
+                  <button class="pipeline-move-btn" onclick="openPipelineModal('${p.id}','${(p.status||'').toLowerCase()}');setTimeout(renderContact,300)" title="Changer statut">
+                    <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                    Changer statut
+                  </button>
+                </div>
+              </div>`).join('')}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
 }
 
 /* ─── BLACKLIST ─── */
