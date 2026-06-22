@@ -2,6 +2,18 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'none';
+    script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://accounts.google.com;
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+    font-src https://fonts.gstatic.com;
+    connect-src https://nsvrkogwmzrbjrtbphpb.supabase.co wss://nsvrkogwmzrbjrtbphpb.supabase.co https://spottedof-worker.businessflymagency.workers.dev https://accounts.google.com https://www.googleapis.com;
+    img-src 'self' data: https:;
+    frame-src 'none';
+    object-src 'none';
+    base-uri 'self';
+    form-action 'self'
+  ">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SpottedOF — Prospect Dashboard</title>

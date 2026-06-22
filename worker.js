@@ -10,6 +10,58 @@ const CORS = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
 
+// ─── RATE LIMITING ───────────────────────────────────────────────────────────
+// Limites par IP et par fenêtre glissante d'1 heure
+const RATE_LIMITS = {
+  '/find-email':   { max: 30,  windowSec: 3600 }, // 30 req/h — extraction email
+  '/scan-similar': { max: 10,  windowSec: 3600 }, // 10 scans/h — appels Apify coûteux
+  '/delete-user':  { max: 5,   windowSec: 3600 }, // 5 suppressions/h — action destructrice
+  '/score-profiles': { max: 20, windowSec: 3600 }, // 20 req/h
+};
+
+async function checkRateLimit(env, ip, path) {
+  // Si KV non configuré, on passe sans bloquer
+  if (!env.RATE_LIMIT) return null;
+
+  const limit = RATE_LIMITS[path];
+  if (!limit) return null;
+
+  const key = `rl:${path}:${ip}`;
+  const now = Math.floor(Date.now() / 1000);
+  const windowStart = now - limit.windowSec;
+
+  // Récupérer le compteur actuel depuis KV
+  let data;
+  try {
+    const raw = await env.RATE_LIMIT.get(key, { type: 'json' });
+    data = raw && raw.ts > windowStart ? raw : { count: 0, ts: now };
+  } catch {
+    data = { count: 0, ts: now };
+  }
+
+  data.count += 1;
+  // Stocker avec TTL = durée de fenêtre
+  try {
+    await env.RATE_LIMIT.put(key, JSON.stringify(data), { expirationTtl: limit.windowSec });
+  } catch { /* KV write error, ne pas bloquer */ }
+
+  if (data.count > limit.max) {
+    const retryAfter = limit.windowSec - (now - data.ts);
+    return new Response(JSON.stringify({
+      error: 'Trop de requêtes. Réessaie dans quelques minutes.',
+      retry_after: Math.max(retryAfter, 60),
+    }), {
+      status: 429,
+      headers: {
+        'Content-Type': 'application/json',
+        'Retry-After': String(Math.max(retryAfter, 60)),
+        ...CORS,
+      },
+    });
+  }
+  return null;
+}
+
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
@@ -221,6 +273,11 @@ export default {
 
     const url = new URL(request.url);
     const path = url.pathname;
+
+    // ── Rate limiting ──────────────────────────────────────────────────────────
+    const ip = request.headers.get('CF-Connecting-IP') || request.headers.get('X-Forwarded-For') || 'unknown';
+    const rateLimitResponse = await checkRateLimit(env, ip, path);
+    if (rateLimitResponse) return rateLimitResponse;
 
     // POST /score-profiles
     // Body: { profiles: [...], scan_source: "@handle" }

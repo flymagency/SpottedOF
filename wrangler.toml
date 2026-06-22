@@ -7,3 +7,10 @@ AIRTABLE_BASE_ID = "appLemJayGiYhfsI1"
 
 # AIRTABLE_TOKEN doit être ajouté comme secret :
 # wrangler secret put AIRTABLE_TOKEN
+
+# KV Namespace pour le rate limiting
+# Créer avec : wrangler kv namespace create RATE_LIMIT
+# Puis remplacer VOTRE_KV_ID ci-dessous par l'id retourné
+[[kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "VOTRE_KV_ID"
