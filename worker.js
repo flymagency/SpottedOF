@@ -566,24 +566,23 @@ export default {
 
       try {
         if (platform === 'ig' || platform === 'instagram') {
-          // Phase 1 : récupérer les comptes qui mentionnent @handle (même niche)
-          // resultsType 'following' a été supprimé par Apify — on utilise 'mentions'
-          const mentionsRunId = await apifyStartRun('apify~instagram-scraper', {
-            directUrls: [`https://www.instagram.com/${handle}/`],
-            resultsType: 'mentions',
-            resultsLimit: Math.min(resultsLimit * 3, 300),
+          // Phase 1 : récupérer les following du compte de référence
+          // Utilise l'acteur dédié (apify/instagram-scraper a supprimé resultsType:'following')
+          const followingRunId = await apifyStartRun('apify~instagram-following-scraper', {
+            username: handle,
+            resultsLimit: Math.min(resultsLimit, 200),
           }, APIFY_TOKEN);
 
           return json({
             success: true,
-            run_id: mentionsRunId,
+            run_id: followingRunId,
             phase: 1,
             handle,
             platform,
             results_limit: resultsLimit,
             min_score: minScore,
             status: 'RUNNING',
-            message: `Phase 1/2 — recherche de comptes similaires à @${handle}…`,
+            message: `Phase 1/2 — récupération des abonnements de @${handle}…`,
           });
         }
 
@@ -657,22 +656,21 @@ export default {
       );
       const items = await itemsRes.json();
 
-      // ── PHASE 1 (IG) : mentions → extraire les auteurs → lancer scrape de détails ──
+      // ── PHASE 1 (IG) : following list → extraire usernames → lancer scrape de détails ──
       if (phase === 1 && (platform === 'ig' || platform === 'instagram')) {
         if (!Array.isArray(items) || items.length === 0) {
-          return json({ done: true, error: `Aucune mention trouvée pour @${handle}. Essaie un compte plus actif.` });
+          return json({ done: true, error: `Aucun abonnement trouvé pour @${handle}. Compte privé ou inexistant ?` });
         }
 
-        // Extraire les usernames des auteurs des posts qui mentionnent @handle
-        const seen = new Set();
+        // L'acteur instagram-following-scraper retourne { username, fullName, isPrivate, ... }
+        const seen = new Set([handle.toLowerCase()]);
         const usernames = items
-          .map(p => p.ownerUsername || p.username || p.ownerId)
-          .filter(u => u && typeof u === 'string' && u.toLowerCase() !== handle.toLowerCase())
-          .filter(u => { if (seen.has(u)) return false; seen.add(u); return true; })
+          .map(p => p.username || p.login)
+          .filter(u => u && typeof u === 'string' && !seen.has(u.toLowerCase()) && seen.add(u.toLowerCase()))
           .slice(0, Math.min(resultsLimit, 200));
 
         if (usernames.length === 0) {
-          return json({ done: true, error: `Impossible d'extraire des profils depuis les mentions de @${handle}.` });
+          return json({ done: true, error: `Tous les abonnements de @${handle} sont des comptes privés ou inaccessibles.` });
         }
 
         // Phase 2 : scraper les détails complets de ces profils
