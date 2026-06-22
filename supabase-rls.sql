@@ -24,21 +24,13 @@ DROP POLICY IF EXISTS "profiles_select_own"  ON profiles;
 DROP POLICY IF EXISTS "profiles_update_own"  ON profiles;
 DROP POLICY IF EXISTS "profiles_admin_all"   ON profiles;
 
+-- Chaque utilisateur lit/modifie uniquement son propre profil
+-- La page admin utilise la service key (bypass RLS) donc pas besoin de politique admin ici
 CREATE POLICY "profiles_select_own" ON profiles
   FOR SELECT USING (auth.uid() = id);
 
 CREATE POLICY "profiles_update_own" ON profiles
   FOR UPDATE USING (auth.uid() = id);
-
--- Admin peut tout lire (pour la page admin)
-CREATE POLICY "profiles_admin_all" ON profiles
-  FOR ALL USING (
-    EXISTS (
-      SELECT 1 FROM profiles p
-      WHERE p.id = auth.uid()
-      AND p.plan IN ('admin', 'superadmin')
-    )
-  );
 
 -- ============================================================
 -- TABLE : tickets
