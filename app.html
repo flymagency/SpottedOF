@@ -2684,7 +2684,7 @@ function renderHome() {
     </div>
 
     <!-- PANELS BAS -->
-    <div class="home-bottom">
+    <div class="home-bottom" style="grid-template-columns:1fr 1fr 1fr">
       <!-- Scans 7 prochains jours -->
       <div class="home-panel">
         <div class="home-panel-head">
@@ -2742,6 +2742,28 @@ function renderHome() {
               <svg width="14" height="14" fill="none" stroke="var(--pink)" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             </div>
             Mon équipe
+          </button>
+          <button class="home-quick-btn" onclick="window.location.href='plan.html#support'">
+            <div class="home-quick-icon" style="background:rgba(152,152,168,0.1)">
+              <svg width="14" height="14" fill="none" stroke="var(--muted)" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            Contacter le support
+          </button>
+        </div>
+      </div>
+      <!-- Support -->
+      <div class="home-panel">
+        <div class="home-panel-head">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Support
+        </div>
+        <div class="home-panel-body" style="padding:20px">
+          <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:16px">
+            <strong style="color:var(--text)">Un problème ou une question ?</strong><br>
+            On répond sous 24h.
+          </div>
+          <button onclick="openTicketModal()" class="btn btn-primary" style="width:100%;justify-content:center">
+            ✉️ Nous contacter
           </button>
         </div>
       </div>
@@ -4953,6 +4975,83 @@ window.launchScan = async function() {
     await saveScheduledScan(refHandle, platform, {});
   }
 };
+
+// ─── SUPPORT TICKET ───────────────────────────────────────────────────────────
+function openTicketModal() {
+  document.getElementById('ticketOverlay').style.display = 'flex';
+  document.getElementById('ticketSuccess').style.display = 'none';
+  document.getElementById('ticketForm').style.display = 'block';
+  document.getElementById('ticketMessage').value = '';
+  document.getElementById('ticketError').style.display = 'none';
+}
+function closeTicketModal() {
+  document.getElementById('ticketOverlay').style.display = 'none';
+}
+async function submitTicket() {
+  const category = document.getElementById('ticketCategory').value;
+  const message = document.getElementById('ticketMessage').value.trim();
+  const btn = document.getElementById('ticketSubmitBtn');
+  const errEl = document.getElementById('ticketError');
+  errEl.style.display = 'none';
+  if (!message) { errEl.textContent = "Décris ton problème avant d'envoyer."; errEl.style.display = 'block'; return; }
+  btn.disabled = true; btn.textContent = 'Envoi...';
+  const { data: prof } = await sb.from('profiles').select('agency_name, plan').eq('id', currentUser.id).single();
+  const { error } = await sb.from('tickets').insert({
+    user_id: currentUser.id,
+    email: currentUser.email,
+    agency_name: prof?.agency_name || '',
+    plan: prof?.plan || 'free',
+    category, message, status: 'open',
+  });
+  if (error) {
+    errEl.textContent = "Erreur lors de l'envoi. Réessaie."; errEl.style.display = 'block';
+    btn.disabled = false; btn.textContent = 'Envoyer la demande'; return;
+  }
+  document.getElementById('ticketForm').style.display = 'none';
+  document.getElementById('ticketSuccess').style.display = 'block';
+  btn.disabled = false; btn.textContent = 'Envoyer la demande';
+}
 </script>
+
+<!-- MODAL TICKET SUPPORT -->
+<div id="ticketOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);backdrop-filter:blur(6px);z-index:500;align-items:center;justify-content:center;padding:24px">
+  <div style="background:var(--surface);border:1px solid var(--border-light);border-radius:20px;padding:32px;max-width:480px;width:100%">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
+      <div>
+        <div style="font-size:16px;font-weight:700">🎫 Contacter le support</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:3px;font-family:'Space Mono',monospace">On répond sous 24h</div>
+      </div>
+      <button onclick="closeTicketModal()" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer">✕</button>
+    </div>
+    <div id="ticketSuccess" style="display:none;text-align:center;padding:20px 0">
+      <div style="font-size:48px;margin-bottom:12px">✅</div>
+      <div style="font-size:16px;font-weight:700;margin-bottom:6px">Demande envoyée !</div>
+      <div style="font-size:13px;color:var(--muted)">On revient vers toi sous 24h.</div>
+      <button onclick="closeTicketModal()" style="margin-top:20px;background:var(--accent);color:white;border:none;padding:11px 24px;border-radius:10px;font-size:14px;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer">Fermer</button>
+    </div>
+    <div id="ticketForm">
+      <div style="margin-bottom:16px">
+        <label style="font-size:11px;color:var(--muted);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:0.08em;display:block;margin-bottom:8px">Type de problème</label>
+        <select id="ticketCategory" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:'Inter',sans-serif;font-size:14px;outline:none;cursor:pointer">
+          <option value="paiement">💳 Problème de paiement</option>
+          <option value="compte">🔐 Problème de compte / connexion</option>
+          <option value="bug">🐛 Bug technique</option>
+          <option value="fonctionnalite">✨ Demande de fonctionnalité</option>
+          <option value="upgrade">⬆️ Changer de plan</option>
+          <option value="autre">💬 Autre</option>
+        </select>
+      </div>
+      <div style="margin-bottom:20px">
+        <label style="font-size:11px;color:var(--muted);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:0.08em;display:block;margin-bottom:8px">Décris ton problème</label>
+        <textarea id="ticketMessage" rows="5" placeholder="Explique-nous le problème en détail..." style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:'Inter',sans-serif;font-size:14px;outline:none;resize:vertical;line-height:1.6"></textarea>
+      </div>
+      <div id="ticketError" style="display:none;background:rgba(240,67,108,0.1);border:1px solid rgba(240,67,108,0.25);color:#F0436C;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:14px"></div>
+      <div style="display:flex;gap:10px">
+        <button onclick="submitTicket()" id="ticketSubmitBtn" style="flex:1;background:var(--accent);color:white;border:none;padding:13px;border-radius:12px;font-size:14px;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer">Envoyer la demande</button>
+        <button onclick="closeTicketModal()" style="background:var(--surface2);color:var(--muted);border:1px solid var(--border);padding:13px 16px;border-radius:12px;font-size:14px;font-family:'Inter',sans-serif;cursor:pointer">Annuler</button>
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 </html>
