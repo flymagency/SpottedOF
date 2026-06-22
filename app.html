@@ -275,13 +275,66 @@
     .plan-lock-title { font-size: 15px; font-weight: 700; }
     .plan-lock-sub { font-size: 13px; color: var(--muted); }
 
+    /* ─── HAMBURGER BUTTON ─── */
+    .hamburger-btn {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 36px; height: 36px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    /* Overlay backdrop mobile */
+    .sidebar-backdrop {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 49;
+      backdrop-filter: blur(2px);
+    }
+    .sidebar-backdrop.open { display: block; }
+
     @media (max-width: 900px) {
-      .sidebar { display: none; }
+      /* Sidebar cachée par défaut, slide-in quand .open */
+      .sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
+        z-index: 50;
+      }
+      .sidebar.open { transform: translateX(0); }
+
       .main-area { margin-left: 0; }
+      .hamburger-btn { display: flex; }
+
+      /* Topbar adaptée mobile */
+      .topbar { padding: 0 14px; gap: 10px; }
+      .topbar-title { font-size: 14px; }
+
+      /* Grilles */
       .stats-row { grid-template-columns: 1fr 1fr; }
       .table-head, .prospect-row { grid-template-columns: 2fr 1fr 1fr 100px; }
       .th:nth-child(3),.th:nth-child(4),.th:nth-child(5),
       .prospect-row>*:nth-child(3),.prospect-row>*:nth-child(4),.prospect-row>*:nth-child(5) { display: none; }
+
+      /* Cards & contenu */
+      .saved-grid { grid-template-columns: 1fr; }
+      .pipeline-board { gap: 12px; }
+      .pipeline-col { min-width: 260px; }
+      .home-kpi-grid { grid-template-columns: 1fr 1fr; }
+      .home-widgets-row { grid-template-columns: 1fr; }
+      .modal-inner { width: calc(100vw - 24px); max-height: 90vh; border-radius: 16px; }
+      .drawer { width: 100vw; border-radius: 16px 16px 0 0; bottom: 0; top: auto; right: 0; height: 85vh; }
+      .page-header { padding: 18px 16px 14px; flex-direction: column; align-items: flex-start; }
+      .view-body, .analytics-section { padding: 16px; }
+    }
+
+    @media (max-width: 480px) {
+      .stats-row { grid-template-columns: 1fr; }
+      .home-kpi-grid { grid-template-columns: 1fr 1fr; }
+      .topbar-right button[style*="PDF"], .topbar-right label[style*="Import"] { display: none; }
     }
 
     /* ─── HOME VIEW ─── */
@@ -446,7 +499,8 @@
 <body>
 
 <!-- ═══ SIDEBAR ═══ -->
-<aside class="sidebar">
+<div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeMobileSidebar()"></div>
+<aside class="sidebar" id="mainSidebar">
   <div class="sidebar-logo">
     <div class="logo-icon">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 34 34" width="34" height="34">
@@ -567,6 +621,11 @@
   <!-- TOPBAR -->
   <div class="topbar">
     <div class="topbar-left">
+      <button class="hamburger-btn" onclick="toggleMobileSidebar()" aria-label="Menu">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
       <div class="topbar-title" id="topbarTitle">Prospects</div>
     </div>
     <div class="topbar-right">
@@ -2669,7 +2728,18 @@ const NAV_TITLES = {
 const NAV_TAB_MAP = { prospects: 'all' };
 const SEPARATE_VIEWS = new Set(['home', 'blacklist', 'stats', 'performance', 'reminders', 'replies', 'team', 'saved', 'private', 'contact']);
 
+function toggleMobileSidebar() {
+  document.getElementById('mainSidebar').classList.toggle('open');
+  document.getElementById('sidebarBackdrop').classList.toggle('open');
+}
+function closeMobileSidebar() {
+  document.getElementById('mainSidebar').classList.remove('open');
+  document.getElementById('sidebarBackdrop').classList.remove('open');
+}
+
 function navTo(section) {
+  closeMobileSidebar(); // Ferme la sidebar mobile à chaque navigation
+
   // Active state sidebar
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
   const btn = document.getElementById(`nav-${section}`);
