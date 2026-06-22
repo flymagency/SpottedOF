@@ -566,23 +566,24 @@ export default {
 
       try {
         if (platform === 'ig' || platform === 'instagram') {
-          // Phase 1 : récupérer la liste des following via l'acteur officiel Apify
-          const followingRunId = await apifyStartRun('apify~instagram-scraper', {
+          // Phase 1 : récupérer les comptes qui mentionnent @handle (même niche)
+          // resultsType 'following' a été supprimé par Apify — on utilise 'mentions'
+          const mentionsRunId = await apifyStartRun('apify~instagram-scraper', {
             directUrls: [`https://www.instagram.com/${handle}/`],
-            resultsType: 'following',
-            resultsLimit: Math.min(resultsLimit, 200),
+            resultsType: 'mentions',
+            resultsLimit: Math.min(resultsLimit * 3, 300),
           }, APIFY_TOKEN);
 
           return json({
             success: true,
-            run_id: followingRunId,
-            phase: 1, // phase 1 → on extraira les usernames → phase 2 = détails complets
+            run_id: mentionsRunId,
+            phase: 1,
             handle,
             platform,
             results_limit: resultsLimit,
             min_score: minScore,
             status: 'RUNNING',
-            message: `Phase 1/2 — récupération des abonnements de @${handle}…`,
+            message: `Phase 1/2 — recherche de comptes similaires à @${handle}…`,
           });
         }
 
@@ -656,20 +657,22 @@ export default {
       );
       const items = await itemsRes.json();
 
-      // ── PHASE 1 (IG) : following list → extraire usernames → lancer scrape de détails ──
+      // ── PHASE 1 (IG) : mentions → extraire les auteurs → lancer scrape de détails ──
       if (phase === 1 && (platform === 'ig' || platform === 'instagram')) {
         if (!Array.isArray(items) || items.length === 0) {
-          return json({ done: true, error: `Aucun abonnement trouvé pour @${handle}. Compte privé ou inexistant ?` });
+          return json({ done: true, error: `Aucune mention trouvée pour @${handle}. Essaie un compte plus actif.` });
         }
 
-        // Extraire les usernames (on exclut les privés et le compte de référence)
+        // Extraire les usernames des auteurs des posts qui mentionnent @handle
+        const seen = new Set();
         const usernames = items
-          .filter(p => p.username && !p.isPrivate && p.username.toLowerCase() !== handle.toLowerCase())
-          .map(p => p.username)
-          .slice(0, Math.min(resultsLimit, 200)); // max 200 profils à détailler
+          .map(p => p.ownerUsername || p.username || p.ownerId)
+          .filter(u => u && typeof u === 'string' && u.toLowerCase() !== handle.toLowerCase())
+          .filter(u => { if (seen.has(u)) return false; seen.add(u); return true; })
+          .slice(0, Math.min(resultsLimit, 200));
 
         if (usernames.length === 0) {
-          return json({ done: true, error: `Tous les abonnements de @${handle} sont des comptes privés.` });
+          return json({ done: true, error: `Impossible d'extraire des profils depuis les mentions de @${handle}.` });
         }
 
         // Phase 2 : scraper les détails complets de ces profils
@@ -684,7 +687,7 @@ export default {
             run_id: phase2RunId,
             total_following: items.length,
             profiles_to_detail: usernames.length,
-            label: `Phase 2/2 — récupération des détails de ${usernames.length} profils…`,
+            label: `Phase 2/2 — analyse de ${usernames.length} profils similaires…`,
           });
         } catch(e) {
           return json({ done: true, error: e.message });
