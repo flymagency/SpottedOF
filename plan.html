@@ -11,8 +11,6 @@
       --bg: #060608; --surface: #0C0C0F; --surface2: #111115; --surface3: #18181D;
       --border: rgba(255,255,255,0.07); --border-light: rgba(255,255,255,0.13);
       --accent: #06B6D4; --accent-light: #22D3EE; --accent-glow: rgba(6,182,212,0.16);
-      --accent2: #F0436C;
-      --green: #1ECA6E; --yellow: #F59E0B; --pink: #F0436C;
       --text: #FFFFFF; --muted: #9898A8; --text-3: #484858;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -24,75 +22,170 @@
         radial-gradient(circle, rgba(255,255,255,0.025) 1px, transparent 1px);
       background-size: 100% 100%, 28px 28px;
     }
-    .container { max-width: 900px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+    .container { max-width: 760px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+    /* ANIMATIONS */
+    @keyframes planCardIn {
+      from { opacity: 0; transform: perspective(700px) translateY(24px) rotateX(10deg); }
+      to   { opacity: 1; transform: perspective(700px) translateY(0) rotateX(0deg); }
+    }
+    .anim-block {
+      opacity: 0;
+      animation: planCardIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .anim-block:nth-child(1) { animation-delay: 0.05s; }
+    .anim-block:nth-child(2) { animation-delay: 0.15s; }
+    .anim-block:nth-child(3) { animation-delay: 0.25s; }
 
     /* HEADER */
-    header { padding: 24px 0 20px; border-bottom: 1px solid var(--border); margin-bottom: 40px; }
+    header { padding: 24px 0 20px; border-bottom: 1px solid var(--border); margin-bottom: 48px; }
     .header-inner { display: flex; align-items: center; justify-content: space-between; }
     .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); }
-    .logo-icon { width: 36px; height: 36px; border-radius: 9px; display: flex; align-items: center; justify-content: center; }
-    .logo-text { font-size: 20px; font-weight: 800; }
+    .logo-text { font-size: 20px; font-weight: 800; font-family: 'Outfit', sans-serif; }
     .logo-text span { color: var(--accent); }
     .btn { padding: 8px 18px; font-size: 13px; border-radius: 10px; font-weight: 700; font-family: 'Inter', sans-serif; cursor: pointer; border: none; transition: all 0.2s; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
     .btn-ghost { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
     .btn-ghost:hover { border-color: var(--accent); color: var(--text); }
-    .btn-primary { background: var(--accent); color: white; }
-    .btn-primary:hover { background: var(--accent-light); }
 
-    /* PAGE TITLE */
-    .page-title { font-size: 26px; font-weight: 700; margin-bottom: 6px; }
-    .page-sub { font-size: 14px; color: var(--muted); margin-bottom: 36px; }
+    /* PAGE HEADER */
+    .page-header { margin-bottom: 32px; }
+    .page-eyebrow { font-size: 11px; font-family: 'Space Mono', monospace; color: var(--accent); text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 8px; }
+    .page-title { font-size: 28px; font-weight: 700; font-family: 'Outfit', sans-serif; }
 
-    /* PLAN ACTUEL */
-    .current-plan-card { border-radius: 20px; padding: 28px 32px; margin-bottom: 32px; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
-    .plan-info { display: flex; align-items: center; gap: 20px; }
-    .plan-icon { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; }
-    .plan-name { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
-    .plan-status { font-size: 12px; font-family: 'Space Mono', monospace; }
-    .plan-price-display { text-align: right; }
-    .plan-price-num { font-size: 32px; font-weight: 800; line-height: 1; }
-    .plan-price-period { font-size: 13px; color: var(--muted); margin-top: 4px; }
+    /* PLAN CARD */
+    .plan-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 32px;
+      margin-bottom: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    .plan-card::before {
+      content: '';
+      position: absolute;
+      top: -60px; right: -60px;
+      width: 240px; height: 240px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(6,182,212,0.12) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .plan-badge-active {
+      position: absolute;
+      top: 20px; right: 20px;
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: rgba(6,182,212,0.1);
+      border: 1px solid rgba(6,182,212,0.25);
+      border-radius: 6px;
+      padding: 4px 10px;
+    }
+    .plan-eyebrow {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      margin-bottom: 10px;
+    }
+    .plan-name {
+      font-family: 'Outfit', sans-serif;
+      font-size: 36px;
+      font-weight: 900;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .plan-price {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 28px;
+    }
 
-    /* USAGE */
-    .section-title { font-size: 14px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-family: 'Space Mono', monospace; margin-bottom: 16px; }
-    .usage-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
-    .usage-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; }
-    .usage-label { font-size: 11px; color: var(--muted); font-family: 'Space Mono', monospace; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
-    .usage-value { font-size: 26px; font-weight: 800; margin-bottom: 8px; }
-    .usage-bar-track { height: 5px; background: var(--surface3); border-radius: 3px; overflow: hidden; }
-    .usage-bar-fill { height: 100%; border-radius: 3px; transition: width 0.8s ease; }
-    .usage-note { font-size: 11px; color: var(--muted); margin-top: 6px; }
+    /* USAGE BARS */
+    .usage-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .usage-item {}
+    .usage-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .usage-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+    }
+    .usage-value {
+      font-family: 'Outfit', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .bar-track { height: 4px; background: var(--surface3); border-radius: 2px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 2px; transition: width 0.9s cubic-bezier(0.22,1,0.36,1); }
 
-    /* FEATURES */
-    .features-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 32px; }
-    .feature-item { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; font-size: 13px; }
-    .feature-item.locked { opacity: 0.4; }
-    .feature-check { font-size: 15px; flex-shrink: 0; }
+    /* UPGRADE CARD */
+    .upgrade-card {
+      background: var(--surface);
+      border: 1px solid rgba(6,182,212,0.18);
+      border-radius: 20px;
+      padding: 32px;
+      margin-bottom: 20px;
+    }
+    .upgrade-eyebrow {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      margin-bottom: 10px;
+    }
+    .upgrade-plan-name {
+      font-family: 'Outfit', sans-serif;
+      font-size: 22px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+    .upgrade-desc {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+    .upgrade-price-row { display: flex; align-items: flex-end; gap: 10px; margin-bottom: 24px; }
+    .upgrade-price {
+      font-family: 'Outfit', sans-serif;
+      font-size: 40px;
+      font-weight: 900;
+      line-height: 1;
+    }
+    .upgrade-period { font-size: 14px; color: var(--muted); margin-bottom: 4px; }
+    .btn-cta {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--accent);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 0 24px rgba(6,182,212,0.3);
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+    .btn-cta:hover { background: var(--accent-light); box-shadow: 0 0 32px rgba(6,182,212,0.45); transform: translateY(-1px); }
 
-    /* UPGRADE */
-    .upgrade-section { background: linear-gradient(135deg, rgba(6,182,212,0.06), rgba(240,67,108,0.04)); border: 1px solid rgba(6,182,212,0.2); border-radius: 20px; padding: 28px 32px; margin-bottom: 32px; }
-    .upgrade-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
-    .upgrade-sub { font-size: 13px; color: var(--muted); margin-bottom: 24px; line-height: 1.6; }
-    .plans-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-    .upgrade-plan { background: var(--surface2); border: 2px solid var(--border); border-radius: 14px; padding: 18px; text-align: center; transition: all 0.2s; cursor: default; }
-    .upgrade-plan.current { border-color: var(--accent); background: rgba(6,182,212,0.07); }
-    .upgrade-plan.available { cursor: pointer; }
-    .upgrade-plan.available:hover { border-color: rgba(6,182,212,0.5); transform: translateY(-2px); }
-    .up-name { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
-    .up-price { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
-    .up-desc { font-size: 11px; color: var(--muted); margin-bottom: 12px; line-height: 1.5; }
-    .up-btn { width: 100%; padding: 9px; border-radius: 8px; font-size: 12px; font-weight: 700; font-family: 'Inter', sans-serif; cursor: pointer; border: none; transition: all 0.2s; }
-    .up-btn-current { background: var(--surface3); color: var(--muted); cursor: default; }
-    .up-btn-upgrade { background: var(--accent); color: white; }
-    .up-btn-upgrade:hover { background: var(--accent-light); }
-
+    /* NOTIFICATION PANEL */
+    .notif-wrap { position: relative; }
+    #notifPanel { display:none; position:absolute; right:0; top:44px; background:var(--surface); border:1px solid var(--border-light); border-radius:16px; width:320px; z-index:200; overflow:hidden; box-shadow:0 8px 32px rgba(0,0,0,0.5); }
 
     @media (max-width: 600px) {
       .usage-grid { grid-template-columns: 1fr; }
-      .features-grid { grid-template-columns: 1fr; }
-      .plans-row { grid-template-columns: 1fr; }
-      .current-plan-card { flex-direction: column; align-items: flex-start; }
-      .plan-price-display { text-align: left; }
+      .plan-name { font-size: 28px; }
     }
   </style>
 </head>
@@ -101,7 +194,7 @@
   <header>
     <div class="header-inner">
       <a href="app.html" class="logo">
-        <div class="logo-icon" style="background:none;padding:0;overflow:visible">
+        <div style="width:36px;height:36px;flex-shrink:0">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" width="36" height="36">
             <defs><linearGradient id="lg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#06B6D4"/><stop offset="100%" style="stop-color:#F0436C"/></linearGradient></defs>
             <rect width="36" height="36" rx="9" fill="#0C0C0F"/>
@@ -117,13 +210,12 @@
       </a>
       <div style="display:flex;gap:10px;align-items:center">
         <span id="headerEmail" style="font-family:'Space Mono',monospace;font-size:11px;color:var(--muted)"></span>
-        <!-- CLOCHE NOTIFICATIONS -->
-        <div style="position:relative">
+        <div class="notif-wrap">
           <button id="notifBtn" onclick="toggleNotifPanel()" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;position:relative">
             🔔
             <span id="notifCount" style="display:none;position:absolute;top:-5px;right:-5px;background:#F0436C;color:white;font-size:9px;font-weight:700;font-family:'Space Mono',monospace;min-width:16px;height:16px;border-radius:50%;padding:0 3px;justify-content:center;align-items:center"></span>
           </button>
-          <div id="notifPanel" style="display:none;position:absolute;right:0;top:44px;background:var(--surface);border:1px solid var(--border-light);border-radius:16px;width:320px;z-index:200;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.5)">
+          <div id="notifPanel">
             <div style="padding:14px 16px;border-bottom:1px solid var(--border);font-size:13px;font-weight:700">Notifications</div>
             <div id="notifList" style="max-height:300px;overflow-y:auto"></div>
           </div>
@@ -133,77 +225,53 @@
     </div>
   </header>
 
-  <div class="page-title">Mon plan</div>
-  <div class="page-sub">Gère ton abonnement et suis l'utilisation de ton compte.</div>
+  <div style="display:flex;flex-direction:column;gap:0">
 
-  <!-- PLAN ACTUEL -->
-  <div class="current-plan-card" id="currentPlanCard">
-    <div class="plan-info">
-      <div class="plan-icon" id="planIcon">⏳</div>
-      <div>
-        <div class="plan-name" id="planName">Chargement...</div>
-        <div class="plan-status" id="planStatus"></div>
+    <!-- BLOC 1 : PLAN ACTUEL -->
+    <div class="anim-block">
+      <div class="plan-card" id="planCard">
+        <div class="plan-badge-active" id="planBadge">ACTIF</div>
+        <div class="plan-eyebrow">PLAN ACTUEL</div>
+        <div class="plan-name" id="planName">—</div>
+        <div class="plan-price" id="planPrice"></div>
+        <div class="usage-grid">
+          <div class="usage-item">
+            <div class="usage-header">
+              <span class="usage-label">Scans utilisés</span>
+              <span class="usage-value" id="scansValue">—</span>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill" id="scansBar" style="width:0%;background:var(--accent)"></div>
+            </div>
+          </div>
+          <div class="usage-item">
+            <div class="usage-header">
+              <span class="usage-label">Prospects trouvés</span>
+              <span class="usage-value" id="prospectsValue">—</span>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill" id="prospectsBar" style="width:0%;background:rgba(255,255,255,0.3)"></div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-    <div class="plan-price-display">
-      <div class="plan-price-num" id="planPriceNum">—</div>
-      <div class="plan-price-period" id="planPricePeriod"></div>
+
+    <!-- BLOC 2 : UPGRADE -->
+    <div class="anim-block" id="upgradeBlock" style="display:none">
+      <div class="upgrade-card">
+        <div class="upgrade-eyebrow" id="upgradeEyebrow">PROCHAINE ÉTAPE</div>
+        <div class="upgrade-plan-name" id="upgradeNextName">—</div>
+        <div class="upgrade-desc" id="upgradeNextDesc"></div>
+        <div class="upgrade-price-row">
+          <div class="upgrade-price" id="upgradeNextPrice">—</div>
+          <div class="upgrade-period">/ mois</div>
+        </div>
+        <a id="upgradeBtn" href="#" class="btn-cta">Passer à <span id="upgradeBtnLabel">—</span> →</a>
+      </div>
     </div>
+
   </div>
-
-  <!-- UTILISATION -->
-  <div class="section-title">Utilisation</div>
-  <div class="usage-grid">
-    <div class="usage-card">
-      <div class="usage-label">Prospects</div>
-      <div class="usage-value" id="usageCount">—</div>
-      <div class="usage-bar-track">
-        <div class="usage-bar-fill" id="usageBar" style="width:0%;background:var(--accent)"></div>
-      </div>
-      <div class="usage-note" id="usageNote">— / —</div>
-    </div>
-    <div class="usage-card">
-      <div class="usage-label">Membre depuis</div>
-      <div class="usage-value" id="memberSince" style="font-size:18px;margin-top:6px">—</div>
-      <div class="usage-note" id="memberDays"></div>
-    </div>
-    <div class="usage-card">
-      <div class="usage-label">Statut paiement</div>
-      <div class="usage-value" id="paidStatus" style="font-size:18px;margin-top:6px">—</div>
-      <div class="usage-note" id="paidNote"></div>
-    </div>
-  </div>
-
-  <!-- FEATURES INCLUSES -->
-  <div class="section-title">Fonctionnalités incluses</div>
-  <div class="features-grid" id="featuresList"></div>
-
-  <!-- UPGRADE -->
-  <div class="upgrade-section" id="upgradeSection" style="display:none">
-    <div class="upgrade-title">🚀 Passe à la vitesse supérieure</div>
-    <div class="upgrade-sub">Upgrade ton plan pour débloquer plus de prospects et de fonctionnalités avancées.</div>
-    <div class="plans-row">
-      <div class="upgrade-plan" id="upStarter">
-        <div class="up-name" style="color:#06B6D4">Starter</div>
-        <div class="up-price">70€</div>
-        <div class="up-desc">200 prospects<br>5 langues DM<br>Export CSV</div>
-        <button class="up-btn" id="btnStarter">Plan actuel</button>
-      </div>
-      <div class="upgrade-plan" id="upPro">
-        <div class="up-name" style="color:#1ECA6E">Pro</div>
-        <div class="up-price">100€</div>
-        <div class="up-desc">Prospects illimités<br>Stats avancées<br>Notes prospects</div>
-        <button class="up-btn" id="btnPro">Choisir Pro</button>
-      </div>
-      <div class="upgrade-plan" id="upAgency">
-        <div class="up-name" style="color:#F0436C">Agency</div>
-        <div class="up-price">200€</div>
-        <div class="up-desc">Tout le Pro<br>Multi-utilisateurs<br>Support 24/7</div>
-        <button class="up-btn" id="btnAgency">Choisir Agency</button>
-      </div>
-    </div>
-  </div>
-
 </div>
 
 <script>
@@ -213,55 +281,25 @@ const WORKER = 'https://spottedof-worker.businessflymagency.workers.dev';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const PLANS = {
-  starter: { name: 'Starter', price: '70€', period: '/mois', color: '#06B6D4', icon: '⚡', limit: 200 },
-  pro:     { name: 'Pro',     price: '100€', period: '/mois', color: '#1ECA6E', icon: '🚀', limit: Infinity },
-  agency:  { name: 'Agency',  price: '200€', period: '/mois', color: '#F0436C', icon: '🏢', limit: Infinity },
-  admin:   { name: 'Admin',   price: '—',    period: '',      color: '#F59E0B', icon: '⚙️', limit: Infinity },
+  starter: { name: 'Starter', price: '49€', period: '49€ / mois', limit: 200 },
+  pro:     { name: 'Pro',     price: '99€', period: '99€ / mois', limit: Infinity },
+  agency:  { name: 'Agency',  price: '199€', period: '199€ / mois', limit: Infinity },
+  admin:   { name: 'Admin',   price: '—',   period: '—',           limit: Infinity },
 };
 
-const FEATURES = {
-  starter: [
-    { label: '200 prospects maximum',       ok: true },
-    { label: 'Score automatique 0–100%',    ok: true },
-    { label: 'Dashboard complet',           ok: true },
-    { label: 'Templates DM 5 langues',      ok: true },
-    { label: 'Export CSV',                  ok: true },
-    { label: 'Pipeline de statuts',         ok: true },
-    { label: 'Notes sur les prospects',     ok: true },
-    { label: 'Statistiques avancées',       ok: false },
-    { label: 'Prospects illimités',         ok: false },
-    { label: 'Support prioritaire',         ok: false },
-  ],
-  pro: [
-    { label: 'Prospects illimités',         ok: true },
-    { label: 'Score automatique 0–100%',    ok: true },
-    { label: 'Dashboard complet',           ok: true },
-    { label: 'Templates DM 5 langues',      ok: true },
-    { label: 'Export CSV',                  ok: true },
-    { label: 'Pipeline de statuts',         ok: true },
-    { label: 'Notes sur les prospects',     ok: true },
-    { label: 'Statistiques avancées',       ok: true },
-    { label: 'Cross-platform finder',       ok: true },
-    { label: 'Support prioritaire',         ok: false },
-  ],
-  agency: [
-    { label: 'Prospects illimités',         ok: true },
-    { label: 'Tout le plan Pro',            ok: true },
-    { label: 'Multi-utilisateurs',          ok: true },
-    { label: 'Support prioritaire 24/7',    ok: true },
-    { label: 'Onboarding personnalisé',     ok: true },
-    { label: 'Accès anticipé nouvelles features', ok: true },
-    { label: 'Statistiques avancées',       ok: true },
-    { label: 'Export CSV illimité',         ok: true },
-    { label: 'Notes sur les prospects',     ok: true },
-    { label: 'Pipeline de statuts',         ok: true },
-  ],
-  admin: [
-    { label: 'Accès total',                 ok: true },
-    { label: 'Panel d\'administration',     ok: true },
-    { label: 'Prospects illimités',         ok: true },
-    { label: 'Toutes les fonctionnalités',  ok: true },
-  ],
+const UPGRADE_NEXT = {
+  starter: {
+    next: 'pro',
+    name: 'Pro',
+    price: '99€',
+    desc: 'Prospects illimités, statistiques avancées, notes prospects et cross-platform finder.',
+  },
+  pro: {
+    next: 'agency',
+    name: 'Agency',
+    price: '199€',
+    desc: 'Tout le plan Pro, multi-utilisateurs, support prioritaire 24/7 et onboarding personnalisé.',
+  },
 };
 
 sb.auth.getSession().then(async ({ data }) => {
@@ -269,86 +307,71 @@ sb.auth.getSession().then(async ({ data }) => {
   const user = data.session.user;
   document.getElementById('headerEmail').textContent = user.email;
 
-
   const { data: profile } = await sb.from('profiles').select('*').eq('id', user.id).single();
   const plan = (profile?.plan || 'starter').toLowerCase();
   const paid = profile?.paid || false;
-  const createdAt = profile?.created_at || user.created_at;
 
-  renderPlan(plan, paid, createdAt);
+  renderPlan(plan, paid);
   await renderUsage(plan);
-  renderFeatures(plan);
-  renderUpgrade(plan, paid);
-  loadNotifications(); // charger les notifs après avoir le user
+  renderUpgrade(plan);
+  loadNotifications();
 });
 
-function renderPlan(plan, paid, createdAt) {
+function renderPlan(plan, paid) {
   const p = PLANS[plan] || PLANS.starter;
-  const card = document.getElementById('currentPlanCard');
-
-  // Couleur de la carte
-  card.style.background = `linear-gradient(135deg, ${p.color}10, var(--surface))`;
-  card.style.border = `1px solid ${p.color}30`;
-
-  document.getElementById('planIcon').textContent = p.icon;
-  document.getElementById('planIcon').style.background = `${p.color}18`;
   document.getElementById('planName').textContent = p.name;
-  document.getElementById('planName').style.color = p.color;
-  document.getElementById('planPriceNum').textContent = p.price;
-  document.getElementById('planPriceNum').style.color = p.color;
-  document.getElementById('planPricePeriod').textContent = p.period;
+  document.getElementById('planPrice').textContent = plan !== 'admin' ? p.period : '';
 
+  const badge = document.getElementById('planBadge');
   if (paid || plan === 'admin') {
-    document.getElementById('planStatus').innerHTML = `<span style="color:#1ECA6E">✓ Actif</span>`;
+    badge.textContent = 'ACTIF';
+    badge.style.color = 'var(--accent)';
+    badge.style.background = 'rgba(6,182,212,0.1)';
+    badge.style.borderColor = 'rgba(6,182,212,0.25)';
   } else {
-    document.getElementById('planStatus').innerHTML = `<span style="color:#F0436C">⚠ Non activé — Contacte-nous pour activer</span>`;
+    badge.textContent = 'EN ATTENTE';
+    badge.style.color = '#F0436C';
+    badge.style.background = 'rgba(240,67,108,0.1)';
+    badge.style.borderColor = 'rgba(240,67,108,0.25)';
   }
 }
 
 async function renderUsage(plan) {
   const limit = PLANS[plan]?.limit || 200;
 
-  // Charger le nombre de prospects depuis le Worker
   try {
     const res = await fetch(`${WORKER}/stats`);
     const stats = await res.json();
-    const count = stats.total || 0;
-    const pct = limit === Infinity ? 0 : Math.min(100, Math.round(count / limit * 100));
+    const total = stats.total || 0;
+    const scans = stats.scans || total; // fallback to total if no scans key
 
-    document.getElementById('usageCount').textContent = count;
-    document.getElementById('usageBar').style.width = limit === Infinity ? '8%' : `${pct}%`;
-    document.getElementById('usageBar').style.background = pct > 80 ? '#F0436C' : pct > 60 ? '#F59E0B' : '#06B6D4';
-    document.getElementById('usageNote').textContent = limit === Infinity ? `${count} prospects · Illimité` : `${count} / ${limit} prospects`;
+    const scanPct = limit === Infinity ? 8 : Math.min(100, Math.round(scans / limit * 100));
+    const prospectPct = limit === Infinity ? 8 : Math.min(100, Math.round(total / limit * 100));
+
+    document.getElementById('scansValue').textContent = scans;
+    document.getElementById('scansBar').style.width = `${scanPct}%`;
+
+    document.getElementById('prospectsValue').textContent = total;
+    document.getElementById('prospectsBar').style.width = `${prospectPct}%`;
   } catch(e) {
-    document.getElementById('usageCount').textContent = '—';
+    document.getElementById('scansValue').textContent = '—';
+    document.getElementById('prospectsValue').textContent = '—';
   }
-
-  // Membre depuis
-  const { data: { session } } = await sb.auth.getSession();
-  const created = new Date(session.user.created_at);
-  const days = Math.floor((Date.now() - created) / 86400000);
-  document.getElementById('memberSince').textContent = created.toLocaleDateString('fr-FR', { day:'2-digit', month:'short', year:'numeric' });
-  document.getElementById('memberDays').textContent = `Il y a ${days} jour${days > 1 ? 's' : ''}`;
-
-  // Statut paiement
-  const { data: profile } = await sb.from('profiles').select('paid').eq('id', session.user.id).single();
-  const paid = profile?.paid || false;
-  document.getElementById('paidStatus').textContent = paid || plan === 'admin' ? '✓ Payé' : '✗ En attente';
-  document.getElementById('paidStatus').style.color = paid || plan === 'admin' ? '#1ECA6E' : '#F0436C';
-  document.getElementById('paidNote').textContent = paid ? 'Renouvellement mensuel' : 'Contacte-nous pour activer';
 }
 
-function renderFeatures(plan) {
-  const features = FEATURES[plan] || FEATURES.starter;
-  document.getElementById('featuresList').innerHTML = features.map(f => `
-    <div class="feature-item ${f.ok ? '' : 'locked'}">
-      <span class="feature-check">${f.ok ? '✅' : '🔒'}</span>
-      <span>${f.label}</span>
-    </div>
-  `).join('');
+function renderUpgrade(plan) {
+  if (plan === 'admin' || plan === 'agency') return;
+  const info = UPGRADE_NEXT[plan];
+  if (!info) return;
+
+  document.getElementById('upgradeBlock').style.display = 'block';
+  document.getElementById('upgradeNextName').textContent = info.name;
+  document.getElementById('upgradeNextDesc').textContent = info.desc;
+  document.getElementById('upgradeNextPrice').textContent = info.price;
+  document.getElementById('upgradeBtnLabel').textContent = info.name;
+  document.getElementById('upgradeBtn').href =
+    `mailto:businessflymagency@gmail.com?subject=Upgrade vers ${info.name}&body=Bonjour, je souhaite passer au plan ${info.name} (${info.price}/mois).`;
 }
-
-
 
 /* ─── NOTIFICATIONS ─── */
 const NOTIF_SEEN_KEY = 'spottedof_seen_notifs';
@@ -420,41 +443,12 @@ function toggleNotifPanel() {
   if (!isOpen) _renderNotifPanel();
 }
 
-// Fermer le panel si clic ailleurs
 document.addEventListener('click', e => {
   if (!document.getElementById('notifBtn')?.contains(e.target)) {
     const panel = document.getElementById('notifPanel');
     if (panel) panel.style.display = 'none';
   }
 });
-
-
-function renderUpgrade(plan, paid) {
-  if (plan === 'admin') return;
-  document.getElementById('upgradeSection').style.display = 'block';
-
-  const plans = ['starter', 'pro', 'agency'];
-  plans.forEach(p => {
-    const card = document.getElementById(`up${p.charAt(0).toUpperCase()+p.slice(1)}`);
-    const btn = document.getElementById(`btn${p.charAt(0).toUpperCase()+p.slice(1)}`);
-    if (p === plan) {
-      card.classList.add('current');
-      btn.textContent = '✓ Plan actuel';
-      btn.className = 'up-btn up-btn-current';
-    } else if (plans.indexOf(p) > plans.indexOf(plan)) {
-      card.classList.add('available');
-      btn.textContent = `Passer au ${PLANS[p].name}`;
-      btn.className = 'up-btn up-btn-upgrade';
-      btn.onclick = () => {
-        window.location.href = `mailto:businessflymagency@gmail.com?subject=Upgrade vers ${PLANS[p].name}&body=Bonjour, je souhaite passer au plan ${PLANS[p].name} (${PLANS[p].price}/mois).`;
-      };
-    } else {
-      btn.textContent = 'Plan inférieur';
-      btn.className = 'up-btn up-btn-current';
-    }
-  });
-}
-
 </script>
 </body>
 </html>
