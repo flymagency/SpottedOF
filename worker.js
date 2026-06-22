@@ -950,6 +950,51 @@ export default {
       return json({ success: true, deleted: userId });
     }
 
-    return json({ error: 'Route introuvable', routes: ['POST /score-profiles', 'GET /prospects', 'GET /stats', 'POST /update-status', 'POST /find-email', 'POST /scan-similar', 'GET /scan-poll', 'POST /delete-user'] }, 404);
+    // POST /send-dm
+    // Body: { appId, apiKey, profileId, targetUsername, dmMessage }
+    if (request.method === 'POST' && path === '/send-dm') {
+      let body;
+      try { body = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
+      const { appId, apiKey, profileId, targetUsername, dmMessage } = body;
+      if (!appId || !apiKey || !profileId || !targetUsername || !dmMessage) {
+        return json({ error: 'Champs requis: appId, apiKey, profileId, targetUsername, dmMessage' }, 400);
+      }
+
+      // Build Geelark HMAC signature
+      const traceId = crypto.randomUUID().replace(/-/g, '');
+      const timestamp = String(Math.floor(Date.now() / 1000));
+      const nonce = crypto.randomUUID().replace(/-/g, '').slice(0, 8);
+      const signStr = appId + traceId + timestamp + nonce;
+      const keyData = new TextEncoder().encode(apiKey);
+      const msgData = new TextEncoder().encode(signStr);
+      const cryptoKey = await crypto.subtle.importKey('raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+      const sigBuf = await crypto.subtle.sign('HMAC', cryptoKey, msgData);
+      const signature = Array.from(new Uint8Array(sigBuf)).map(b => b.toString(16).padStart(2,'0')).join('');
+
+      const geelarkRes = await fetch('https://openapi.geelark.com/open/v1/rpa/task/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-APP-ID': appId,
+          'X-TRACE-ID': traceId,
+          'X-TIMESTAMP': timestamp,
+          'X-NONCE': nonce,
+          'X-SIGNATURE': signature,
+        },
+        body: JSON.stringify({
+          templateId: '625154503368245370',
+          profileIds: [profileId],
+          variables: { targetUsername, dmMessage },
+        }),
+      });
+
+      const geelarkData = await geelarkRes.json().catch(() => ({}));
+      if (!geelarkRes.ok || geelarkData.code !== 0) {
+        return json({ error: geelarkData.msg || `Erreur Geelark (${geelarkRes.status})`, detail: geelarkData }, 502);
+      }
+      return json({ success: true, taskId: geelarkData.data?.taskId });
+    }
+
+    return json({ error: 'Route introuvable', routes: ['POST /score-profiles', 'GET /prospects', 'GET /stats', 'POST /update-status', 'POST /find-email', 'POST /scan-similar', 'GET /scan-poll', 'POST /delete-user', 'POST /send-dm'] }, 404);
   }
 };

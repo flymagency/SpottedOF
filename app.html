@@ -875,6 +875,92 @@
   </div>
 </div>
 
+<!-- MODAL DM GEELARK -->
+<div class="modal-overlay" id="dmModal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-title">💬 Envoyer un DM Instagram</div>
+      <button class="modal-close" onclick="closeModal('dmModal')">✕</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:16px;">
+
+      <!-- Target info -->
+      <div style="display:flex;align-items:center;gap:12px;background:var(--surface2);border-radius:10px;padding:12px 14px;border:1px solid var(--border)">
+        <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--pink));display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">@</div>
+        <div>
+          <div style="font-size:14px;font-weight:700" id="dmTargetName">—</div>
+          <div style="font-size:12px;color:var(--muted)" id="dmTargetHandle">@username</div>
+        </div>
+        <a id="dmInstagramLink" href="#" target="_blank" rel="noopener" style="margin-left:auto;color:var(--accent);font-size:12px;font-weight:600;text-decoration:none;background:rgba(6,182,212,0.1);border:1px solid rgba(6,182,212,0.25);border-radius:7px;padding:5px 10px">Voir profil ↗</a>
+      </div>
+
+      <!-- Message -->
+      <div>
+        <label class="form-label" style="margin-bottom:6px;display:block">Message</label>
+        <textarea id="dmMessage" rows="5" class="form-input" style="resize:vertical;min-height:110px;font-family:'Inter',sans-serif;font-size:13px;line-height:1.6" placeholder="Salut ! J'ai vu ton contenu et…"></textarea>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">Tu peux personnaliser avant d'envoyer.</div>
+      </div>
+
+      <!-- Geelark section -->
+      <div id="dmGeelarkSection">
+        <!-- configured state filled by JS -->
+      </div>
+
+      <!-- Copy-paste fallback -->
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px">
+        <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.06em;font-family:'Space Mono',monospace">Envoi manuel</div>
+        <ol style="font-size:12px;color:var(--muted);padding-left:18px;line-height:2">
+          <li>Copie le message ci-dessus</li>
+          <li><a id="dmManualLink" href="#" target="_blank" rel="noopener" style="color:var(--accent)">Ouvre Instagram ↗</a></li>
+          <li>Colle et envoie le DM</li>
+        </ol>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" style="flex:1;gap:8px" id="dmSendBtn" onclick="sendDmViaGeelark()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Envoyer via Geelark
+      </button>
+      <button class="btn btn-ghost" onclick="copyDmMessage()">📋 Copier</button>
+      <button class="btn btn-ghost" onclick="closeModal('dmModal')">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONFIG GEELARK -->
+<div class="modal-overlay" id="geelarkConfigModal">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-header">
+      <div class="modal-title">⚙️ Configuration Geelark</div>
+      <button class="modal-close" onclick="closeModal('geelarkConfigModal')">✕</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:14px;">
+      <p style="font-size:13px;color:var(--muted);line-height:1.6">Entre tes identifiants Geelark pour envoyer des DMs Instagram automatiquement. Ces données sont stockées uniquement dans ton navigateur.</p>
+      <div>
+        <label class="form-label">App ID</label>
+        <input type="text" class="form-input" id="glAppId" placeholder="Ex: 123456789" autocomplete="off">
+      </div>
+      <div>
+        <label class="form-label">API Key</label>
+        <input type="password" class="form-input" id="glApiKey" placeholder="Ta clé API Geelark" autocomplete="off">
+      </div>
+      <div>
+        <label class="form-label">Profile ID (téléphone virtuel)</label>
+        <input type="text" class="form-input" id="glProfileId" placeholder="ID du profil Geelark avec Instagram" autocomplete="off">
+      </div>
+      <div style="background:rgba(6,182,212,0.06);border:1px solid rgba(6,182,212,0.2);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--muted);line-height:1.6">
+        💡 Trouve l'App ID et l'API Key dans <strong style="color:white">Geelark → Settings → API</strong><br>
+        Le Profile ID est l'identifiant du téléphone virtuel qui a Instagram connecté.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" style="flex:1" onclick="saveGeelarkConfig()">Enregistrer</button>
+      <button class="btn btn-ghost" onclick="closeModal('geelarkConfigModal')">Annuler</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL SCAN -->
 <div class="modal-overlay" id="scanModal">
   <div class="modal">
@@ -1996,8 +2082,122 @@ let currentProspect = null;
 
 function goToContact() {
   if (!currentProspect) return;
-  const data = encodeURIComponent(JSON.stringify(currentProspect));
-  window.location.href = `contact.html?p=${data}`;
+  const p = currentProspect;
+  const username = p.username || p.handle || '';
+  const displayName = p.fullName || p.name || username;
+
+  // Fill DM modal target info
+  document.getElementById('dmTargetName').textContent = displayName || username;
+  document.getElementById('dmTargetHandle').textContent = username ? `@${username}` : '—';
+  const igUrl = username ? `https://instagram.com/${username}` : '#';
+  const dmUrl = username ? `https://ig.me/m/${username}` : '#';
+  document.getElementById('dmInstagramLink').href = igUrl;
+  document.getElementById('dmManualLink').href = dmUrl;
+
+  // Default message
+  const textarea = document.getElementById('dmMessage');
+  if (!textarea.value) {
+    textarea.value = `Salut ${displayName || username} ! 👋\n\nJ'ai découvert ton profil et j'aimerais te parler d'une opportunité qui pourrait t'intéresser. Tu serais dispo pour en discuter ?`;
+  }
+
+  // Geelark section
+  renderDmGeelarkSection();
+
+  closeModal('prospectModal');
+  document.getElementById('dmModal').classList.add('open');
+}
+
+function renderDmGeelarkSection() {
+  const cfg = getGeelarkConfig();
+  const el = document.getElementById('dmGeelarkSection');
+  const sendBtn = document.getElementById('dmSendBtn');
+  if (cfg) {
+    el.innerHTML = `<div style="display:flex;align-items:center;gap:8px;background:rgba(6,182,212,0.06);border:1px solid rgba(6,182,212,0.2);border-radius:10px;padding:10px 14px;">
+      <div style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0"></div>
+      <div style="font-size:12px;color:var(--muted)">Geelark connecté — <strong style="color:white">profil ${cfg.profileId.slice(0,8)}…</strong></div>
+      <button onclick="openGeelarkConfig()" style="margin-left:auto;font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline">Modifier</button>
+    </div>`;
+    sendBtn.style.display = 'inline-flex';
+  } else {
+    el.innerHTML = `<div style="display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;">
+      <div style="width:8px;height:8px;border-radius:50%;background:var(--muted);flex-shrink:0"></div>
+      <div style="font-size:12px;color:var(--muted)">Geelark non configuré — envoi automatique désactivé</div>
+      <button onclick="openGeelarkConfig()" style="margin-left:auto;font-size:12px;font-weight:700;color:var(--accent);background:none;border:none;cursor:pointer">Configurer →</button>
+    </div>`;
+    sendBtn.style.display = 'none';
+  }
+}
+
+function getGeelarkConfig() {
+  try {
+    const raw = localStorage.getItem('geelark_config');
+    if (!raw) return null;
+    const cfg = JSON.parse(raw);
+    return (cfg.appId && cfg.apiKey && cfg.profileId) ? cfg : null;
+  } catch { return null; }
+}
+
+function openGeelarkConfig() {
+  const cfg = getGeelarkConfig();
+  if (cfg) {
+    document.getElementById('glAppId').value = cfg.appId || '';
+    document.getElementById('glApiKey').value = cfg.apiKey || '';
+    document.getElementById('glProfileId').value = cfg.profileId || '';
+  }
+  document.getElementById('geelarkConfigModal').classList.add('open');
+}
+
+function saveGeelarkConfig() {
+  const appId = document.getElementById('glAppId').value.trim();
+  const apiKey = document.getElementById('glApiKey').value.trim();
+  const profileId = document.getElementById('glProfileId').value.trim();
+  if (!appId || !apiKey || !profileId) {
+    showToast('Tous les champs sont requis', 'error'); return;
+  }
+  localStorage.setItem('geelark_config', JSON.stringify({ appId, apiKey, profileId }));
+  closeModal('geelarkConfigModal');
+  showToast('Configuration Geelark enregistrée ✓');
+  renderDmGeelarkSection();
+}
+
+async function sendDmViaGeelark() {
+  const cfg = getGeelarkConfig();
+  if (!cfg) { openGeelarkConfig(); return; }
+  const username = document.getElementById('dmTargetHandle').textContent.replace('@','').trim();
+  const message = document.getElementById('dmMessage').value.trim();
+  if (!username || !message) { showToast('Nom d\'utilisateur ou message manquant', 'error'); return; }
+
+  const btn = document.getElementById('dmSendBtn');
+  btn.disabled = true;
+  btn.textContent = 'Envoi en cours…';
+
+  try {
+    const res = await wFetch(`${WORKER}/send-dm`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        appId: cfg.appId,
+        apiKey: cfg.apiKey,
+        profileId: cfg.profileId,
+        targetUsername: username,
+        dmMessage: message,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `Erreur ${res.status}`);
+    showToast('DM envoyé via Geelark ✓');
+    closeModal('dmModal');
+  } catch (e) {
+    showToast(`Erreur: ${e.message}`, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Envoyer via Geelark`;
+  }
+}
+
+function copyDmMessage() {
+  const msg = document.getElementById('dmMessage').value;
+  navigator.clipboard.writeText(msg).then(() => showToast('Message copié ✓')).catch(() => showToast('Copie échouée', 'error'));
 }
 
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
