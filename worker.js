@@ -674,8 +674,10 @@ export default {
 
         // Phase 2 : scraper les détails complets de ces profils
         try {
-          const phase2RunId = await apifyStartRun('apify~instagram-profile-scraper', {
-            usernames: usernames,
+          const phase2RunId = await apifyStartRun('apify~instagram-scraper', {
+            directUrls: usernames.map(u => `https://www.instagram.com/${u}/`),
+            resultsType: 'details',
+            resultsLimit: 1,
           }, APIFY_TOKEN);
 
           return json({
