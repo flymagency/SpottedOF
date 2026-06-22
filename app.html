@@ -1167,6 +1167,7 @@ let currentUser = null;
 let userPlan = null;
 let userPaid = false;
 let userFirstName = '';
+let userAgencyName = '';
 
 const PLAN_LIMITS = { starter: 200, pro: Infinity, agency: Infinity, admin: Infinity };
 const PLAN_COLORS = {
@@ -1199,6 +1200,7 @@ sb.auth.getSession().then(async ({ data }) => {
   userPlan = (profile?.plan || 'starter').toLowerCase();
   userPaid = profile?.paid || false;
   userFirstName = profile?.first_name || '';
+  userAgencyName = profile?.agency_name || '';
 
   // Membre d'une équipe = accès garanti
   // Vérification : token URL + team_members BDD + plan='member' + localStorage (persistance reload)
@@ -2987,7 +2989,7 @@ function renderHome() {
   const toContact = DATA.filter(p => !(p.hasOf || p.has_of)).length;
 
   // Prénom ou nom d'agence
-  const displayName = userFirstName || profile?.agency_name || '';
+  const displayName = userFirstName || userAgencyName || '';
 
   // Scans des 7 prochains jours depuis SCHEDULED_SCANS
   const in7days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
