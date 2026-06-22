@@ -266,6 +266,10 @@ const SUPABASE_URL = 'https://nsvrkogwmzrbjrtbphpb.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_x7QwXgNepnb6t_2LCMniqw_zIEZ2LnR';
 const WORKER = 'https://spottedof-worker.businessflymagency.workers.dev';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+function esc(str) {
+  if (str == null) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
 
 const PLANS = {
   starter:    { name: 'Starter',     price: '49€',  period: '49€ / mois',  limit: 200 },
@@ -576,7 +580,7 @@ function _renderNotifPanel() {
       <div style="font-size:20px;flex-shrink:0">${isNew ? '🔴' : '✅'}</div>
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;font-weight:700;margin-bottom:3px">Ticket résolu${isNew ? ' <span style="color:#F0436C;font-size:9px;background:rgba(240,67,108,0.1);padding:1px 5px;border-radius:4px;">NEW</span>' : ''}</div>
-        <div style="font-size:12px;color:var(--muted);margin-bottom:4px">${CAT_LABELS[t.category] || t.category}</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:4px">${CAT_LABELS[t.category] || esc(t.category)}</div>
         <div style="font-size:11px;color:var(--text-3);font-family:'Space Mono',monospace">${date}</div>
       </div>
     </div>`;

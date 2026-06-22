@@ -1,0 +1,1281 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SpottedOF — Propositions Design</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300..900&family=Outfit:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --bg: #060608; --surface: #0C0C0F; --surface2: #111115;
+  --border: rgba(255,255,255,0.07); --border-light: rgba(255,255,255,0.13);
+  --accent: #06B6D4; --accent-light: #22D3EE;
+  --pink: #F0436C; --green: #1ECA6E; --yellow: #F59E0B;
+  --text: #FFFFFF; --muted: #9898A8; --text-3: #484858;
+}
+body { background:#0a0a0e; color:#fff; font-family:'Inter',sans-serif; }
+
+/* ── NAV ── */
+.nav-label {
+  background: rgba(6,182,212,0.1); border: 1px solid rgba(6,182,212,0.25);
+  color: var(--accent); font-family:'Space Mono',monospace; font-size:10px;
+  padding:3px 10px; border-radius:100px; display:inline-block; margin-bottom:8px;
+}
+.section-divider {
+  padding: 40px 0 20px;
+  text-align: center;
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+}
+.section-divider span { background: #0a0a0e; padding: 0 20px; position: relative; }
+.section-divider::before {
+  content:''; position:absolute; left:0; right:0; top:50%;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.section-divider { position:relative; }
+
+/* ════════════════════════════════
+   LANDING — PROPOSITION
+   ════════════════════════════════ */
+.landing-mock {
+  max-width: 1100px; margin: 0 auto; padding: 0 32px;
+}
+
+/* NAV */
+.lnav {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 0; border-bottom: 1px solid var(--border);
+}
+.lnav-logo { font-family:'Outfit',sans-serif; font-size:18px; font-weight:800; }
+.lnav-logo span { color: var(--accent); }
+.lnav-links { display:flex; align-items:center; gap:24px; }
+.lnav-link { font-size:13px; color:var(--muted); cursor:pointer; }
+.lnav-btn {
+  background: var(--accent); color:#fff; font-size:12px; font-weight:700;
+  padding: 8px 18px; border-radius:9px; cursor:pointer;
+}
+
+/* HERO */
+.hero-new {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 80px; align-items: center;
+  padding: 100px 0 80px;
+}
+.hero-tag {
+  display: inline-flex; align-items:center; gap:6px;
+  background: rgba(6,182,212,0.08); border: 1px solid rgba(6,182,212,0.2);
+  border-radius:100px; padding:5px 14px; font-size:11px;
+  font-family:'Space Mono',monospace; color:var(--accent);
+  margin-bottom:28px;
+}
+.hero-tag::before { content:''; width:6px; height:6px; background:var(--accent); border-radius:50%; }
+.hero-h1 {
+  font-family:'Outfit',sans-serif; font-size:52px; font-weight:900;
+  line-height: 1.05; letter-spacing: -1.5px; margin-bottom: 32px;
+}
+.hero-h1 em { font-style:normal; color:var(--accent); }
+.hero-cta-row { display:flex; align-items:center; gap:16px; }
+.hero-btn-main {
+  background: var(--accent); color:#fff; font-weight:700; font-size:14px;
+  padding:13px 28px; border-radius:12px; cursor:pointer;
+  box-shadow: 0 0 32px rgba(6,182,212,0.3);
+}
+.hero-btn-ghost {
+  font-size:13px; color:var(--muted); cursor:pointer;
+  display:flex; align-items:center; gap:6px;
+}
+.hero-right-mock {
+  background: var(--surface); border: 1px solid var(--border-light);
+  border-radius: 20px; overflow:hidden;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
+}
+.mock-bar { background:var(--surface2); padding:10px 16px; display:flex; align-items:center; gap:8px; border-bottom:1px solid var(--border); }
+.mock-dot { width:8px; height:8px; border-radius:50%; }
+.mock-content { padding:20px; display:flex; flex-direction:column; gap:12px; }
+.mock-stat-row { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.mock-stat { background:var(--surface2); border-radius:10px; padding:12px; }
+.mock-stat-val { font-size:20px; font-weight:800; color:var(--accent); }
+.mock-stat-lab { font-size:9px; color:var(--muted); font-family:'Space Mono',monospace; text-transform:uppercase; margin-top:2px; }
+.mock-row { background:var(--surface2); border-radius:8px; height:32px; display:flex; align-items:center; padding:0 12px; gap:10px; }
+.mock-avatar { width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--pink)); flex-shrink:0; }
+.mock-line { height:6px; border-radius:3px; background:rgba(255,255,255,0.08); flex:1; }
+.mock-score { font-size:10px; font-weight:700; color:var(--green); font-family:'Space Mono',monospace; }
+
+/* FEATURES — NOUVELLE VERSION : icônes + label seulement */
+.features-new {
+  padding: 80px 0;
+  border-top: 1px solid var(--border);
+}
+.feat-eyebrow {
+  font-family:'Space Mono',monospace; font-size:10px; color:var(--muted);
+  text-transform:uppercase; letter-spacing:0.15em; margin-bottom:16px;
+}
+.feat-title { font-family:'Outfit',sans-serif; font-size:32px; font-weight:800; margin-bottom:56px; }
+.feat-grid {
+  display: grid; grid-template-columns: repeat(3,1fr); gap:1px;
+  background: var(--border); border-radius:16px; overflow:hidden;
+}
+.feat-item {
+  background: var(--surface); padding: 32px 28px;
+  display:flex; flex-direction:column; gap:16px;
+  transition: background 0.2s;
+}
+.feat-item:hover { background: var(--surface2); }
+.feat-icon {
+  width:40px; height:40px; border-radius:10px;
+  display:flex; align-items:center; justify-content:center; font-size:18px;
+}
+.feat-name { font-size:15px; font-weight:700; }
+/* PAS DE DESCRIPTION — c'est le changement clé */
+
+/* HOW — NOUVELLE VERSION : timeline horizontale ultra-épurée */
+.how-new {
+  padding: 80px 0;
+  border-top: 1px solid var(--border);
+}
+.how-steps-new {
+  display: grid; grid-template-columns: 1fr 40px 1fr 40px 1fr;
+  align-items: center; gap:0; margin-top:48px;
+}
+.how-step-new { text-align:center; }
+.how-step-num {
+  width:40px; height:40px; border-radius:50%;
+  background: rgba(6,182,212,0.1); border: 1px solid rgba(6,182,212,0.3);
+  color:var(--accent); font-family:'Space Mono',monospace; font-size:12px; font-weight:700;
+  display:flex; align-items:center; justify-content:center; margin:0 auto 16px;
+}
+.how-step-title { font-size:15px; font-weight:700; margin-bottom:6px; }
+.how-step-sub { font-size:12px; color:var(--muted); }
+.how-arrow { text-align:center; color:var(--text-3); font-size:18px; }
+
+/* PRICING — PLUS AÉRÉ */
+.pricing-new {
+  padding: 80px 0;
+  border-top: 1px solid var(--border);
+}
+.pricing-grid-new {
+  display: grid; grid-template-columns: repeat(3,1fr); gap:16px; margin-top:48px;
+}
+.price-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius:20px; padding:32px;
+}
+.price-card.featured {
+  border-color: rgba(6,182,212,0.4);
+  background: linear-gradient(135deg, rgba(6,182,212,0.06), var(--surface));
+}
+.price-name { font-family:'Space Mono',monospace; font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:12px; }
+.price-amount { font-family:'Outfit',sans-serif; font-size:42px; font-weight:900; line-height:1; margin-bottom:4px; }
+.price-amount span { font-size:16px; font-weight:500; color:var(--muted); }
+.price-period { font-size:12px; color:var(--muted); margin-bottom:28px; }
+.price-feats { display:flex; flex-direction:column; gap:10px; margin-bottom:28px; }
+.price-feat { font-size:13px; display:flex; align-items:center; gap:8px; color:var(--muted); }
+.price-feat::before { content:'—'; color:var(--text-3); }
+.price-feat.ok { color:var(--text); }
+.price-feat.ok::before { content:'✓'; color:var(--accent); }
+.price-btn {
+  width:100%; padding:12px; border-radius:10px; font-size:13px; font-weight:700;
+  cursor:pointer; text-align:center;
+  background:var(--surface2); border:1px solid var(--border); color:var(--muted);
+}
+.price-btn.primary { background:var(--accent); border-color:transparent; color:#fff; }
+
+/* ════════════════════════════════
+   LOGIN — PROPOSITION
+   ════════════════════════════════ */
+.login-mock {
+  min-height: 500px; display:flex; align-items:center; justify-content:center;
+  padding: 60px 32px;
+}
+.login-card {
+  width: 360px;
+}
+.login-logo { font-family:'Outfit',sans-serif; font-size:22px; font-weight:800; margin-bottom:40px; }
+.login-logo span { color:var(--accent); }
+.login-h1 { font-size:24px; font-weight:800; margin-bottom:6px; }
+.login-sub { font-size:13px; color:var(--muted); margin-bottom:32px; }
+.login-field { margin-bottom:14px; }
+.login-label { font-size:11px; color:var(--muted); font-family:'Space Mono',monospace; text-transform:uppercase; letter-spacing:0.06em; display:block; margin-bottom:7px; }
+.login-input {
+  width:100%; background:var(--surface2); border:1px solid var(--border);
+  border-radius:10px; padding:11px 14px; color:var(--text); font-size:13px;
+  font-family:'Inter',sans-serif;
+}
+.login-input.focused { border-color:var(--accent); }
+.login-btn {
+  width:100%; padding:13px; background:var(--accent); color:#fff;
+  border-radius:10px; font-size:14px; font-weight:700; margin-top:8px; cursor:pointer;
+  text-align:center; box-shadow:0 0 24px rgba(6,182,212,0.25);
+}
+.login-footer { margin-top:24px; font-size:12px; color:var(--muted); text-align:center; }
+.login-footer a { color:var(--accent); }
+
+/* ════════════════════════════════
+   HOME DASHBOARD — PROPOSITION
+   ════════════════════════════════ */
+.home-mock {
+  max-width:900px; margin:0 auto; padding:40px 32px;
+}
+.home-header-new {
+  margin-bottom:48px;
+}
+.home-date-new { font-family:'Space Mono',monospace; font-size:10px; color:var(--accent); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:10px; }
+.home-greeting-new { font-family:'Outfit',sans-serif; font-size:40px; font-weight:900; line-height:1; margin-bottom:6px; }
+.home-sub-new { font-size:13px; color:var(--text-3); }
+
+.kpi-grid-new { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:40px; }
+.kpi-new {
+  background:var(--surface); border:1px solid var(--border); border-radius:16px;
+  padding:28px 24px;
+}
+.kpi-val { font-family:'Outfit',sans-serif; font-size:44px; font-weight:900; line-height:1; margin-bottom:8px; }
+.kpi-lab { font-family:'Space Mono',monospace; font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; }
+
+.panels-new { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.panel-new { background:var(--surface); border:1px solid var(--border); border-radius:14px; overflow:hidden; }
+.panel-head-new { padding:16px 20px; border-bottom:1px solid var(--border); font-size:12px; font-weight:700; display:flex;align-items:center;gap:8px; color:var(--muted); }
+.panel-row-new { padding:13px 20px; border-bottom:1px solid var(--border); display:flex;align-items:center;justify-content:space-between; font-size:12px; }
+.panel-row-new:last-child { border:none; }
+.panel-empty-new { padding:32px 20px; text-align:center; color:var(--text-3); font-size:12px; }
+.quick-btn-new {
+  display:flex; align-items:center; gap:10px; padding:13px 20px;
+  border-bottom:1px solid var(--border); cursor:pointer; font-size:13px; font-weight:500;
+}
+.quick-btn-new:last-child { border:none; }
+.q-icon { width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px; flex-shrink:0; }
+
+/* WRAPPER PAGES */
+.page-mock { background: var(--bg); border: 1px solid var(--border); border-radius:20px; overflow:hidden; margin:0 40px 60px; }
+.page-label { text-align:center; padding:20px 0 8px; font-family:'Space Mono',monospace; font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.12em; }
+
+/* SCAN MODAL */
+.scan-mock {
+  padding:40px; display:flex; align-items:center; justify-content:center;
+}
+.scan-card {
+  background:var(--surface); border:1px solid var(--border-light); border-radius:20px;
+  width:480px; overflow:hidden;
+}
+.scan-head { padding:22px 28px 18px; border-bottom:1px solid var(--border); }
+.scan-title { font-size:16px; font-weight:800; margin-bottom:3px; }
+.scan-sub { font-size:12px; color:var(--muted); }
+.scan-body { padding:24px 28px; display:flex;flex-direction:column;gap:18px; }
+.scan-field-label { font-size:11px; font-family:'Space Mono',monospace; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:8px; display:block; }
+.scan-input {
+  width:100%; background:var(--surface2); border:1px solid var(--border);
+  border-radius:10px; padding:11px 14px; color:var(--text); font-size:13px; font-family:'Inter',sans-serif;
+}
+.scan-plat-row { display:flex;gap:8px; }
+.scan-plat {
+  flex:1; padding:10px; border-radius:10px; border:1px solid var(--border);
+  background:var(--surface2); text-align:center; font-size:12px; font-weight:600;
+  cursor:pointer; color:var(--muted);
+}
+.scan-plat.active { border-color:var(--accent); color:var(--accent); background:rgba(6,182,212,0.08); }
+.scan-footer { padding:16px 28px; border-top:1px solid var(--border); display:flex;gap:10px; }
+.scan-btn { flex:1;padding:12px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;background:var(--accent);color:#fff;border:none; }
+.scan-btn-ghost { padding:12px 20px;border-radius:10px;font-size:13px;cursor:pointer;background:var(--surface2);color:var(--muted);border:1px solid var(--border); }
+
+body { padding: 40px 0; }
+h2.proposal { font-family:'Outfit',sans-serif; font-size:28px; font-weight:900; text-align:center; margin:60px 0 8px; }
+.proposal-sub { text-align:center; color:var(--muted); font-size:13px; margin-bottom:32px; }
+
+/* ══════════════════════════════
+   ANIMATIONS 3D
+   ══════════════════════════════ */
+
+/* Entrée hero mockup — tilt 3D depuis la droite */
+@keyframes heroMockIn {
+  0%   { opacity:0; transform: perspective(900px) rotateY(22deg) rotateX(6deg) translateX(60px) scale(0.95); }
+  60%  { opacity:1; }
+  100% { opacity:1; transform: perspective(900px) rotateY(0deg) rotateX(0deg) translateX(0) scale(1); }
+}
+.hero-right-mock {
+  animation: heroMockIn 1s cubic-bezier(0.16,1,0.3,1) 0.2s both;
+  will-change: transform, opacity;
+}
+/* Hover léger sur hero mock */
+.hero-right-mock:hover {
+  transform: perspective(900px) rotateY(-3deg) rotateX(2deg) translateY(-4px);
+  transition: transform 0.4s cubic-bezier(0.16,1,0.3,1);
+}
+
+/* Entrée KPI cards — remontent avec perspective */
+@keyframes kpiEntry3D {
+  0%   { opacity:0; transform: perspective(600px) rotateX(24deg) translateY(32px); }
+  100% { opacity:1; transform: perspective(600px) rotateX(0deg)  translateY(0); }
+}
+.kpi-new {
+  animation: kpiEntry3D 0.6s cubic-bezier(0.16,1,0.3,1) both;
+}
+.kpi-new:nth-child(1) { animation-delay: 0.05s; }
+.kpi-new:nth-child(2) { animation-delay: 0.12s; }
+.kpi-new:nth-child(3) { animation-delay: 0.19s; }
+.kpi-new:nth-child(4) { animation-delay: 0.26s; }
+
+/* KPI hover — tilt 3D continu au survol */
+.kpi-new {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: default;
+}
+.kpi-new:hover {
+  transform: perspective(600px) rotateX(-6deg) rotateY(4deg) translateY(-4px) scale(1.02);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(6,182,212,0.15);
+}
+
+/* Feature items — entrée glissante */
+@keyframes featIn {
+  0%   { opacity:0; transform: translateY(20px); }
+  100% { opacity:1; transform: translateY(0); }
+}
+.feat-item {
+  animation: featIn 0.5s cubic-bezier(0.16,1,0.3,1) both;
+}
+.feat-item:nth-child(1) { animation-delay:0.1s; }
+.feat-item:nth-child(2) { animation-delay:0.17s; }
+.feat-item:nth-child(3) { animation-delay:0.24s; }
+.feat-item:nth-child(4) { animation-delay:0.31s; }
+.feat-item:nth-child(5) { animation-delay:0.38s; }
+.feat-item:nth-child(6) { animation-delay:0.45s; }
+
+/* Scan card — scale 3D à l'entrée */
+@keyframes scanCardIn {
+  0%   { opacity:0; transform: perspective(800px) rotateX(10deg) scale(0.96); }
+  100% { opacity:1; transform: perspective(800px) rotateX(0deg)  scale(1); }
+}
+.scan-card {
+  animation: scanCardIn 0.6s cubic-bezier(0.16,1,0.3,1) both;
+}
+
+/* Login card — monte du bas */
+@keyframes loginIn {
+  0%   { opacity:0; transform: perspective(600px) translateY(28px) rotateX(8deg); }
+  100% { opacity:1; transform: perspective(600px) translateY(0)    rotateX(0deg); }
+}
+.login-card {
+  animation: loginIn 0.65s cubic-bezier(0.16,1,0.3,1) 0.1s both;
+}
+
+/* Admin table rows — décalage */
+@keyframes rowSlideIn {
+  0%   { opacity:0; transform: translateX(-16px); }
+  100% { opacity:1; transform: translateX(0); }
+}
+.admin-row:nth-child(2) { animation: rowSlideIn 0.4s cubic-bezier(0.16,1,0.3,1) 0.1s both; }
+.admin-row:nth-child(3) { animation: rowSlideIn 0.4s cubic-bezier(0.16,1,0.3,1) 0.18s both; }
+.admin-row:nth-child(4) { animation: rowSlideIn 0.4s cubic-bezier(0.16,1,0.3,1) 0.26s both; }
+.admin-row:nth-child(5) { animation: rowSlideIn 0.4s cubic-bezier(0.16,1,0.3,1) 0.34s both; }
+
+/* Price cards — flip depuis l'arrière */
+@keyframes priceCardIn {
+  0%   { opacity:0; transform: perspective(800px) rotateY(-14deg) translateX(-24px) scale(0.97); }
+  100% { opacity:1; transform: perspective(800px) rotateY(0deg)   translateX(0)     scale(1); }
+}
+.price-card:nth-child(1) { animation: priceCardIn 0.6s cubic-bezier(0.16,1,0.3,1) 0.05s both; }
+.price-card:nth-child(2) { animation: priceCardIn 0.6s cubic-bezier(0.16,1,0.3,1) 0.18s both; }
+.price-card:nth-child(3) { animation: priceCardIn 0.6s cubic-bezier(0.16,1,0.3,1) 0.31s both; }
+.price-card {
+  transition: transform 0.3s cubic-bezier(0.16,1,0.3,1), box-shadow 0.3s ease, border-color 0.3s ease;
+  position: relative;
+}
+.price-card::after {
+  content: '';
+  position: absolute; inset: -1px; border-radius: 20px;
+  background: linear-gradient(135deg, rgba(6,182,212,0.4), rgba(6,182,212,0.08));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: 0;
+}
+.price-card:hover::after { opacity: 1; }
+.price-card:hover {
+  transform: perspective(900px) rotateX(-5deg) rotateY(3deg) translateY(-10px) scale(1.03);
+  box-shadow: 0 32px 80px rgba(0,0,0,0.5), 0 0 40px rgba(6,182,212,0.12);
+  border-color: rgba(6,182,212,0.5) !important;
+}
+.price-card > * { position: relative; z-index: 1; }
+
+/* ── HERO MOCK LIVE ── */
+.live-dot {
+  width:6px; height:6px; border-radius:50%; background:var(--accent);
+  animation: livePulse 1.4s ease-in-out infinite;
+}
+@keyframes livePulse {
+  0%,100% { opacity:1; box-shadow:0 0 0 0 rgba(6,182,212,0.6); }
+  50%      { opacity:0.7; box-shadow:0 0 0 5px rgba(6,182,212,0); }
+}
+.mock-bar-fill {
+  position:absolute; left:0; top:0; height:100%; width:0;
+  border-radius:3px;
+  transition: width 1s cubic-bezier(0.16,1,0.3,1);
+}
+.mock-row { transition: opacity 0.4s ease; }
+.mock-scanning {
+  display:flex; align-items:center; gap:8px; padding:6px 0;
+  opacity:0; transition:opacity 0.3s ease;
+}
+.scan-pulse {
+  width:6px; height:6px; border-radius:50%; background:var(--accent);
+  animation: livePulse 0.9s ease-in-out infinite;
+  flex-shrink:0;
+}
+.scan-prog {
+  flex:1; height:3px; background:rgba(255,255,255,0.06); border-radius:2px; overflow:hidden;
+}
+.scan-prog-fill {
+  height:100%; width:0; background:var(--accent); border-radius:2px;
+  transition: width 0.1s linear;
+}
+
+/* Panels dashboard */
+@keyframes panelIn {
+  0%   { opacity:0; transform: perspective(700px) rotateX(12deg) translateY(20px); }
+  100% { opacity:1; transform: perspective(700px) rotateX(0deg)  translateY(0); }
+}
+.panel-new:nth-child(1) { animation: panelIn 0.5s cubic-bezier(0.16,1,0.3,1) 0.3s both; }
+.panel-new:nth-child(2) { animation: panelIn 0.5s cubic-bezier(0.16,1,0.3,1) 0.38s both; }
+</style>
+</head>
+<body>
+
+<!-- ═══ LANDING ═══ -->
+<h2 class="proposal">① Landing page</h2>
+<p class="proposal-sub">Plus de paragraphes dans les features — icône + titre seulement. Section "Comment" en 3 mots. Plus d'air partout.</p>
+<div class="page-mock">
+  <div class="landing-mock">
+
+    <!-- NAV -->
+    <div class="lnav">
+      <div class="lnav-logo">Spotted<span>OF</span></div>
+      <div class="lnav-links">
+        <div class="lnav-link">Fonctionnalités</div>
+        <div class="lnav-link">Tarifs</div>
+        <div class="lnav-btn">Commencer →</div>
+      </div>
+    </div>
+
+    <!-- HERO -->
+    <div class="hero-new">
+      <div>
+        <div class="hero-tag">✦ Multi-réseaux · IG · TT · Threads</div>
+        <div class="hero-h1">Trouvez vos<br>prochains talents<br><em>en 2 minutes.</em></div>
+        <div class="hero-cta-row">
+          <div class="hero-btn-main">Commencer gratuitement</div>
+          <div class="hero-btn-ghost">Voir la démo →</div>
+        </div>
+      </div>
+      <div class="hero-right-mock">
+        <div class="mock-bar">
+          <div class="mock-dot" style="background:#3a3a3a"></div>
+          <div class="mock-dot" style="background:#3a3a3a"></div>
+          <div class="mock-dot" style="background:#3a3a3a"></div>
+          <div style="flex:1;height:6px;background:rgba(255,255,255,0.04);border-radius:3px;margin:0 8px"></div>
+          <div class="live-dot"></div>
+          <span style="font-size:9px;color:var(--accent);font-family:'Space Mono',monospace;margin-left:4px">LIVE</span>
+        </div>
+        <div class="mock-content">
+          <div class="mock-stat-row">
+            <div class="mock-stat">
+              <div class="mock-stat-val" id="heroStat1">0</div>
+              <div class="mock-stat-lab">Prospects</div>
+            </div>
+            <div class="mock-stat">
+              <div class="mock-stat-val" id="heroStat2" style="color:#fff">0%</div>
+              <div class="mock-stat-lab">Score moy.</div>
+            </div>
+            <div class="mock-stat">
+              <div class="mock-stat-val" id="heroStat3" style="color:#fff">0</div>
+              <div class="mock-stat-lab">Avec OF</div>
+            </div>
+          </div>
+          <div class="mock-row" id="heroRow1" style="opacity:0">
+            <div class="mock-avatar" style="background:linear-gradient(135deg,var(--accent),#0891b2)"></div>
+            <div style="flex:1;position:relative;height:6px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden">
+              <div class="mock-bar-fill" style="--target:94%;background:var(--accent)"></div>
+            </div>
+            <div class="mock-score" id="heroScore1">0%</div>
+          </div>
+          <div class="mock-row" id="heroRow2" style="opacity:0">
+            <div class="mock-avatar" style="background:rgba(255,255,255,0.1)"></div>
+            <div style="flex:1;position:relative;height:6px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden">
+              <div class="mock-bar-fill" style="--target:78%;background:rgba(255,255,255,0.3)"></div>
+            </div>
+            <div class="mock-score" id="heroScore2" style="color:rgba(255,255,255,0.5)">0%</div>
+          </div>
+          <div class="mock-row" id="heroRow3" style="opacity:0">
+            <div class="mock-avatar" style="background:rgba(255,255,255,0.07)"></div>
+            <div style="flex:1;position:relative;height:6px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden">
+              <div class="mock-bar-fill" style="--target:86%;background:rgba(255,255,255,0.25)"></div>
+            </div>
+            <div class="mock-score" id="heroScore3" style="color:rgba(255,255,255,0.5)">0%</div>
+          </div>
+          <!-- Ligne "scan en cours" -->
+          <div class="mock-scanning" id="heroScanning">
+            <div class="scan-pulse"></div>
+            <span style="font-size:10px;color:var(--muted);font-family:'Space Mono',monospace">Analyse en cours…</span>
+            <div class="scan-prog"><div class="scan-prog-fill"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FEATURES — ICÔNE + TITRE SEULEMENT, pas de paragraphe -->
+    <div class="features-new">
+      <div class="feat-eyebrow">Fonctionnalités</div>
+      <div class="feat-title">Tout pour recruter plus vite.</div>
+      <div class="feat-grid">
+        <div class="feat-item">
+          <div class="feat-icon" style="background:rgba(255,255,255,0.05)">🎯</div>
+          <div class="feat-name">Scoring IA</div>
+        </div>
+        <div class="feat-item">
+          <div class="feat-icon" style="background:rgba(255,255,255,0.05)">🔍</div>
+          <div class="feat-name">Détection OF / MYM</div>
+        </div>
+        <div class="feat-item">
+          <div class="feat-icon" style="background:rgba(255,255,255,0.05)">📊</div>
+          <div class="feat-name">Filtres avancés</div>
+        </div>
+        <div class="feat-item">
+          <div class="feat-icon" style="background:rgba(255,255,255,0.05)">👥</div>
+          <div class="feat-name">Gestion d'équipe</div>
+        </div>
+        <div class="feat-item">
+          <div class="feat-icon" style="background:rgba(255,255,255,0.05)">📱</div>
+          <div class="feat-name">Multi-réseaux</div>
+        </div>
+        <div class="feat-item">
+          <div class="feat-icon" style="background:rgba(255,255,255,0.05)">⏱️</div>
+          <div class="feat-name">Scans planifiés</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HOW — ULTRA ÉPURÉ -->
+    <div class="how-new">
+      <div class="feat-eyebrow">Comment ça marche</div>
+      <div class="feat-title">3 étapes. C'est tout.</div>
+      <div class="how-steps-new">
+        <div class="how-step-new">
+          <div class="how-step-num">01</div>
+          <div class="how-step-title">Ciblez</div>
+          <div class="how-step-sub">Un compte Instagram, TikTok ou Threads</div>
+        </div>
+        <div class="how-arrow">→</div>
+        <div class="how-step-new">
+          <div class="how-step-num">02</div>
+          <div class="how-step-title">Scannez</div>
+          <div class="how-step-sub">Notre IA analyse et score les profils</div>
+        </div>
+        <div class="how-arrow">→</div>
+        <div class="how-step-new">
+          <div class="how-step-num">03</div>
+          <div class="how-step-title">Contactez</div>
+          <div class="how-step-sub">Vos prospects qualifiés, prêts à signer</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRICING -->
+    <div class="pricing-new">
+      <div class="feat-eyebrow">Tarifs</div>
+      <div class="feat-title">Simple et transparent.</div>
+      <div class="pricing-grid-new">
+        <div class="price-card">
+          <div class="price-name">Starter</div>
+          <div class="price-amount">49€<span>/mois</span></div>
+          <div class="price-period">Pour démarrer</div>
+          <div class="price-feats">
+            <div class="price-feat ok">200 prospects/mois</div>
+            <div class="price-feat ok">IG · TT · Threads</div>
+            <div class="price-feat ok">Scoring IA</div>
+            <div class="price-feat">Équipe</div>
+            <div class="price-feat">Scans planifiés</div>
+          </div>
+          <div class="price-btn">Commencer</div>
+        </div>
+        <div class="price-card featured">
+          <div class="price-name">Pro ★ Populaire</div>
+          <div class="price-amount" style="color:var(--accent)">99€<span>/mois</span></div>
+          <div class="price-period">Pour les agences actives</div>
+          <div class="price-feats">
+            <div class="price-feat ok">Prospects illimités</div>
+            <div class="price-feat ok">IG · TT · Threads</div>
+            <div class="price-feat ok">Scoring IA</div>
+            <div class="price-feat ok">Scans planifiés</div>
+            <div class="price-feat">Équipe</div>
+          </div>
+          <div class="price-btn primary">Commencer</div>
+        </div>
+        <div class="price-card">
+          <div class="price-name">Agence</div>
+          <div class="price-amount">199€<span>/mois</span></div>
+          <div class="price-period">Pour les grandes équipes</div>
+          <div class="price-feats">
+            <div class="price-feat ok">Prospects illimités</div>
+            <div class="price-feat ok">IG · TT · Threads</div>
+            <div class="price-feat ok">Scoring IA</div>
+            <div class="price-feat ok">Scans planifiés</div>
+            <div class="price-feat ok">Équipe multi-users</div>
+          </div>
+          <div class="price-btn">Commencer</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ LOGIN ═══ -->
+<h2 class="proposal">② Connexion</h2>
+<p class="proposal-sub">Formulaire seul, zéro texte superflu. Logo discret, champs aérés.</p>
+<div class="page-mock">
+  <div class="login-mock">
+    <div class="login-card">
+      <div class="login-logo">Spotted<span>OF</span></div>
+      <div class="login-h1">Connexion</div>
+      <div class="login-sub">Content de te revoir.</div>
+      <div class="login-field">
+        <label class="login-label">Email</label>
+        <div class="login-input" style="color:var(--muted)">toi@agence.com</div>
+      </div>
+      <div class="login-field">
+        <label class="login-label">Mot de passe</label>
+        <div class="login-input focused" style="color:var(--muted)">••••••••</div>
+      </div>
+      <div class="login-btn">Se connecter</div>
+      <div class="login-footer">Pas de compte ? <a>Créer le mien →</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ DASHBOARD HOME ═══ -->
+<h2 class="proposal">③ Accueil dashboard</h2>
+<p class="proposal-sub">KPIs beaucoup plus grands. Moins de labels. Plus d'espace vertical.</p>
+<div class="page-mock">
+  <div class="home-mock">
+    <div class="home-header-new">
+      <div class="home-date-new">📅 Lundi 22 juin 2026</div>
+      <div class="home-greeting-new">Bonjour, Robin 👋</div>
+      <div class="home-sub-new">Voici un aperçu de ton activité</div>
+    </div>
+
+    <div class="kpi-grid-new">
+      <div class="kpi-new" style="border-color:rgba(6,182,212,0.2)">
+        <div class="kpi-val" style="color:var(--accent)">247</div>
+        <div class="kpi-lab">Prospects scrapés</div>
+      </div>
+      <div class="kpi-new">
+        <div class="kpi-val">71<small style="font-size:20px;color:var(--muted)">%</small></div>
+        <div class="kpi-lab">Score moyen</div>
+      </div>
+      <div class="kpi-new">
+        <div class="kpi-val">89</div>
+        <div class="kpi-lab">Avec plateforme privée</div>
+      </div>
+      <div class="kpi-new">
+        <div class="kpi-val">158</div>
+        <div class="kpi-lab">À contacter</div>
+      </div>
+    </div>
+
+    <div class="panels-new">
+      <div class="panel-new">
+        <div class="panel-head-new">📅 Scans — 7 prochains jours</div>
+        <div class="panel-empty-new">Aucun scan planifié cette semaine</div>
+      </div>
+      <div class="panel-new">
+        <div class="panel-head-new">⚡ Actions rapides</div>
+        <div class="quick-btn-new"><div class="q-icon" style="background:rgba(255,255,255,0.05)">🔍</div>Nouveau scan</div>
+        <div class="quick-btn-new"><div class="q-icon" style="background:rgba(255,255,255,0.05)">👥</div>Voir les prospects</div>
+        <div class="quick-btn-new"><div class="q-icon" style="background:rgba(255,255,255,0.05)">📅</div>Scans planifiés</div>
+        <div class="quick-btn-new"><div class="q-icon" style="background:rgba(255,255,255,0.05)">👥</div>Mon équipe</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SCAN MODAL ═══ -->
+<h2 class="proposal">④ Modal Nouveau scan</h2>
+<p class="proposal-sub">Essentiel d'abord. Options avancées dépliables, groupées, aérées.</p>
+
+<!-- État fermé -->
+<p style="text-align:center;font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;margin-bottom:12px">Options avancées fermées</p>
+<div class="page-mock" style="background:rgba(0,0,0,0.5)">
+  <div class="scan-mock">
+    <div class="scan-card">
+      <div class="scan-head">
+        <div class="scan-title">Nouveau scan</div>
+        <div class="scan-sub">Followers d'un compte de référence</div>
+      </div>
+      <div class="scan-body">
+        <div>
+          <label class="scan-field-label">Compte cible</label>
+          <div class="scan-input" style="color:var(--muted)">@handle ou URL</div>
+        </div>
+        <div>
+          <label class="scan-field-label">Plateforme</label>
+          <div class="scan-plat-row">
+            <div class="scan-plat active">Instagram</div>
+            <div class="scan-plat">TikTok</div>
+            <div class="scan-plat">Threads</div>
+          </div>
+        </div>
+        <!-- toggle fermé -->
+        <div class="adv-toggle">
+          <span>⚙️ Options avancées</span>
+          <span class="adv-arrow">›</span>
+        </div>
+      </div>
+      <div class="scan-footer">
+        <div class="scan-btn">Lancer le scan →</div>
+        <div class="scan-btn-ghost">Annuler</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- État ouvert -->
+<p style="text-align:center;font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;margin:32px 0 12px">Options avancées ouvertes</p>
+<div class="page-mock" style="background:rgba(0,0,0,0.5)">
+  <div class="scan-mock" style="max-width:560px">
+    <div class="scan-card">
+      <div class="scan-head">
+        <div class="scan-title">Nouveau scan</div>
+        <div class="scan-sub">Followers d'un compte de référence</div>
+      </div>
+      <div class="scan-body">
+        <div>
+          <label class="scan-field-label">Compte cible</label>
+          <div class="scan-input" style="color:var(--muted)">@handle ou URL</div>
+        </div>
+        <div>
+          <label class="scan-field-label">Plateforme</label>
+          <div class="scan-plat-row">
+            <div class="scan-plat active">Instagram</div>
+            <div class="scan-plat">TikTok</div>
+            <div class="scan-plat">Threads</div>
+          </div>
+        </div>
+
+        <!-- toggle ouvert -->
+        <div class="adv-toggle open">
+          <span>⚙️ Options avancées</span>
+          <span class="adv-arrow" style="transform:rotate(90deg)">›</span>
+        </div>
+
+        <!-- Groupe 1 : Volume -->
+        <div class="adv-group">
+          <div class="adv-group-label">Volume</div>
+          <div class="adv-row-2">
+            <div class="adv-field">
+              <label class="scan-field-label">Profils à analyser</label>
+              <div class="adv-range-wrap">
+                <div class="adv-range-track"><div class="adv-range-fill" style="width:33%"></div></div>
+                <span class="adv-range-val">100</span>
+              </div>
+            </div>
+            <div class="adv-field">
+              <label class="scan-field-label">Score minimum</label>
+              <div class="adv-range-wrap">
+                <div class="adv-range-track"><div class="adv-range-fill" style="width:17%"></div></div>
+                <span class="adv-range-val" style="color:var(--accent)">15%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Groupe 2 : Audience -->
+        <div class="adv-group">
+          <div class="adv-group-label">Audience</div>
+          <div class="adv-row-2">
+            <div class="adv-field">
+              <label class="scan-field-label">Followers min</label>
+              <div class="scan-input" style="padding:9px 12px;font-size:12px;display:flex;align-items:center;justify-content:space-between">5 000 <span style="color:var(--muted);font-size:11px">▼</span></div>
+            </div>
+            <div class="adv-field">
+              <label class="scan-field-label">Followers max</label>
+              <div class="scan-input" style="padding:9px 12px;font-size:12px;display:flex;align-items:center;justify-content:space-between">300 000 <span style="color:var(--muted);font-size:11px">▼</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Groupe 3 : Filtres -->
+        <div class="adv-group" style="border-bottom:none;padding-bottom:0">
+          <div class="adv-group-label">Filtres</div>
+          <div class="adv-checks">
+            <label class="adv-check"><div class="adv-check-box checked"></div>Compte public uniquement</label>
+            <label class="adv-check"><div class="adv-check-box"></div>Pas encore sur plateforme privée</label>
+            <label class="adv-check"><div class="adv-check-box"></div>Déjà sur plateforme privée</label>
+            <label class="adv-check"><div class="adv-check-box"></div>Non vérifié seulement</label>
+          </div>
+        </div>
+
+        <!-- Planifier -->
+        <div class="adv-schedule">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="adv-toggle-pill"></div>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:var(--accent)">📅 Planifier ce scan</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:1px">SpottedOF relancera automatiquement</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <div class="scan-footer">
+        <div class="scan-btn">Lancer le scan →</div>
+        <div class="scan-btn-ghost">Annuler</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+/* ── SCAN ADVANCED ── */
+.adv-toggle {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 14px; border-radius:10px;
+  background:var(--surface2); border:1px solid var(--border);
+  font-size:13px; font-weight:600; cursor:pointer;
+  color:var(--muted); transition:color .2s;
+}
+.adv-toggle.open { color:#fff; border-color:rgba(6,182,212,0.25); background:rgba(6,182,212,0.04); }
+.adv-arrow { font-size:18px; font-weight:400; transition:transform .2s; }
+.adv-group {
+  padding:20px 0 16px;
+  border-bottom:1px solid var(--border);
+}
+.adv-group-label {
+  font-family:'Space Mono',monospace; font-size:10px; text-transform:uppercase;
+  letter-spacing:.12em; color:var(--muted); margin-bottom:14px;
+}
+.adv-row-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.adv-field { display:flex; flex-direction:column; gap:6px; }
+.adv-range-wrap { display:flex; align-items:center; gap:10px; margin-top:6px; }
+.adv-range-track {
+  flex:1; height:4px; background:var(--surface2);
+  border-radius:2px; overflow:hidden;
+}
+.adv-range-fill { height:100%; background:var(--accent); border-radius:2px; }
+.adv-range-val { font-family:'Space Mono',monospace; font-size:11px; font-weight:700; color:#fff; min-width:36px; text-align:right; }
+.adv-checks { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.adv-check { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); cursor:pointer; }
+.adv-check-box {
+  width:16px; height:16px; border-radius:4px;
+  border:1px solid var(--border); background:var(--surface2); flex-shrink:0;
+}
+.adv-check-box.checked { background:var(--accent); border-color:var(--accent); }
+.adv-schedule {
+  margin-top:16px; padding:14px 16px;
+  background:rgba(6,182,212,0.04); border:1px solid rgba(6,182,212,0.15);
+  border-radius:10px;
+}
+.adv-toggle-pill {
+  width:36px; height:20px; border-radius:100px;
+  background:var(--surface2); border:1px solid var(--border); flex-shrink:0;
+}
+</style>
+
+<div style="height:60px"></div>
+
+<!-- ═══ INSCRIPTION ═══ -->
+<h2 class="proposal">⑤ Inscription</h2>
+<p class="proposal-sub">Prénom visible dès l'accueil. Étapes claires, aucun texte parasite.</p>
+<div class="page-mock" style="background:rgba(0,0,0,0.4)">
+  <div class="auth-mock">
+    <div class="auth-logo">Spotted<span>OF</span></div>
+    <div class="auth-h1">Créer mon compte</div>
+    <div class="auth-sub">Gratuit, sans carte bancaire.</div>
+    <div class="auth-form">
+      <div class="auth-row-2">
+        <div>
+          <label class="scan-field-label">Prénom</label>
+          <div class="scan-input" style="color:var(--muted)">Robin</div>
+        </div>
+        <div>
+          <label class="scan-field-label">Nom de l'agence</label>
+          <div class="scan-input" style="color:var(--muted)">FlyMagency</div>
+        </div>
+      </div>
+      <div>
+        <label class="scan-field-label">Email</label>
+        <div class="scan-input" style="color:var(--muted)">toi@agence.com</div>
+      </div>
+      <div>
+        <label class="scan-field-label">Mot de passe</label>
+        <div class="scan-input" style="color:var(--muted)">••••••••</div>
+      </div>
+      <div class="auth-plan-row">
+        <div class="auth-plan active">
+          <div class="auth-plan-name">Starter</div>
+          <div class="auth-plan-price">49€/mois</div>
+        </div>
+        <div class="auth-plan">
+          <div class="auth-plan-name">Pro</div>
+          <div class="auth-plan-price">99€/mois</div>
+        </div>
+        <div class="auth-plan">
+          <div class="auth-plan-name">Agence</div>
+          <div class="auth-plan-price">199€/mois</div>
+        </div>
+      </div>
+      <div class="scan-btn" style="width:100%;text-align:center;padding:14px">Créer mon compte →</div>
+      <div style="text-align:center;font-size:12px;color:var(--muted)">Déjà un compte ? <span style="color:var(--accent);cursor:pointer">Se connecter</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ADMIN ═══ -->
+<h2 class="proposal">⑥ Espace Admin</h2>
+<p class="proposal-sub">Table clients épurée. Tout visible d'un coup d'œil. Modale propre pour gérer.</p>
+<div class="page-mock" style="padding:0;overflow:hidden;height:580px">
+  <div style="display:flex;height:100%">
+    <!-- sidebar -->
+    <div style="width:200px;background:var(--surface);border-right:1px solid var(--border);padding:20px 0;flex-shrink:0">
+      <div style="padding:0 20px 20px;font-family:'Outfit',sans-serif;font-weight:800;font-size:16px">Spotted<span style="color:var(--accent)">OF</span></div>
+      <div style="padding:8px 20px;font-size:12px;color:var(--muted);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.1em;margin-top:8px">Admin</div>
+      <div class="admin-nav-item active">👥 Clients</div>
+      <div class="admin-nav-item">📊 Stats</div>
+      <div class="admin-nav-item">⚙️ Config</div>
+    </div>
+    <!-- main -->
+    <div style="flex:1;padding:28px;overflow-y:auto;position:relative">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
+        <div>
+          <div style="font-size:18px;font-weight:800;font-family:'Outfit',sans-serif">Clients</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">12 comptes actifs</div>
+        </div>
+        <div style="background:var(--accent);color:#fff;font-size:12px;font-weight:700;padding:8px 16px;border-radius:8px;cursor:pointer">+ Ajouter</div>
+      </div>
+      <!-- table -->
+      <div class="admin-table">
+        <div class="admin-thead">
+          <div>Client</div><div>Plan</div><div>Statut</div><div>Scans</div><div></div>
+        </div>
+        <div class="admin-row">
+          <div class="admin-client-cell"><div class="admin-avatar" style="background:linear-gradient(135deg,var(--accent),#0891b2)">R</div><div><div class="admin-name">Robin D.</div><div class="admin-email">robin@fly.com</div></div></div>
+          <div><span class="admin-badge admin-badge-pro">Pro</span></div>
+          <div><span class="admin-badge admin-badge-ok">Actif</span></div>
+          <div style="font-size:13px;font-weight:600">24</div>
+          <div><button class="admin-manage-btn">Gérer →</button></div>
+        </div>
+        <div class="admin-row">
+          <div class="admin-client-cell"><div class="admin-avatar" style="background:linear-gradient(135deg,var(--pink),#be185d)">S</div><div><div class="admin-name">Sofia M.</div><div class="admin-email">sofia@of.io</div></div></div>
+          <div><span class="admin-badge admin-badge-starter">Starter</span></div>
+          <div><span class="admin-badge admin-badge-ok">Actif</span></div>
+          <div style="font-size:13px;font-weight:600">6</div>
+          <div><button class="admin-manage-btn">Gérer →</button></div>
+        </div>
+        <div class="admin-row">
+          <div class="admin-client-cell"><div class="admin-avatar" style="background:linear-gradient(135deg,var(--yellow),#d97706)">K</div><div><div class="admin-name">Kevin T.</div><div class="admin-email">kevin@agency.fr</div></div></div>
+          <div><span class="admin-badge" style="background:rgba(30,202,110,0.1);color:var(--green)">Agence</span></div>
+          <div><span class="admin-badge admin-badge-ok">Actif</span></div>
+          <div style="font-size:13px;font-weight:600">57</div>
+          <div><button class="admin-manage-btn">Gérer →</button></div>
+        </div>
+        <div class="admin-row" style="opacity:0.45">
+          <div class="admin-client-cell"><div class="admin-avatar" style="background:var(--surface2);border:1px solid var(--border)">M</div><div><div class="admin-name">Marc L.</div><div class="admin-email">marc@old.com</div></div></div>
+          <div><span class="admin-badge admin-badge-starter">Starter</span></div>
+          <div><span class="admin-badge" style="background:rgba(240,67,108,0.1);color:var(--pink)">Inactif</span></div>
+          <div style="font-size:13px;font-weight:600">0</div>
+          <div><button class="admin-manage-btn">Gérer →</button></div>
+        </div>
+      </div>
+      <!-- modale flottante -->
+      <div class="admin-modal-overlay">
+        <div class="admin-modal">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+            <div style="font-size:15px;font-weight:800;font-family:'Outfit',sans-serif">Gérer · Robin D.</div>
+            <div style="color:var(--muted);font-size:18px;cursor:pointer;line-height:1">×</div>
+          </div>
+          <div class="admin-modal-grid">
+            <div>
+              <label class="scan-field-label">Prénom</label>
+              <div class="scan-input">Robin</div>
+            </div>
+            <div>
+              <label class="scan-field-label">Agence</label>
+              <div class="scan-input">FlyMagency</div>
+            </div>
+            <div>
+              <label class="scan-field-label">Email</label>
+              <div class="scan-input">robin@fly.com</div>
+            </div>
+            <div>
+              <label class="scan-field-label">Plan</label>
+              <div class="scan-input" style="display:flex;align-items:center;justify-content:space-between">Pro <span style="color:var(--muted);font-size:11px">▼</span></div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:16px">
+            <div style="flex:1;background:var(--accent);color:#fff;font-size:12px;font-weight:700;padding:10px;border-radius:8px;text-align:center;cursor:pointer">Enregistrer</div>
+            <div style="background:rgba(245,158,11,0.1);color:var(--yellow);font-size:12px;font-weight:700;padding:10px 14px;border-radius:8px;cursor:pointer">📧 Reset MDP</div>
+            <div style="background:rgba(240,67,108,0.1);color:var(--pink);font-size:12px;font-weight:700;padding:10px 14px;border-radius:8px;cursor:pointer">🗑️</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MON PLAN ═══ -->
+<h2 class="proposal">⑦ Mon Plan</h2>
+<p class="proposal-sub">Plan actuel bien visible. Usage en clair. Upgrade facile d'un clic.</p>
+<div class="page-mock" style="background:rgba(0,0,0,0.3)">
+  <div style="max-width:680px;margin:0 auto;padding:40px 24px;display:flex;flex-direction:column;gap:24px">
+    <!-- Plan actuel -->
+    <div style="background:var(--surface);border:1px solid rgba(6,182,212,0.3);border-radius:16px;padding:28px;position:relative;overflow:hidden">
+      <div style="position:absolute;top:0;right:0;width:200px;height:200px;background:radial-gradient(circle,rgba(6,182,212,0.06) 0%,transparent 70%)"></div>
+      <div style="display:flex;align-items:flex-start;justify-content:space-between">
+        <div>
+          <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Plan actuel</div>
+          <div style="font-family:'Outfit',sans-serif;font-size:28px;font-weight:900">Pro</div>
+          <div style="font-size:13px;color:var(--muted);margin-top:4px">99€ / mois · Renouvellement le 15 juil.</div>
+        </div>
+        <div style="background:rgba(6,182,212,0.1);color:var(--accent);font-size:11px;font-weight:700;padding:5px 12px;border-radius:100px;font-family:'Space Mono',monospace">ACTIF</div>
+      </div>
+      <!-- usage bars -->
+      <div style="margin-top:24px;display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:6px"><span style="color:var(--muted)">Scans utilisés</span><span style="font-weight:700">8 / 20</span></div>
+          <div style="height:4px;background:var(--surface2);border-radius:2px"><div style="width:40%;height:100%;background:var(--accent);border-radius:2px"></div></div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:6px"><span style="color:var(--muted)">Prospects trouvés</span><span style="font-weight:700">247</span></div>
+          <div style="height:4px;background:var(--surface2);border-radius:2px"><div style="width:75%;height:100%;background:var(--green);border-radius:2px"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Upgrade vers Agence -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:4px">Passer à Agence</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:16px">Scans illimités, équipe jusqu'à 10 membres, export CSV avancé.</div>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div style="font-family:'Outfit',sans-serif;font-size:22px;font-weight:900">199€<span style="font-size:13px;color:var(--muted);font-weight:400"> / mois</span></div>
+        <div style="background:var(--accent);color:#fff;font-size:12px;font-weight:700;padding:10px 20px;border-radius:9px;cursor:pointer;box-shadow:0 0 24px rgba(6,182,212,0.25)">Passer à Agence →</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<style>
+/* ── AUTH REGISTER ── */
+.auth-mock {
+  max-width: 420px; margin:0 auto; padding:48px 24px;
+  display:flex; flex-direction:column; gap:0;
+}
+.auth-logo { font-family:'Outfit',sans-serif; font-size:20px; font-weight:800; margin-bottom:32px; }
+.auth-logo span { color:var(--accent); }
+.auth-h1 { font-family:'Outfit',sans-serif; font-size:26px; font-weight:900; margin-bottom:6px; }
+.auth-sub { font-size:13px; color:var(--muted); margin-bottom:28px; }
+.auth-form { display:flex; flex-direction:column; gap:16px; }
+.auth-row-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.auth-plan-row { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.auth-plan {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:10px; padding:12px; cursor:pointer; text-align:center;
+}
+.auth-plan.active { border-color:rgba(6,182,212,0.4); background:rgba(6,182,212,0.06); }
+.auth-plan-name { font-size:12px; font-weight:700; }
+.auth-plan-price { font-size:11px; color:var(--muted); margin-top:2px; }
+
+/* ── ADMIN ── */
+.admin-nav-item {
+  padding:10px 20px; font-size:13px; color:var(--muted); cursor:pointer;
+  display:flex; align-items:center; gap:8px;
+}
+.admin-nav-item.active { color:#fff; background:rgba(255,255,255,0.04); border-left:2px solid var(--accent); }
+.admin-table { border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+.admin-thead {
+  display:grid; grid-template-columns:2fr 1fr 1fr 80px 100px;
+  padding:10px 16px; background:var(--surface);
+  font-size:10px; color:var(--muted); font-family:'Space Mono',monospace; text-transform:uppercase; letter-spacing:.08em;
+  border-bottom:1px solid var(--border);
+}
+.admin-row {
+  display:grid; grid-template-columns:2fr 1fr 1fr 80px 100px;
+  padding:12px 16px; align-items:center;
+  border-bottom:1px solid var(--border); background:var(--surface2);
+  transition:background .15s;
+}
+.admin-row:last-child { border-bottom:none; }
+.admin-client-cell { display:flex; align-items:center; gap:10px; }
+.admin-avatar {
+  width:32px; height:32px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:13px; font-weight:800; color:#fff; flex-shrink:0;
+}
+.admin-name { font-size:13px; font-weight:600; }
+.admin-email { font-size:11px; color:var(--muted); }
+.admin-badge {
+  font-size:10px; font-weight:700; padding:3px 8px; border-radius:100px;
+  font-family:'Space Mono',monospace;
+}
+.admin-badge-pro { background:rgba(6,182,212,0.1); color:var(--accent); }
+.admin-badge-starter { background:rgba(255,255,255,0.06); color:var(--muted); }
+.admin-badge-ok { background:rgba(30,202,110,0.1); color:var(--green); }
+.admin-manage-btn {
+  background:var(--surface); border:1px solid var(--border);
+  color:var(--accent); font-size:11px; font-weight:700;
+  padding:5px 12px; border-radius:7px; cursor:pointer;
+}
+.admin-modal-overlay {
+  position:absolute; inset:0; background:rgba(0,0,0,0.6);
+  display:flex; align-items:center; justify-content:center;
+  pointer-events:none;
+}
+.admin-modal {
+  background:var(--surface); border:1px solid var(--border-light);
+  border-radius:14px; padding:24px; width:380px;
+  box-shadow:0 24px 80px rgba(0,0,0,0.6);
+}
+.admin-modal-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+</style>
+
+<div style="height:60px"></div>
+
+<script>
+// ═══ HERO MOCK — ANIMATION LIVE ═══
+function animCount(el, target, suffix, duration, onDone) {
+  const start = performance.now();
+  function step(now) {
+    const p = Math.min((now - start) / duration, 1);
+    const ease = 1 - Math.pow(1 - p, 3);
+    el.textContent = Math.round(ease * target) + suffix;
+    if (p < 1) requestAnimationFrame(step);
+    else if (onDone) onDone();
+  }
+  requestAnimationFrame(step);
+}
+
+function runHeroSequence() {
+  const scanning = document.getElementById('heroScanning');
+  const progFill = scanning?.querySelector('.scan-prog-fill');
+
+  // Phase 1 — barre de scan
+  scanning.style.opacity = '1';
+  let prog = 0;
+  const scanInt = setInterval(() => {
+    prog = Math.min(prog + Math.random() * 4 + 1, 100);
+    if (progFill) progFill.style.width = prog + '%';
+    if (prog >= 100) {
+      clearInterval(scanInt);
+      scanning.style.opacity = '0';
+
+      // Phase 2 — stats comptent
+      setTimeout(() => {
+        animCount(document.getElementById('heroStat1'), 247, '', 900);
+        animCount(document.getElementById('heroStat2'), 71, '%', 700);
+        animCount(document.getElementById('heroStat3'), 89, '', 600);
+      }, 200);
+
+      // Phase 3 — lignes apparaissent avec barres
+      setTimeout(() => {
+        const r1 = document.getElementById('heroRow1');
+        r1.style.opacity = '1';
+        const b1 = r1.querySelector('.mock-bar-fill');
+        if (b1) b1.style.width = '94%';
+        animCount(document.getElementById('heroScore1'), 94, '%', 900);
+      }, 500);
+
+      setTimeout(() => {
+        const r2 = document.getElementById('heroRow2');
+        r2.style.opacity = '1';
+        const b2 = r2.querySelector('.mock-bar-fill');
+        if (b2) b2.style.width = '78%';
+        animCount(document.getElementById('heroScore2'), 78, '%', 800);
+      }, 750);
+
+      setTimeout(() => {
+        const r3 = document.getElementById('heroRow3');
+        r3.style.opacity = '1';
+        const b3 = r3.querySelector('.mock-bar-fill');
+        if (b3) b3.style.width = '86%';
+        animCount(document.getElementById('heroScore3'), 86, '%', 750);
+      }, 1000);
+
+      // Phase 4 — rejouer en boucle après 4s
+      setTimeout(() => {
+        // Reset
+        ['heroStat1','heroStat2','heroStat3'].forEach(id => document.getElementById(id).textContent = id.endsWith('2') ? '0%' : '0');
+        ['heroRow1','heroRow2','heroRow3'].forEach(id => {
+          const el = document.getElementById(id);
+          el.style.opacity = '0';
+          const b = el.querySelector('.mock-bar-fill');
+          if (b) { b.style.transition = 'none'; b.style.width = '0'; setTimeout(()=>b.style.transition='',50); }
+        });
+        ['heroScore1','heroScore2','heroScore3'].forEach(id => document.getElementById(id).textContent = '0%');
+        if (progFill) { progFill.style.transition = 'none'; progFill.style.width = '0'; setTimeout(()=>progFill.style.transition='',50); }
+        prog = 0;
+        setTimeout(runHeroSequence, 300);
+      }, 4500);
+    }
+  }, 40);
+}
+
+// Démarrer après l'animation d'entrée du cadre
+setTimeout(runHeroSequence, 1000);
+
+// 3D tilt interactif sur les KPI cards
+document.querySelectorAll('.kpi-new').forEach(card => {
+  card.addEventListener('mousemove', e => {
+    const rect = card.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width  - 0.5;
+    const y = (e.clientY - rect.top)  / rect.height - 0.5;
+    const rotY =  x * 18;
+    const rotX = -y * 14;
+    card.style.transform = `perspective(600px) rotateX(${rotX}deg) rotateY(${rotY}deg) translateY(-4px) scale(1.03)`;
+    card.style.boxShadow = `${-rotY * 1.5}px ${rotX * 1.5}px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(6,182,212,0.12)`;
+    card.style.transition = 'none';
+  });
+  card.addEventListener('mouseleave', () => {
+    card.style.transition = 'transform 0.4s cubic-bezier(0.16,1,0.3,1), box-shadow 0.4s ease';
+    card.style.transform = '';
+    card.style.boxShadow = '';
+  });
+});
+
+// 3D tilt dynamique sur les price cards (suit la souris)
+document.querySelectorAll('.price-card').forEach(card => {
+  card.addEventListener('mousemove', e => {
+    const rect = card.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width  - 0.5;
+    const y = (e.clientY - rect.top)  / rect.height - 0.5;
+    const rotX = -y * 16;
+    const rotY =  x * 16;
+    card.style.transform = `perspective(900px) rotateX(${rotX}deg) rotateY(${rotY}deg) translateY(-10px) scale(1.03)`;
+    card.style.boxShadow = `${-rotY*2}px ${rotX*2}px 60px rgba(0,0,0,0.5), 0 0 50px rgba(6,182,212,0.1)`;
+    card.style.borderColor = 'rgba(6,182,212,0.5)';
+    card.style.transition = 'none';
+  });
+  card.addEventListener('mouseleave', () => {
+    card.style.transition = 'transform 0.5s cubic-bezier(0.16,1,0.3,1), box-shadow 0.5s ease, border-color 0.5s ease';
+    card.style.transform = '';
+    card.style.boxShadow = '';
+    card.style.borderColor = '';
+  });
+});
+
+// 3D tilt sur les feature items
+document.querySelectorAll('.feat-item').forEach(card => {
+  card.addEventListener('mousemove', e => {
+    const rect = card.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width  - 0.5;
+    const y = (e.clientY - rect.top)  / rect.height - 0.5;
+    card.style.transform = `perspective(500px) rotateX(${-y*8}deg) rotateY(${x*8}deg)`;
+    card.style.transition = 'none';
+  });
+  card.addEventListener('mouseleave', () => {
+    card.style.transition = 'transform 0.35s cubic-bezier(0.16,1,0.3,1), background 0.2s';
+    card.style.transform = '';
+  });
+});
+</script>
+</body>
+</html>

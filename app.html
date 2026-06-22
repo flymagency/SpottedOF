@@ -1119,6 +1119,12 @@ const SUPABASE_URL = 'https://nsvrkogwmzrbjrtbphpb.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_x7QwXgNepnb6t_2LCMniqw_zIEZ2LnR';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// ─── SÉCURITÉ : échappement HTML pour prévenir XSS ───────────────────────────
+function esc(str) {
+  if (str == null) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
 // Auth check
 let currentUser = null;
 let userPlan = null;
@@ -1143,9 +1149,15 @@ sb.auth.getSession().then(async ({ data }) => {
 
   // Charger le profil + vérifier appartenance équipe en parallèle
   const [{ data: profile }, { data: teamMembership }] = await Promise.all([
-    sb.from('profiles').select('plan, paid, first_name, agency_name').eq('id', currentUser.id).single(),
+    sb.from('profiles').select('plan, paid, first_name, agency_name, suspended').eq('id', currentUser.id).single(),
     sb.from('team_members').select('id').eq('user_id', currentUser.id).limit(1).maybeSingle(),
   ]);
+  // Compte bloqué par l'admin → déconnexion immédiate
+  if (profile?.suspended) {
+    await sb.auth.signOut();
+    window.location.href = 'login.html?suspended=1';
+    return;
+  }
   userPlan = (profile?.plan || 'starter').toLowerCase();
   userPaid = profile?.paid || false;
   userFirstName = profile?.first_name || '';
@@ -1311,8 +1323,8 @@ function renderProspects() {
       return `<div class="prospect-card" onclick="openProspect('${p.id}')">
         <div class="card-platform dot-${p.platform}" style="background:${p.platform==='ig'?'var(--accent2)':p.platform==='tt'?'var(--green)':'var(--accent)'}"></div>
         <div class="card-avatar">${avatarHTML(p.handle, p.platform, 72)}</div>
-        <div class="card-handle">${p.handle}</div>
-        <div class="card-name">${p.name}</div>
+        <div class="card-handle">${esc(p.handle)}</div>
+        <div class="card-name">${esc(p.name)}</div>
         <div class="card-score s-${cl}">${p.score}%</div>
         <div class="card-stats">
           <span class="card-stat">${fmt(p.followers)} followers</span>
@@ -1332,13 +1344,13 @@ function renderProspects() {
       <div class="profile-cell">
         <div class="avatar">${avatarHTML(p.handle, p.platform)}</div>
         <div>
-          <div class="profile-handle"><span class="platform-dot dot-${p.platform}"></span>${p.handle}</div>
-          <div class="profile-name">${p.name}</div>
+          <div class="profile-handle"><span class="platform-dot dot-${p.platform}"></span>${esc(p.handle)}</div>
+          <div class="profile-name">${esc(p.name)}</div>
         </div>
       </div>
       <div class="cell cell-mono">${fmt(p.followers)}</div>
       <div class="cell cell-mono" style="color:var(--yellow)">${p.engagement}%</div>
-      <div class="cell" style="font-size:12px;color:var(--muted)">${p.niche}</div>
+      <div class="cell" style="font-size:12px;color:var(--muted)">${esc(p.niche)}</div>
       <div class="cell">${statusBadge(p)}</div>
       <div class="cell">
         <div class="score-wrap">
@@ -1373,7 +1385,7 @@ function renderProspects() {
         <div class="icon-btn" onclick="blacklistProspect('${p.id}',this)" title="Blacklister" style="color:var(--muted);border-color:rgba(107,114,128,0.25)">
           <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
         </div>
-        ${isPro() ? `<div class="icon-btn" onclick="openTagsModal('${p.id}','${p.handle}')" title="Tags" style="color:#06B6D4;border-color:rgba(6,182,212,0.25)">🏷️</div>` : ''}
+        ${isPro() ? `<div class="icon-btn" onclick="openTagsModal('${p.id}')" title="Tags" style="color:#06B6D4;border-color:rgba(6,182,212,0.25)">🏷️</div>` : ''}
         <div class="icon-btn" onclick="deleteProspect('${p.id}',this)" title="Supprimer" style="color:#F0436C;border-color:rgba(240,67,108,0.25)">
           <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
         </div>
@@ -1463,12 +1475,12 @@ function openProspect(id) {
     <div class="modal-profile">
       <div class="modal-avatar">${avatarHTML(p.handle, p.platform, 60)}</div>
       <div>
-        <div class="modal-handle">${p.handle}</div>
-        <div class="modal-meta">${p.name} · ${p.niche} · <span class="platform-dot dot-${p.platform}" style="margin-left:4px"></span>${p.platform.toUpperCase()}</div>
+        <div class="modal-handle">${esc(p.handle)}</div>
+        <div class="modal-meta">${esc(p.name)} · ${esc(p.niche)} · <span class="platform-dot dot-${p.platform}" style="margin-left:4px"></span>${p.platform.toUpperCase()}</div>
         <div style="margin-top:8px">${p.hasOf ? privatePlatformBadge(p) : '<span class="badge badge-convert">À contacter</span>'}</div>
       </div>
     </div>
-    <div class="modal-bio">${p.bio || '<em style="color:var(--muted)">Pas de bio disponible</em>'}</div>
+    <div class="modal-bio">${p.bio ? esc(p.bio) : '<em style="color:var(--muted)">Pas de bio disponible</em>'}</div>
     <div class="score-breakdown">
       <div class="score-item"><div class="score-item-label">Score global</div><div class="score-item-val s-${cl}">${p.score}%</div></div>
       <div class="score-item"><div class="score-item-label">Followers</div><div class="score-item-val">${fmt(p.followers)}</div></div>
@@ -2699,13 +2711,13 @@ function renderSaved() {
           <div class="saved-card-top">
             <div class="saved-avatar">${avatarHTML(p.handle, p.platform, 48)}</div>
             <div class="saved-info">
-              <div class="saved-handle"><span class="platform-dot dot-${p.platform}"></span>${p.handle}</div>
-              <div class="saved-name">${p.name}</div>
-              <div style="font-size:11px;color:var(--muted);font-family:'Space Mono',monospace;margin-top:2px">${fmt(p.followers)} · ${p.niche||'—'}</div>
+              <div class="saved-handle"><span class="platform-dot dot-${p.platform}"></span>${esc(p.handle)}</div>
+              <div class="saved-name">${esc(p.name)}</div>
+              <div style="font-size:11px;color:var(--muted);font-family:'Space Mono',monospace;margin-top:2px">${fmt(p.followers)} · ${esc(p.niche)||'—'}</div>
             </div>
             <div class="saved-score s-${cl}">${p.score}%</div>
           </div>
-          ${note ? `<div class="saved-note">💬 ${note}</div>` : ''}
+          ${note ? `<div class="saved-note">💬 ${esc(note)}</div>` : ''}
           <div class="saved-footer" onclick="event.stopPropagation()">
             ${statusBadge(p)}
             <button class="icon-btn" onclick="openProspect('${p.id}')" title="Voir le profil" style="margin-left:auto">
@@ -2769,8 +2781,8 @@ function renderPrivate() {
           <div class="profile-cell" style="flex:2">
             <div class="avatar">${avatarHTML(p.handle, p.platform)}</div>
             <div>
-              <div class="profile-handle"><span class="platform-dot dot-${p.platform}"></span>${p.handle}</div>
-              <div class="profile-name">${p.name}</div>
+              <div class="profile-handle"><span class="platform-dot dot-${p.platform}"></span>${esc(p.handle)}</div>
+              <div class="profile-name">${esc(p.name)}</div>
             </div>
           </div>
           <div class="cell cell-mono">${fmt(p.followers)}</div>
@@ -2861,12 +2873,12 @@ function renderContact() {
                 <div class="pipeline-card-top">
                   <div class="avatar" style="width:32px;height:32px;font-size:11px;flex-shrink:0">${avatarHTML(p.handle, p.platform, 32)}</div>
                   <div style="flex:1;min-width:0">
-                    <div class="profile-handle" style="font-size:12px"><span class="platform-dot dot-${p.platform}"></span>${p.handle}</div>
-                    <div class="profile-name" style="font-size:11px">${p.name}</div>
+                    <div class="profile-handle" style="font-size:12px"><span class="platform-dot dot-${p.platform}"></span>${esc(p.handle)}</div>
+                    <div class="profile-name" style="font-size:11px">${esc(p.name)}</div>
                   </div>
                   <span class="score-num s-${sc(p.score)}" style="font-size:11px;font-family:'Space Mono',monospace">${p.score}%</span>
                 </div>
-                ${p.note ? `<div class="pipeline-note">${p.note}</div>` : ''}
+                ${p.note ? `<div class="pipeline-note">${esc(p.note)}</div>` : ''}
                 <div class="pipeline-card-actions" onclick="event.stopPropagation()">
                   <button class="pipeline-move-btn" onclick="openPipelineModal('${p.id}','${(p.status||'').toLowerCase()}');setTimeout(renderContact,300)" title="Changer statut">
                     <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
@@ -3116,10 +3128,10 @@ function renderBlacklist() {
         <div class="bl-row">
           <div class="avatar" style="flex-shrink:0">${avatarHTML(p.handle, p.platform, 40)}</div>
           <div style="flex:1;min-width:0">
-            <div class="profile-handle" style="font-size:13px;font-weight:700"><span class="platform-dot dot-${p.platform}"></span>${p.handle}</div>
-            <div class="profile-name">${p.name}</div>
+            <div class="profile-handle" style="font-size:13px;font-weight:700"><span class="platform-dot dot-${p.platform}"></span>${esc(p.handle)}</div>
+            <div class="profile-name">${esc(p.name)}</div>
           </div>
-          <div style="font-size:11px;color:var(--muted);font-family:'Space Mono',monospace">${fmt(p.followers)} · ${p.niche}</div>
+          <div style="font-size:11px;color:var(--muted);font-family:'Space Mono',monospace">${fmt(p.followers)} · ${esc(p.niche)}</div>
           <div class="score-wrap" style="min-width:80px">
             <div class="score-bar"><div class="score-fill sf-${sc(p.score)}" style="width:${p.score}%"></div></div>
             <span class="score-num s-${sc(p.score)}">${p.score}%</span>
@@ -3593,7 +3605,7 @@ function openNewReminderModal() {
         <label class="form-label">Prospect</label>
         <select id="reminderProspect" class="form-input" style="padding:8px 10px">
           <option value="">— Sélectionner un prospect</option>
-          ${options.map(p => `<option value="${p.id}">${p.handle} · ${p.niche}</option>`).join('')}
+          ${options.map(p => `<option value="${p.id}">${esc(p.handle)} · ${esc(p.niche)}</option>`).join('')}
         </select>
       </div>
       <div style="margin-bottom:14px">
@@ -4979,10 +4991,11 @@ async function loadTags() {
   } catch(e) {}
 }
 
-function openTagsModal(prospectId, handle) {
+function openTagsModal(prospectId) {
   if (!isPro()) { showToast('Fonctionnalité Pro uniquement 🔒', 'error'); return; }
   _tagsProspectId = prospectId;
-  document.getElementById('tagsModalHandle').textContent = '@' + handle;
+  const _p = DATA.find(x => x.id === prospectId);
+  document.getElementById('tagsModalHandle').textContent = '@' + (_p ? _p.handle : '');
   renderTagsModal();
   document.getElementById('tagsModal').classList.add('open');
 }
@@ -4995,7 +5008,7 @@ function renderTagsModal() {
   } else {
     el.innerHTML = tags.map(t => `
       <span class="tag-chip" style="background:${t.color}18;color:${t.color};border-color:${t.color}40">
-        ${t.tag}
+        ${esc(t.tag)}
         <span class="tag-del" onclick="removeTag('${t.tag.replace(/'/g,"\\'")}')">✕</span>
       </span>`).join('');
   }

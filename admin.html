@@ -359,9 +359,10 @@ const SUPABASE_URL = 'https://nsvrkogwmzrbjrtbphpb.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_x7QwXgNepnb6t_2LCMniqw_zIEZ2LnR';
 const WORKER = 'https://spottedof-worker.businessflymagency.workers.dev';
 const ADMIN_EMAIL = 'businessflymagency@gmail.com';
-const PLAN_PRICES = { free: 0, starter: 70, pro: 100, agency: 200, admin: 0 };
+const PLAN_PRICES = { free: 0, starter: 49, pro: 99, agency: 199, admin: 0, superadmin: 0, member: 0 };
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+function esc(str) { if (str==null) return ''; return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 let clients = [];
 
 // Auth + admin check
@@ -414,8 +415,8 @@ function renderClients() {
   el.innerHTML = clients.map(c => `
     <div class="client-row">
       <div style="min-width:0">
-        <div class="client-email" title="${c.email || ''}">${c.email || '—'}</div>
-        <div class="client-agency">${c.agency_name || '—'}</div>
+        <div class="client-email" title="${esc(c.email)}">${esc(c.email) || '—'}</div>
+        <div class="client-agency">${esc(c.agency_name) || '—'}</div>
       </div>
       <div class="cell">${planBadge(c.plan)}</div>
       <div class="cell">
@@ -423,7 +424,7 @@ function renderClients() {
       </div>
       <div class="cell-mono" style="font-size:12px;font-weight:700;color:var(--text)">${c.prospects_count || 0}</div>
       <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted)">${dateFmt(c.created_at)}</div>
-      <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.notes || '—'}</div>
+      <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(c.notes) || '—'}</div>
       <div class="actions-cell">
         <button onclick="editClient('${c.id}')" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;color:var(--accent);cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.2s;white-space:nowrap" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
           Gérer →
@@ -599,13 +600,13 @@ async function loadTickets() {
       const planColor = { starter:'#06B6D4', pro:'#1ECA6E', agency:'#F0436C', admin:'#F59E0B' }[t.plan?.toLowerCase()] || '#9898A8';
       return `<div class="ticket-row ${t.status==='open'?'unread':''}">
         <div>
-          <div style="font-weight:700;font-size:12px">${t.agency_name || '—'}</div>
-          <div style="font-size:10px;color:var(--muted);font-family:'Space Mono',monospace;margin-top:2px">${t.email || ''}</div>
+          <div style="font-weight:700;font-size:12px">${esc(t.agency_name) || '—'}</div>
+          <div style="font-size:10px;color:var(--muted);font-family:'Space Mono',monospace;margin-top:2px">${esc(t.email) || ''}</div>
         </div>
-        <div><span style="font-size:10px;font-family:'Space Mono',monospace;font-weight:700;color:${planColor}">${(t.plan||'—').toUpperCase()}</span></div>
-        <div><span class="cat-badge">${CAT_LABELS[t.category] || t.category}</span></div>
+        <div><span style="font-size:10px;font-family:'Space Mono',monospace;font-weight:700;color:${planColor}">${esc((t.plan||'—').toUpperCase())}</span></div>
+        <div><span class="cat-badge">${CAT_LABELS[t.category] || esc(t.category)}</span></div>
         <div style="font-size:11px;color:var(--muted);font-family:'Space Mono',monospace">${date}</div>
-        <div style="font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${t.message}">${t.message}</div>
+        <div style="font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(t.message)}">${esc(t.message)}</div>
         <div style="display:flex;gap:6px;justify-content:flex-end">
           ${t.status === 'open'
             ? `<button onclick="resolveTicket('${t.id}')" style="background:rgba(30,202,110,0.1);color:#1ECA6E;border:1px solid rgba(30,202,110,0.25);padding:5px 10px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif">✓ Résolu</button>`

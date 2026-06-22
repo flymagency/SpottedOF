@@ -250,6 +250,10 @@
   sb.auth.getSession().then(({ data }) => {
     if (data.session) window.location.href = 'app.html';
   });
+  // Afficher message si compte suspendu
+  if (new URLSearchParams(location.search).get('suspended') === '1') {
+    showError('Votre compte a été suspendu. Contactez le support.');
+  }
 
   async function submit() {
     const email = document.getElementById('email').value.trim();
