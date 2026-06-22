@@ -270,6 +270,61 @@
       .th:nth-child(3),.th:nth-child(4),.th:nth-child(5),
       .prospect-row>*:nth-child(3),.prospect-row>*:nth-child(4),.prospect-row>*:nth-child(5) { display: none; }
     }
+
+    /* ─── HOME VIEW ─── */
+    @keyframes homeCardIn { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:none; } }
+    @keyframes countUp { from { opacity:0; } to { opacity:1; } }
+    @keyframes pulseGlow { 0%,100% { box-shadow:0 0 0 0 rgba(6,182,212,0); } 50% { box-shadow:0 0 24px 4px rgba(6,182,212,0.12); } }
+    @keyframes gradientShift { 0%,100% { background-position:0% 50%; } 50% { background-position:100% 50%; } }
+
+    .home-header {
+      background: linear-gradient(135deg, rgba(6,182,212,0.08) 0%, rgba(240,67,108,0.05) 50%, rgba(6,182,212,0.04) 100%);
+      background-size: 200% 200%;
+      animation: gradientShift 8s ease infinite;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 32px 36px;
+      margin-bottom: 28px;
+      position: relative;
+      overflow: hidden;
+    }
+    .home-header::before {
+      content: '';
+      position: absolute;
+      top: -60px; right: -60px;
+      width: 200px; height: 200px;
+      background: radial-gradient(circle, rgba(6,182,212,0.12), transparent 70%);
+      pointer-events: none;
+    }
+    .home-date { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+    .home-greeting { font-size: 26px; font-weight: 800; font-family: 'Outfit', sans-serif; margin-bottom: 4px; }
+    .home-sub { font-size: 13px; color: var(--muted); }
+
+    .home-kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 28px; }
+    .home-kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px 22px; opacity: 0; animation: homeCardIn 0.45s cubic-bezier(0.16,1,0.3,1) forwards; }
+    .home-kpi:nth-child(1) { animation-delay: 0.05s; border-color: rgba(6,182,212,0.25); }
+    .home-kpi:nth-child(2) { animation-delay: 0.10s; }
+    .home-kpi:nth-child(3) { animation-delay: 0.15s; border-color: rgba(240,67,108,0.2); }
+    .home-kpi:nth-child(4) { animation-delay: 0.20s; border-color: rgba(30,202,110,0.2); }
+    .home-kpi:hover { animation: pulseGlow 2s ease infinite; border-color: rgba(6,182,212,0.35); transform: translateY(-2px); transition: transform 0.2s cubic-bezier(0.16,1,0.3,1); }
+    .home-kpi-label { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+    .home-kpi-value { font-size: 32px; font-weight: 800; font-family: 'Outfit', sans-serif; line-height: 1; }
+    .home-kpi-delta { font-size: 11px; color: var(--muted); margin-top: 6px; }
+
+    .home-bottom { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .home-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; opacity: 0; animation: homeCardIn 0.45s cubic-bezier(0.16,1,0.3,1) forwards; }
+    .home-panel:nth-child(1) { animation-delay: 0.28s; }
+    .home-panel:nth-child(2) { animation-delay: 0.35s; }
+    .home-panel-head { padding: 14px 20px; border-bottom: 1px solid var(--border); font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .home-panel-body { padding: 4px 0; }
+    .home-panel-row { padding: 11px 20px; border-bottom: 1px solid var(--border); font-size: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; transition: background 0.15s; }
+    .home-panel-row:last-child { border-bottom: none; }
+    .home-panel-row:hover { background: var(--surface2); }
+    .home-empty { padding: 32px 20px; text-align: center; color: var(--muted); font-size: 12px; }
+    .home-quick-btn { display: flex; align-items: center; gap: 10px; padding: 12px 20px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.15s; border: none; background: none; width: 100%; text-align: left; color: var(--text); font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500; }
+    .home-quick-btn:last-child { border-bottom: none; }
+    .home-quick-btn:hover { background: var(--surface2); }
+    .home-quick-icon { width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   </style>
 </head>
 <body>
@@ -298,9 +353,14 @@
   </div>
 
   <nav class="sidebar-nav">
+    <!-- HOME -->
+    <button class="nav-item active" id="nav-home" onclick="navTo('home')" style="margin-bottom:4px">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Accueil
+    </button>
     <!-- SCOUTING -->
     <div class="nav-section">Scouting</div>
-    <button class="nav-item active" id="nav-prospects" onclick="navTo('prospects')">
+    <button class="nav-item" id="nav-prospects" onclick="navTo('prospects')">
       <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
       Prospects
       <span class="nav-badge" id="nav-count-badge"></span>
@@ -418,6 +478,11 @@
 
   <!-- CONTENT -->
   <div class="content">
+
+  <!-- ═══ VUE ACCUEIL ═══ -->
+  <div id="view-home">
+    <div id="home-body"></div>
+  </div>
 
   <!-- ═══ VUE SCANS PLANIFIÉS ═══ -->
   <div id="view-scheduled" style="display:none">
@@ -982,6 +1047,7 @@ sb.auth.getSession().then(async ({ data }) => {
   initReminders();
   startGmailPolling();
   initTeam().then(() => checkInviteToken());
+  navTo('home');
 });
 
 // Google Identity Services (Gmail OAuth)
@@ -2393,6 +2459,7 @@ function showLimitModal(limit) {
 
 /* ─── SIDEBAR NAVIGATION ─── */
 const NAV_TITLES = {
+  home:        'Accueil',
   prospects:   'Prospects',
   saved:       'Sauvegardés',
   private:     'Plateforme privée',
@@ -2405,7 +2472,7 @@ const NAV_TITLES = {
   team:        'Équipe',
 };
 const NAV_TAB_MAP = { prospects: 'all', saved: 'saved', private: 'of', contact: 'convert' };
-const SEPARATE_VIEWS = new Set(['blacklist', 'stats', 'performance', 'reminders', 'replies', 'team']);
+const SEPARATE_VIEWS = new Set(['home', 'blacklist', 'stats', 'performance', 'reminders', 'replies', 'team']);
 
 function navTo(section) {
   // Active state sidebar
@@ -2417,7 +2484,7 @@ function navTo(section) {
   document.getElementById('topbarTitle').textContent = NAV_TITLES[section] || section;
 
   // Show/hide views
-  const allViews = ['prospects', 'blacklist', 'stats', 'performance', 'reminders', 'replies', 'team', 'scheduled'];
+  const allViews = ['home', 'prospects', 'blacklist', 'stats', 'performance', 'reminders', 'replies', 'team', 'scheduled'];
   allViews.forEach(v => {
     const el = document.getElementById(`view-${v}`);
     if (el) el.style.display = (v === section || (section === 'all' && v === 'prospects')) ? '' : 'none';
@@ -2426,6 +2493,7 @@ function navTo(section) {
   if (SEPARATE_VIEWS.has(section)) {
     // These sections have their own view containers
     document.getElementById(`view-${section}`).style.display = '';
+    if (section === 'home')        renderHome();
     if (section === 'blacklist')   renderBlacklist();
     if (section === 'stats')       renderStats();
     if (section === 'performance') renderPerformance();
@@ -2485,6 +2553,140 @@ async function unblacklistProspect(id) {
   } catch(e) {
     showToast('Erreur', 'error');
   }
+}
+
+function renderHome() {
+  const el = document.getElementById('home-body');
+
+  // Date en français
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const dateCapitalized = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
+
+  // Stats 30 derniers jours depuis DATA
+  const since30 = new Date(now - 30 * 24 * 60 * 60 * 1000);
+  const recent = DATA.filter(p => new Date(p.created_at || 0) >= since30);
+  const total30 = recent.length || DATA.length; // fallback si pas de date
+  const avgScore = DATA.length ? Math.round(DATA.reduce((s, p) => s + (p.score || 0), 0) / DATA.length) : 0;
+  const withOf = DATA.filter(p => p.hasOf || p.has_of).length;
+  const toContact = DATA.filter(p => !(p.hasOf || p.has_of)).length;
+
+  // Nom agence
+  const agencyName = document.getElementById('sidebarAgency')?.textContent || userPlan?.toUpperCase() || '';
+
+  // Scans du jour depuis SCHEDULED_SCANS
+  const todayStr = now.toISOString().slice(0, 10);
+  const todayScans = (window.SCHEDULED_SCANS || []).filter(s => (s.next_run || '').startsWith(todayStr));
+
+  el.innerHTML = `
+    <!-- HEADER -->
+    <div class="home-header">
+      <div class="home-date">📅 ${dateCapitalized}</div>
+      <div class="home-greeting">Bonjour${agencyName ? ', ' + agencyName : ''} 👋</div>
+      <div class="home-sub">Voici un aperçu de ton activité de scouting</div>
+    </div>
+
+    <!-- KPI 30 JOURS -->
+    <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:12px">📊 30 derniers jours</div>
+    <div class="home-kpi-grid">
+      <div class="home-kpi">
+        <div class="home-kpi-label">Prospects scrapés</div>
+        <div class="home-kpi-value" style="color:var(--accent)" id="hkpi-total">0</div>
+        <div class="home-kpi-delta">total en base</div>
+      </div>
+      <div class="home-kpi">
+        <div class="home-kpi-label">Score moyen</div>
+        <div class="home-kpi-value" style="color:var(--yellow)" id="hkpi-score">0</div>
+        <div class="home-kpi-delta">sur 100</div>
+      </div>
+      <div class="home-kpi">
+        <div class="home-kpi-label">Avec plateforme privée</div>
+        <div class="home-kpi-value" style="color:var(--pink)" id="hkpi-of">0</div>
+        <div class="home-kpi-delta">profils détectés</div>
+      </div>
+      <div class="home-kpi">
+        <div class="home-kpi-label">À contacter</div>
+        <div class="home-kpi-value" style="color:var(--green)" id="hkpi-contact">0</div>
+        <div class="home-kpi-delta">potentiel non OF</div>
+      </div>
+    </div>
+
+    <!-- PANELS BAS -->
+    <div class="home-bottom">
+      <!-- Scans du jour -->
+      <div class="home-panel">
+        <div class="home-panel-head">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Scans du jour
+        </div>
+        <div class="home-panel-body">
+          ${todayScans.length === 0
+            ? `<div class="home-empty">Aucun scan planifié aujourd'hui</div>`
+            : todayScans.map(s => `
+              <div class="home-panel-row">
+                <div>
+                  <div style="font-weight:600;font-size:12px">${s.handle || '—'}</div>
+                  <div style="font-size:10px;color:var(--muted);font-family:'Space Mono',monospace;margin-top:2px">${s.platform?.toUpperCase() || 'IG'}</div>
+                </div>
+                <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--accent)">${(s.next_run || '').slice(11,16)}</div>
+              </div>`).join('')}
+        </div>
+      </div>
+
+      <!-- Actions rapides -->
+      <div class="home-panel">
+        <div class="home-panel-head">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          Actions rapides
+        </div>
+        <div class="home-panel-body">
+          <button class="home-quick-btn" onclick="openScanModal()">
+            <div class="home-quick-icon" style="background:rgba(6,182,212,0.1)">
+              <svg width="14" height="14" fill="none" stroke="var(--accent)" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            </div>
+            Nouveau scan
+          </button>
+          <button class="home-quick-btn" onclick="navTo('prospects')">
+            <div class="home-quick-icon" style="background:rgba(245,158,11,0.1)">
+              <svg width="14" height="14" fill="none" stroke="var(--yellow)" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            Voir les prospects
+          </button>
+          <button class="home-quick-btn" onclick="navTo('scheduled')">
+            <div class="home-quick-icon" style="background:rgba(30,202,110,0.1)">
+              <svg width="14" height="14" fill="none" stroke="var(--green)" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </div>
+            Scans planifiés
+          </button>
+          <button class="home-quick-btn" onclick="navTo('team')">
+            <div class="home-quick-icon" style="background:rgba(240,67,108,0.1)">
+              <svg width="14" height="14" fill="none" stroke="var(--pink)" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            Mon équipe
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Animation compteurs
+  function animateCount(id, target) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    let current = 0;
+    const step = Math.max(1, Math.ceil(target / 40));
+    const interval = setInterval(() => {
+      current = Math.min(current + step, target);
+      el.textContent = current;
+      if (current >= target) clearInterval(interval);
+    }, 20);
+  }
+  setTimeout(() => {
+    animateCount('hkpi-total', total30);
+    animateCount('hkpi-score', avgScore);
+    animateCount('hkpi-of', withOf);
+    animateCount('hkpi-contact', toContact);
+  }, 100);
 }
 
 function renderBlacklist() {
