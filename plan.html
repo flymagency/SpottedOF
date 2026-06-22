@@ -120,20 +120,49 @@
     .feat-name { font-size: 12px; font-weight: 600; color: var(--text); }
     .feat-desc { font-size: 11px; color: var(--muted); line-height: 1.4; }
 
-    /* UPGRADE CARD */
+    /* UPGRADE SECTION */
+    .upgrade-section { margin-bottom: 16px; }
+    .upgrade-section-title { font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 800; margin-bottom: 16px; }
+    .upgrade-cards-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .upgrade-card {
       background: var(--surface);
-      border: 1px solid rgba(6,182,212,0.18);
+      border: 1px solid var(--border);
       border-radius: 20px;
-      padding: 28px 32px;
-      margin-bottom: 16px;
+      padding: 24px;
+      position: relative;
+      transition: border-color 0.2s, transform 0.2s;
     }
-    .upgrade-eyebrow { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 10px; }
-    .upgrade-plan-name { font-family: 'Outfit', sans-serif; font-size: 22px; font-weight: 800; margin-bottom: 4px; }
-    .upgrade-desc { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 20px; }
-    .upgrade-price-row { display: flex; align-items: flex-end; gap: 10px; margin-bottom: 24px; }
-    .upgrade-price { font-family: 'Outfit', sans-serif; font-size: 40px; font-weight: 900; line-height: 1; }
-    .upgrade-period { font-size: 14px; color: var(--muted); margin-bottom: 4px; }
+    .upgrade-card.featured {
+      border-color: rgba(6,182,212,0.35);
+      background: linear-gradient(135deg, rgba(6,182,212,0.04) 0%, var(--surface) 60%);
+    }
+    .upgrade-card:hover { transform: translateY(-2px); }
+    .upgrade-popular { position: absolute; top: -11px; left: 50%; transform: translateX(-50%); background: var(--accent); color: white; font-size: 10px; font-weight: 700; font-family: 'Space Mono', monospace; padding: 3px 12px; border-radius: 20px; white-space: nowrap; letter-spacing: 0.05em; }
+    .upgrade-plan-name { font-family: 'Outfit', sans-serif; font-size: 20px; font-weight: 800; margin-bottom: 4px; }
+    .upgrade-price-row { display: flex; align-items: flex-end; gap: 6px; margin: 12px 0 16px; }
+    .upgrade-price { font-family: 'Outfit', sans-serif; font-size: 34px; font-weight: 900; line-height: 1; }
+    .upgrade-period { font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+    .upgrade-gains { display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px; }
+    .upgrade-gain { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; color: var(--muted); }
+    .upgrade-gain span:first-child { color: var(--accent); font-weight: 700; flex-shrink: 0; }
+    .upgrade-gain.new-feat { color: var(--text); font-weight: 500; }
+    .upgrade-gain.new-feat span:first-child { color: var(--green); }
+    .btn-upgrade { width: 100%; padding: 11px; border-radius: 12px; font-size: 13px; font-weight: 700; font-family: 'Inter', sans-serif; cursor: pointer; border: none; transition: all 0.2s; text-align: center; }
+    .btn-upgrade.primary { background: var(--accent); color: white; box-shadow: 0 0 20px rgba(6,182,212,0.25); }
+    .btn-upgrade.primary:hover { background: var(--accent-light); box-shadow: 0 0 28px rgba(6,182,212,0.4); transform: translateY(-1px); }
+    .btn-upgrade.ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+    .btn-upgrade.ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* UPGRADE MODAL */
+    .upgrade-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px); }
+    .upgrade-modal { background: var(--surface); border: 1px solid var(--border-light); border-radius: 20px; width: 100%; max-width: 420px; padding: 28px; box-shadow: 0 24px 60px rgba(0,0,0,0.5); }
+    .upgrade-modal-title { font-family: 'Outfit', sans-serif; font-size: 20px; font-weight: 800; margin-bottom: 8px; }
+    .upgrade-modal-sub { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 24px; }
+    .upgrade-modal-info { background: var(--surface2); border-radius: 12px; padding: 14px 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; font-size: 13px; }
+
+    @media (max-width: 600px) {
+      .upgrade-cards-row { grid-template-columns: 1fr; }
+    }
 
     /* NOTIFICATION PANEL */
     .notif-wrap { position: relative; }
@@ -223,15 +252,9 @@
 
     <!-- BLOC 3 : UPGRADE -->
     <div class="anim-block" id="upgradeBlock" style="display:none">
-      <div class="upgrade-card">
-        <div class="upgrade-eyebrow" id="upgradeEyebrow">PROCHAINE ÉTAPE</div>
-        <div class="upgrade-plan-name" id="upgradeNextName">—</div>
-        <div class="upgrade-desc" id="upgradeNextDesc"></div>
-        <div class="upgrade-price-row">
-          <div class="upgrade-price" id="upgradeNextPrice">—</div>
-          <div class="upgrade-period">/ mois</div>
-        </div>
-        <a id="upgradeBtn" href="#" class="btn-cta">Passer à <span id="upgradeBtnLabel">—</span> →</a>
+      <div class="upgrade-section">
+        <div class="upgrade-section-title">Évoluer vers un plan supérieur</div>
+        <div class="upgrade-cards-row" id="upgradeCardsRow"></div>
       </div>
     </div>
 
@@ -408,17 +431,117 @@ async function renderUsage(plan) {
   }
 }
 
+const UPGRADE_OPTIONS = {
+  starter: [
+    {
+      key: 'pro', name: 'Pro', price: '99€', featured: true, popular: true,
+      gains: [
+        { text: 'Prospects illimités', isNew: true },
+        { text: 'Multi-plateformes (TikTok, Threads)', isNew: true },
+        { text: 'Statistiques avancées & analytics', isNew: true },
+        { text: 'Notes & tags sur chaque prospect', isNew: true },
+        { text: 'Export PDF complet', isNew: true },
+      ]
+    },
+    {
+      key: 'agency', name: 'Agency', price: '199€', featured: false, popular: false,
+      gains: [
+        { text: 'Tout le plan Pro', isNew: false },
+        { text: 'Équipe multi-utilisateurs', isNew: true },
+        { text: 'Scans planifiés & automatisés', isNew: true },
+        { text: 'Support prioritaire 24/7', isNew: true },
+        { text: 'Onboarding personnalisé', isNew: true },
+      ]
+    },
+  ],
+  pro: [
+    {
+      key: 'agency', name: 'Agency', price: '199€', featured: true, popular: false,
+      gains: [
+        { text: 'Tout ce que tu as déjà en Pro', isNew: false },
+        { text: 'Équipe multi-utilisateurs', isNew: true },
+        { text: 'Gestion des rôles (Admin / Manager)', isNew: true },
+        { text: 'Scans planifiés & automatisés', isNew: true },
+        { text: 'Support prioritaire 24/7', isNew: true },
+        { text: 'Onboarding personnalisé', isNew: true },
+      ]
+    },
+  ],
+};
+
 function renderUpgrade(plan) {
   if (plan === 'admin' || plan === 'superadmin' || plan === 'agency') return;
-  const info = UPGRADE_NEXT[plan];
-  if (!info) return;
+  const options = UPGRADE_OPTIONS[plan];
+  if (!options || !options.length) return;
+
   document.getElementById('upgradeBlock').style.display = 'block';
-  document.getElementById('upgradeNextName').textContent = info.name;
-  document.getElementById('upgradeNextDesc').textContent = info.desc;
-  document.getElementById('upgradeNextPrice').textContent = info.price;
-  document.getElementById('upgradeBtnLabel').textContent = info.name;
-  document.getElementById('upgradeBtn').href =
-    `mailto:businessflymagency@gmail.com?subject=Upgrade vers ${info.name}&body=Bonjour, je souhaite passer au plan ${info.name} (${info.price}/mois).`;
+  const row = document.getElementById('upgradeCardsRow');
+
+  // Si 1 seule option, pleine largeur
+  if (options.length === 1) row.style.gridTemplateColumns = '1fr';
+
+  row.innerHTML = options.map(opt => `
+    <div class="upgrade-card ${opt.featured ? 'featured' : ''}">
+      ${opt.popular ? '<div class="upgrade-popular">⚡ Le plus populaire</div>' : ''}
+      <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px">PLAN ${opt.name.toUpperCase()}</div>
+      <div class="upgrade-plan-name">${opt.name}</div>
+      <div class="upgrade-price-row">
+        <div class="upgrade-price">${opt.price}</div>
+        <div class="upgrade-period">/ mois</div>
+      </div>
+      <div class="upgrade-gains">
+        ${opt.gains.map(g => `
+          <div class="upgrade-gain ${g.isNew ? 'new-feat' : ''}">
+            <span>${g.isNew ? '✓' : '·'}</span>
+            <span>${g.text}</span>
+          </div>`).join('')}
+      </div>
+      <button class="btn-upgrade ${opt.featured ? 'primary' : 'ghost'}" onclick="openUpgradeModal('${opt.name}', '${opt.price}', '${opt.key}')">
+        Passer à ${opt.name} →
+      </button>
+    </div>
+  `).join('');
+}
+
+function openUpgradeModal(planName, price, planKey) {
+  const existing = document.getElementById('upgradeModal');
+  if (existing) existing.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'upgradeModal';
+  overlay.className = 'upgrade-modal-overlay';
+  overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+
+  overlay.innerHTML = `
+    <div class="upgrade-modal">
+      <div style="font-size:28px;margin-bottom:12px">⬆️</div>
+      <div class="upgrade-modal-title">Passer au plan ${planName}</div>
+      <div class="upgrade-modal-sub">
+        Pour finaliser ton upgrade, envoie-nous un message et on s'occupe de tout — migration du compte, facturation, accès immédiat.
+      </div>
+      <div class="upgrade-modal-info">
+        <div style="font-size:22px">💳</div>
+        <div>
+          <div style="font-weight:700;margin-bottom:2px">Plan ${planName} · ${price}/mois</div>
+          <div style="font-size:12px;color:var(--muted)">Facturation mensuelle · Résiliable à tout moment</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <a href="mailto:businessflymagency@gmail.com?subject=Upgrade vers ${planName}&body=Bonjour%2C%0A%0AJe souhaite passer au plan ${planName} (${price}/mois).%0A%0AMerci !"
+           class="btn-upgrade primary" style="text-decoration:none;text-align:center">
+          ✉️ Envoyer la demande d'upgrade
+        </a>
+        <button onclick="document.getElementById('upgradeModal').remove()" class="btn-upgrade ghost">
+          Annuler
+        </button>
+      </div>
+      <div style="margin-top:14px;font-size:11px;color:var(--muted);text-align:center;line-height:1.6">
+        Réponse garantie sous 2h · Accès activé le jour même
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
 }
 
 /* ─── NOTIFICATIONS ─── */
