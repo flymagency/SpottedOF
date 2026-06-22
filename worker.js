@@ -567,8 +567,7 @@ export default {
       try {
         if (platform === 'ig' || platform === 'instagram') {
           // Phase 1 : récupérer les following du compte de référence
-          // Utilise l'acteur dédié (apify/instagram-scraper a supprimé resultsType:'following')
-          const followingRunId = await apifyStartRun('apify~instagram-following-scraper', {
+          const followingRunId = await apifyStartRun('datadoping~instagram-following-scraper', {
             username: handle,
             resultsLimit: Math.min(resultsLimit, 200),
           }, APIFY_TOKEN);
