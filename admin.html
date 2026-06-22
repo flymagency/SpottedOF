@@ -218,6 +218,10 @@
         <input class="form-input" id="editEmail" disabled style="opacity:0.5">
       </div>
       <div>
+        <label class="form-label">Prénom</label>
+        <input class="form-input" id="editFirstName" placeholder="Prénom du client">
+      </div>
+      <div>
         <label class="form-label">Agence</label>
         <input class="form-input" id="editAgency" placeholder="Nom de l'agence">
       </div>
@@ -349,6 +353,7 @@ function editClient(id) {
   if (!c) return;
   document.getElementById('editId').value = c.id;
   document.getElementById('editEmail').value = c.email || '';
+  document.getElementById('editFirstName').value = c.first_name || '';
   document.getElementById('editAgency').value = c.agency_name || '';
   document.getElementById('editPlan').value = c.plan || 'free';
   document.getElementById('editPaid').value = String(c.paid || false);
@@ -359,6 +364,7 @@ function editClient(id) {
 async function saveClient() {
   const id = document.getElementById('editId').value;
   const updates = {
+    first_name: document.getElementById('editFirstName').value,
     agency_name: document.getElementById('editAgency').value,
     plan: document.getElementById('editPlan').value,
     paid: document.getElementById('editPaid').value === 'true',

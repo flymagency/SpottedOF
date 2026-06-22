@@ -301,12 +301,12 @@
     .home-sub { font-size: 13px; color: var(--muted); }
 
     .home-kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 28px; }
-    .home-kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px 22px; opacity: 0; animation: homeCardIn 0.45s cubic-bezier(0.16,1,0.3,1) forwards; }
+    .home-kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px 22px; opacity: 0; animation: homeCardIn 0.45s cubic-bezier(0.16,1,0.3,1) forwards; transition: transform 0.2s cubic-bezier(0.16,1,0.3,1), box-shadow 0.2s, border-color 0.2s; }
     .home-kpi:nth-child(1) { animation-delay: 0.05s; border-color: rgba(6,182,212,0.25); }
     .home-kpi:nth-child(2) { animation-delay: 0.10s; }
     .home-kpi:nth-child(3) { animation-delay: 0.15s; border-color: rgba(240,67,108,0.2); }
     .home-kpi:nth-child(4) { animation-delay: 0.20s; border-color: rgba(30,202,110,0.2); }
-    .home-kpi:hover { animation: pulseGlow 2s ease infinite; border-color: rgba(6,182,212,0.35); transform: translateY(-2px); transition: transform 0.2s cubic-bezier(0.16,1,0.3,1); }
+    .home-kpi:hover { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(6,182,212,0.12); border-color: rgba(6,182,212,0.4); }
     .home-kpi-label { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
     .home-kpi-value { font-size: 32px; font-weight: 800; font-family: 'Outfit', sans-serif; line-height: 1; }
     .home-kpi-delta { font-size: 11px; color: var(--muted); margin-top: 6px; }
@@ -995,6 +995,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let currentUser = null;
 let userPlan = null;
 let userPaid = false;
+let userFirstName = '';
 
 const PLAN_LIMITS = { starter: 200, pro: Infinity, agency: Infinity, admin: Infinity };
 const PLAN_COLORS = {
@@ -1013,11 +1014,12 @@ sb.auth.getSession().then(async ({ data }) => {
 
   // Charger le profil + vérifier appartenance équipe en parallèle
   const [{ data: profile }, { data: teamMembership }] = await Promise.all([
-    sb.from('profiles').select('plan, paid').eq('id', currentUser.id).single(),
+    sb.from('profiles').select('plan, paid, first_name, agency_name').eq('id', currentUser.id).single(),
     sb.from('team_members').select('id').eq('user_id', currentUser.id).limit(1).maybeSingle(),
   ]);
   userPlan = (profile?.plan || 'starter').toLowerCase();
   userPaid = profile?.paid || false;
+  userFirstName = profile?.first_name || '';
 
   // Membre d'une équipe = accès garanti
   // Vérification : token URL + team_members BDD + plan='member' + localStorage (persistance reload)
@@ -2571,8 +2573,8 @@ function renderHome() {
   const withOf = DATA.filter(p => p.hasOf || p.has_of).length;
   const toContact = DATA.filter(p => !(p.hasOf || p.has_of)).length;
 
-  // Nom agence
-  const agencyName = document.getElementById('sidebarAgency')?.textContent || userPlan?.toUpperCase() || '';
+  // Prénom ou nom d'agence
+  const displayName = userFirstName || profile?.agency_name || '';
 
   // Scans du jour depuis SCHEDULED_SCANS
   const todayStr = now.toISOString().slice(0, 10);
@@ -2582,7 +2584,7 @@ function renderHome() {
     <!-- HEADER -->
     <div class="home-header">
       <div class="home-date">📅 ${dateCapitalized}</div>
-      <div class="home-greeting">Bonjour${agencyName ? ', ' + agencyName : ''} 👋</div>
+      <div class="home-greeting">Bonjour${displayName ? ', ' + displayName : ''} 👋</div>
       <div class="home-sub">Voici un aperçu de ton activité de scouting</div>
     </div>
 
