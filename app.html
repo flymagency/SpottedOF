@@ -996,13 +996,19 @@
         </div>
 
         <!-- Guide -->
-        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-top:12px;margin-bottom:16px;">
-          <div style="font-size:12px;font-weight:700;margin-bottom:10px;color:var(--text)">📋 Comment obtenir ton Session ID :</div>
-          <div style="display:flex;flex-direction:column;gap:8px;font-size:12px;color:var(--muted);line-height:1.5;">
-            <div><span style="color:var(--accent);font-weight:700;margin-right:6px;">1</span>Connecte-toi sur <strong style="color:var(--text)">instagram.com</strong> dans Chrome</div>
-            <div><span style="color:var(--accent);font-weight:700;margin-right:6px;">2</span>Appuie sur <strong style="color:var(--text)">F12</strong> → onglet <strong style="color:var(--text)">Application</strong></div>
-            <div><span style="color:var(--accent);font-weight:700;margin-right:6px;">3</span><strong style="color:var(--text)">Cookies</strong> → <strong style="color:var(--text)">https://www.instagram.com</strong></div>
-            <div><span style="color:var(--accent);font-weight:700;margin-right:6px;">4</span>Copie la valeur de <strong style="color:var(--text)">sessionid</strong></div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-top:12px;margin-bottom:16px;">
+          <div style="font-size:12px;font-weight:700;margin-bottom:12px;color:var(--text)">📋 Comment obtenir ton Session ID en 30 secondes :</div>
+          <div style="display:flex;flex-direction:column;gap:10px;font-size:12px;color:var(--muted);line-height:1.5;">
+            <div><span style="color:var(--accent);font-weight:700;margin-right:8px;">1</span>Va sur <strong style="color:var(--text)">instagram.com</strong> dans Chrome (connecte-toi si besoin)</div>
+            <div><span style="color:var(--accent);font-weight:700;margin-right:8px;">2</span>Appuie sur <strong style="color:var(--text)">F12</strong> → clique sur l'onglet <strong style="color:var(--text)">Console</strong></div>
+            <div><span style="color:var(--accent);font-weight:700;margin-right:8px;">3</span>Colle cette ligne et appuie sur <strong style="color:var(--text)">Entrée</strong> :</div>
+          </div>
+          <div style="margin-top:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:10px;">
+            <code style="font-family:'Space Mono',monospace;font-size:11px;color:var(--accent);flex:1;word-break:break-all;">copy(document.cookie.match(/sessionid=([^;]+)/)[1])</code>
+            <button onclick="navigator.clipboard.writeText(`copy(document.cookie.match(/sessionid=([^;]+)/)[1])`).then(()=>showToast('Copié !','success'))" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:5px 10px;color:var(--muted);font-size:11px;cursor:pointer;flex-shrink:0;font-family:'Inter',sans-serif;">Copier</button>
+          </div>
+          <div style="margin-top:10px;font-size:12px;color:var(--muted);line-height:1.5;">
+            <span style="color:var(--accent);font-weight:700;margin-right:8px;">4</span>Le Session ID est copié automatiquement — colle-le dans le champ ci-dessus
           </div>
         </div>
 
