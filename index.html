@@ -712,13 +712,23 @@
   <div class="section-inner">
     <p class="eyebrow">Tarifs</p>
     <h2 class="section-title">Simple. Sans surprise.</h2>
+    <!-- Toggle mensuel / annuel -->
+    <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:36px;">
+      <span id="toggleLabelMonthly" style="font-size:14px;font-weight:600;color:#fff;">Mensuel</span>
+      <button id="billingToggle" onclick="toggleBilling()" style="position:relative;width:48px;height:26px;border-radius:13px;background:var(--accent,#06B6D4);border:none;cursor:pointer;transition:background 0.2s;flex-shrink:0;">
+        <span id="toggleThumb" style="position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform 0.2s;display:block;"></span>
+      </button>
+      <span id="toggleLabelAnnual" style="font-size:14px;font-weight:600;color:var(--muted);">Annuel <span style="background:rgba(6,182,212,0.15);color:var(--accent,#06B6D4);font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;margin-left:4px;">2 mois offerts</span></span>
+    </div>
+
     <div class="pricing-grid" id="pricingGrid">
 
       <!-- Starter -->
       <div class="price-card" id="pc1">
         <div class="plan-name">Starter</div>
-        <div class="plan-price"><sup>€</sup>49</div>
-        <div class="plan-period">par mois</div>
+        <div class="plan-price"><sup>€</sup><span id="priceStarter">49</span></div>
+        <div class="plan-period" id="periodStarter">par mois</div>
+        <div id="annualNoteStarter" style="display:none;font-size:11px;color:var(--muted);margin-top:-2px;margin-bottom:4px;">facturé 490€/an</div>
         <div class="plan-divider"></div>
         <ul class="plan-features">
           <li class="on"><span class="feat-check">✓</span> 200 prospects/mois</li>
@@ -734,8 +744,9 @@
       <div class="price-card popular" id="pc2">
         <div class="popular-badge">★ Populaire</div>
         <div class="plan-name">Pro</div>
-        <div class="plan-price"><sup>€</sup>99</div>
-        <div class="plan-period">par mois</div>
+        <div class="plan-price"><sup>€</sup><span id="pricePro">99</span></div>
+        <div class="plan-period" id="periodPro">par mois</div>
+        <div id="annualNotePro" style="display:none;font-size:11px;color:var(--muted);margin-top:-2px;margin-bottom:4px;">facturé 990€/an</div>
         <div class="plan-divider"></div>
         <ul class="plan-features">
           <li class="on"><span class="feat-check">✓</span> Prospects illimités</li>
@@ -815,6 +826,24 @@
 </div>
 
 <script>
+  /* ── BILLING TOGGLE ── */
+  let _isAnnual = false;
+  function toggleBilling() {
+    _isAnnual = !_isAnnual;
+    const thumb = document.getElementById('toggleThumb');
+    const labelM = document.getElementById('toggleLabelMonthly');
+    const labelA = document.getElementById('toggleLabelAnnual');
+    thumb.style.transform = _isAnnual ? 'translateX(22px)' : 'translateX(0)';
+    labelM.style.color = _isAnnual ? 'var(--muted)' : '#fff';
+    labelA.style.color = _isAnnual ? '#fff' : 'var(--muted)';
+    // Starter
+    document.getElementById('priceStarter').textContent = _isAnnual ? '41' : '49';
+    document.getElementById('annualNoteStarter').style.display = _isAnnual ? 'block' : 'none';
+    // Pro
+    document.getElementById('pricePro').textContent = _isAnnual ? '83' : '99';
+    document.getElementById('annualNotePro').style.display = _isAnnual ? 'block' : 'none';
+  }
+
   /* ── HERO ANIMATION ── */
   function animCount(el, target, suffix, ms) {
     const start = performance.now();
