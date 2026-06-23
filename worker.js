@@ -1291,7 +1291,11 @@ export default {
       try {
         const verifyRes = await fetch(`https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(username)}`, {
           headers: { 'Cookie': `sessionid=${sessionId}`, 'X-IG-App-ID': IG_APP_ID, 'User-Agent': IG_UA_WEB, 'Referer': 'https://www.instagram.com/' },
+          redirect: 'manual',
         });
+        if (verifyRes.status === 301 || verifyRes.status === 302 || verifyRes.status === 0) {
+          return json({ error: 'Session ID invalide ou expiré. Reconnecte-toi sur Instagram et récupère un nouveau sessionid.' }, 400);
+        }
         if (verifyRes.status === 401 || verifyRes.status === 403) {
           return json({ error: 'Session ID invalide ou expiré. Reconnecte-toi sur Instagram et récupère un nouveau sessionid.' }, 400);
         }
