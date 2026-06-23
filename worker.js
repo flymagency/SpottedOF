@@ -16,7 +16,7 @@ const SUPABASE_URL = 'https://nsvrkogwmzrbjrtbphpb.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_x7QwXgNepnb6t_2LCMniqw_zIEZ2LnR';
 
 // Endpoints publics (pas besoin d'être connecté)
-const PUBLIC_PATHS = new Set(['/scan-poll']);
+const PUBLIC_PATHS = new Set(['/scan-poll', '/instagram-challenge']);
 
 async function verifyAuth(request) {
   const auth = request.headers.get('Authorization') || '';
@@ -542,6 +542,228 @@ export default {
       };
     }
 
+    // ─── INSTAGRAM NATIVE API HELPERS ────────────────────────────────────────
+
+    const IG_APP_ID = '936619743392459';
+    const IG_UA_WEB = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
+    const IG_UA_APP = 'Instagram 275.0.0.27.98 Android (33/13; 420dpi; 1080x2400; samsung; SM-G991B; o1s; exynos2100)';
+
+    function b64ToBytes(b64) { return Uint8Array.from(atob(b64), c => c.charCodeAt(0)); }
+    function bytesToB64(buf) { return btoa(String.fromCharCode(...new Uint8Array(buf))); }
+
+    async function encryptText(text, keyB64) {
+      const key = await crypto.subtle.importKey('raw', b64ToBytes(keyB64), { name: 'AES-GCM' }, false, ['encrypt']);
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const enc = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(text));
+      return bytesToB64(iv) + ':' + bytesToB64(enc);
+    }
+
+    async function decryptText(encStr, keyB64) {
+      const [ivB64, ctB64] = encStr.split(':');
+      const key = await crypto.subtle.importKey('raw', b64ToBytes(keyB64), { name: 'AES-GCM' }, false, ['decrypt']);
+      const dec = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64ToBytes(ivB64) }, key, b64ToBytes(ctB64));
+      return new TextDecoder().decode(dec);
+    }
+
+    async function getSupabaseProfile(userId, token) {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=instagram_username,instagram_session_id,instagram_password_enc`, {
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${token}` },
+      });
+      const data = await res.json();
+      return Array.isArray(data) ? data[0] || null : null;
+    }
+
+    async function updateSupabaseProfile(userId, token, fields) {
+      await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}`, {
+        method: 'PATCH',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify(fields),
+      });
+    }
+
+    async function igGetCsrf() {
+      const res = await fetch('https://www.instagram.com/', { headers: { 'User-Agent': IG_UA_WEB } });
+      const setCookie = res.headers.get('set-cookie') || '';
+      const csrf = setCookie.match(/csrftoken=([^;,\s]+)/)?.[1] || 'missing';
+      const igDid = crypto.randomUUID();
+      return { csrf, igDid };
+    }
+
+    async function igDoLogin(username, password, csrf, igDid) {
+      const body = new URLSearchParams({ username, password, queryParams: '{}', optIntoOneTap: 'false' });
+      const res = await fetch('https://www.instagram.com/accounts/login/ajax/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'User-Agent': IG_UA_WEB,
+          'X-CSRFToken': csrf,
+          'X-IG-App-ID': IG_APP_ID,
+          'Referer': 'https://www.instagram.com/',
+          'Cookie': `csrftoken=${csrf}; ig_did=${igDid}`,
+        },
+        body: body.toString(),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (data.two_factor_required) {
+        return { two_factor_required: true, identifier: data.two_factor_info?.two_factor_identifier, csrf, igDid };
+      }
+      if (data.authenticated) {
+        const sessionId = (res.headers.get('set-cookie') || '').match(/sessionid=([^;,\s]+)/)?.[1] || '';
+        return { success: true, sessionId };
+      }
+      if (data.user === false) return { error: 'Compte Instagram introuvable' };
+      return { error: data.message || 'Identifiants incorrects' };
+    }
+
+    async function igDoChallenge(username, code, identifier, csrf, igDid) {
+      const body = new URLSearchParams({ username, verificationCode: code, identifier, queryParams: '{}' });
+      const res = await fetch('https://www.instagram.com/accounts/login/ajax/two_factor/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'User-Agent': IG_UA_WEB,
+          'X-CSRFToken': csrf,
+          'X-IG-App-ID': IG_APP_ID,
+          'Referer': 'https://www.instagram.com/',
+          'Cookie': `csrftoken=${csrf}; ig_did=${igDid}`,
+        },
+        body: body.toString(),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (data.authenticated) {
+        const sessionId = (res.headers.get('set-cookie') || '').match(/sessionid=([^;,\s]+)/)?.[1] || '';
+        return { success: true, sessionId };
+      }
+      return { error: data.message || 'Code incorrect ou expiré' };
+    }
+
+    async function igGetUserId(username, sessionId) {
+      const res = await fetch(`https://www.instagram.com/api/v1/users/web_profile_info/?username=${username}`, {
+        headers: { 'Cookie': `sessionid=${sessionId}`, 'X-IG-App-ID': IG_APP_ID, 'User-Agent': IG_UA_WEB, 'Referer': 'https://www.instagram.com/' },
+      });
+      if (res.status === 401) throw new Error('SESSION_EXPIRED');
+      if (!res.ok) throw new Error(`Instagram API ${res.status}`);
+      const data = await res.json().catch(() => ({}));
+      return data?.data?.user?.id || null;
+    }
+
+    async function igGetFollowing(userId, sessionId, maxCount) {
+      const usernames = [];
+      let maxId = null;
+      do {
+        const qs = new URLSearchParams({ count: '50' });
+        if (maxId) qs.set('max_id', maxId);
+        const res = await fetch(`https://i.instagram.com/api/v1/friendships/${userId}/following/?${qs}`, {
+          headers: { 'Cookie': `sessionid=${sessionId}`, 'X-IG-App-ID': IG_APP_ID, 'User-Agent': IG_UA_APP },
+        });
+        if (!res.ok) break;
+        const data = await res.json().catch(() => ({}));
+        (data.users || []).forEach(u => { if (u.username) usernames.push(u.username); });
+        maxId = data.next_max_id || null;
+        if (maxId && usernames.length < maxCount) await new Promise(r => setTimeout(r, 600));
+      } while (maxId && usernames.length < maxCount);
+      return usernames.slice(0, maxCount);
+    }
+
+    async function igGetProfileDetails(username, sessionId) {
+      const res = await fetch(`https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(username)}`, {
+        headers: { 'Cookie': `sessionid=${sessionId}`, 'X-IG-App-ID': IG_APP_ID, 'User-Agent': IG_UA_WEB, 'Referer': 'https://www.instagram.com/' },
+      });
+      if (!res.ok) return null;
+      const data = await res.json().catch(() => null);
+      const u = data?.data?.user;
+      if (!u) return null;
+      return {
+        username: u.username || username,
+        fullName: u.full_name || '',
+        biography: u.biography || '',
+        followersCount: u.edge_followed_by?.count || 0,
+        followingCount: u.edge_follow?.count || 0,
+        postsCount: u.edge_owner_to_timeline_media?.count || 0,
+        isPrivate: u.is_private || false,
+        isVerified: u.is_verified || false,
+        isBusinessAccount: u.is_business_account || false,
+        externalUrl: u.external_url || '',
+        platform: 'ig',
+        userId: u.id || '',
+      };
+    }
+
+    // Shared scoring/filtering/saving logic (used by both Apify and ig_native paths)
+    async function processAndSaveProfiles(env, rawProfiles, handle, platform, minScore, filters) {
+      const LANG_KW = {
+        fr: ['je','mon','ma','les','des','une','est','avec','pour','dans','sur','pas','plus','être','bonjour','merci','salut'],
+        en: ['the','my','and','for','with','your','you','our','are','have','follow','link','bio','check','out','dm'],
+        es: ['mi','el','la','los','las','con','por','que','una','soy','hola','gracias','aquí'],
+        it: ['il','la','le','un','una','con','per','sono','ciao','grazie','qui'],
+        de: ['ich','mein','die','der','das','mit','für','und','hallo','danke','hier'],
+        pt: ['eu','meu','minha','com','para','que','obrigada','olá','aqui'],
+      };
+      const detectLang = bio => {
+        if (!bio) return 'en';
+        const b = bio.toLowerCase(); let best = 'en', bestS = 0;
+        for (const [l, kws] of Object.entries(LANG_KW)) { const s = kws.filter(k => b.includes(k)).length; if (s > bestS) { bestS = s; best = l; } }
+        return best;
+      };
+      const NICHE_KW = {
+        fitness: ['fitness','gym','workout','sport','muscle','bodybuilding','crossfit','running','yoga','pilates'],
+        beauty: ['beauty','makeup','skincare','cosmetic','glam','mua','beauté','maquillage'],
+        lifestyle: ['lifestyle','life','daily','routine','vlog','content','creator'],
+        cosplay: ['cosplay','anime','manga','gamer','geek','nerd','otaku','comic'],
+        dance: ['dance','dancer','dancing','choreography','ballet','hip hop','twerk'],
+        fashion: ['fashion','style','ootd','outfit','model','modelling','influencer'],
+        travel: ['travel','traveler','wanderlust','adventure','explore','trip','voyage'],
+        wellness: ['wellness','health','mindfulness','meditation','mental health','holistic'],
+        gaming: ['gaming','gamer','twitch','streamer','esport','gameplay'],
+        music: ['music','singer','artist','musician','producer','dj','rap','pop'],
+      };
+      const detectNiche2 = bio => { if (!bio) return ''; const b = bio.toLowerCase(); for (const [n, kws] of Object.entries(NICHE_KW)) { if (kws.some(k => b.includes(k))) return n; } return ''; };
+      const OF_DET = ['onlyfans','only fans','fans.ly','fansly','mym.fans','mym content','mymfans','mym fans','fanvu','fanvue','reveal.co','revealapp','manyvids','loyalfans','patreon.com','admire.me','unlockd','findom','frenchfans','myfans','justforfans','🔞','lien privé','contenu privé','private content','content creator 18'];
+
+      // Dedupe
+      const seen = new Set();
+      const profiles = rawProfiles.filter(p => { if (!p.username || seen.has(p.username)) return false; seen.add(p.username); return true; });
+      const deduped = profiles.filter(p => p.username.toLowerCase() !== handle.toLowerCase());
+
+      const filtered = deduped.filter(p => {
+        const bio = (p.biography || '').toLowerCase();
+        if (filters.public_only && p.isPrivate) return false;
+        const hasOf = OF_DET.some(k => bio.includes(k));
+        if (filters.no_of && hasOf) return false;
+        if (filters.has_of && !hasOf) return false;
+        if (filters.no_verified && p.isVerified) return false;
+        const fc = p.followersCount || 0;
+        if (filters.followers_min > 0 && fc < filters.followers_min) return false;
+        if (filters.followers_max > 0 && fc > filters.followers_max) return false;
+        if (filters.posts_min > 0 && (p.postsCount || 0) < filters.posts_min) return false;
+        if (filters.no_business_account && p.isBusinessAccount) return false;
+        if (filters.has_external_url && !p.externalUrl) return false;
+        if (filters.keywords_include?.length > 0 && !filters.keywords_include.some(kw => bio.includes(kw))) return false;
+        if (filters.keywords_exclude?.length > 0 && filters.keywords_exclude.some(kw => bio.includes(kw))) return false;
+        const ratio = (p.followersCount || 0) / (p.followingCount || 1);
+        if (filters.ratio_min > 0 && ratio < filters.ratio_min) return false;
+        if (filters.engagement_min > 0 && (p.engagementRate || 0) < filters.engagement_min) return false;
+        if (filters.langs?.length > 0 && !filters.langs.includes(detectLang(p.biography))) return false;
+        if (filters.niches?.length > 0 && !filters.niches.includes(detectNiche2(p.biography) || p.niche || '')) return false;
+        return true;
+      });
+
+      filtered.forEach(p => { if (!p.niche) p.niche = detectNiche2(p.biography); });
+
+      const scored = filtered
+        .map(p => ({ ...p, score: scoreProfile(p) }))
+        .filter(p => p.score >= minScore)
+        .sort((a, b) => b.score - a.score);
+
+      const scanSource = `@${handle} (${platform})`;
+      let saved = [], saveError = null;
+      if (scored.length > 0) {
+        try { saved = await saveProspects(env, scored, scanSource); }
+        catch(e) { saveError = e.message; }
+      }
+      return { profiles, deduped, scored, saved, saveError };
+    }
+
     // POST /scan-similar
     // Body: { handle, platform, results_limit, min_score }
     // Instagram : phase 1 = posts du profil → extraire hashtags
@@ -563,22 +785,71 @@ export default {
 
       try {
         if (platform === 'ig' || platform === 'instagram') {
-          // Phase 1 : récupérer les following du compte de référence
-          const followingRunId = await apifyStartRun('datadoping~instagram-following-scraper', {
-            usernames: [handle],
-            max_count: Math.min(resultsLimit, 200),
-          }, APIFY_TOKEN);
+          // ── Instagram native (sans Apify) ──────────────────────────────────
+          const token = (request.headers.get('Authorization') || '').slice(7);
+          const igProfile = await getSupabaseProfile(user.id, token);
+
+          let sessionId = igProfile?.instagram_session_id;
+
+          // Auto re-login si session manquante mais credentials stockés
+          if (!sessionId && igProfile?.instagram_username && igProfile?.instagram_password_enc && env.ENCRYPT_KEY) {
+            const pwd = await decryptText(igProfile.instagram_password_enc, env.ENCRYPT_KEY);
+            const { csrf, igDid } = await igGetCsrf();
+            const loginResult = await igDoLogin(igProfile.instagram_username, pwd, csrf, igDid);
+            if (loginResult.success) {
+              sessionId = loginResult.sessionId;
+              await updateSupabaseProfile(user.id, token, { instagram_session_id: sessionId });
+            }
+          }
+
+          if (!sessionId) {
+            return json({ error: 'Compte Instagram non connecté. Connecte ton compte dans les paramètres.', code: 'IG_NOT_CONNECTED' }, 400);
+          }
+
+          // Récupère l'ID du compte cible
+          let targetUserId;
+          try {
+            targetUserId = await igGetUserId(handle, sessionId);
+          } catch(e) {
+            // Session expirée → re-login automatique
+            if (e.message === 'SESSION_EXPIRED' && igProfile?.instagram_username && igProfile?.instagram_password_enc && env.ENCRYPT_KEY) {
+              const pwd = await decryptText(igProfile.instagram_password_enc, env.ENCRYPT_KEY);
+              const { csrf, igDid } = await igGetCsrf();
+              const loginResult = await igDoLogin(igProfile.instagram_username, pwd, csrf, igDid);
+              if (loginResult.success) {
+                sessionId = loginResult.sessionId;
+                await updateSupabaseProfile(user.id, token, { instagram_session_id: sessionId });
+                targetUserId = await igGetUserId(handle, sessionId);
+              }
+            }
+            if (!targetUserId) throw new Error(`Compte @${handle} introuvable ou inaccessible`);
+          }
+
+          if (!targetUserId) return json({ error: `Compte @${handle} introuvable ou privé` }, 400);
+
+          // Récupère la liste des following
+          const usernames = await igGetFollowing(targetUserId, sessionId, Math.min(resultsLimit, 200));
+          if (usernames.length === 0) return json({ error: `Aucun abonnement trouvé pour @${handle}. Compte privé ?` }, 400);
+
+          // Stocke l'état du scan dans KV
+          const scanId = crypto.randomUUID().replace(/-/g, '');
+          await env.RATE_LIMIT.put(`igscan:${scanId}`, JSON.stringify({
+            type: 'ig_native', sessionId, handle, usernames,
+            processed: 0, profiles: [], min_score: minScore,
+            filters, results_limit: resultsLimit, platform: 'ig',
+          }), { expirationTtl: 3600 });
 
           return json({
             success: true,
-            run_id: followingRunId,
+            run_id: scanId,
+            type: 'ig_native',
             phase: 1,
             handle,
             platform,
-            results_limit: resultsLimit,
             min_score: minScore,
+            total_following: usernames.length,
             status: 'RUNNING',
-            message: `Phase 1/2 — récupération des abonnements de @${handle}…`,
+            message: `${usernames.length} abonnements récupérés — analyse des profils en cours…`,
           });
         }
 
@@ -617,17 +888,69 @@ export default {
       });
     }
 
-    // GET /scan-poll?run_id=xxx&phase=1|2&min_score=50&handle=xxx&platform=ig&results_limit=100&filters={}
+    // GET /scan-poll?run_id=xxx&phase=1|2&min_score=50&handle=xxx&platform=ig&results_limit=100&filters={}&type=ig_native
     if (request.method === 'GET' && path === '/scan-poll') {
       const runId      = url.searchParams.get('run_id');
       const phase      = parseInt(url.searchParams.get('phase') || '2');
       const minScore   = parseInt(url.searchParams.get('min_score') || '20');
       const handle     = url.searchParams.get('handle') || '';
       const platform   = url.searchParams.get('platform') || 'ig';
+      const scanType   = url.searchParams.get('type') || '';
       const resultsLimit = Math.min(parseInt(url.searchParams.get('results_limit') || '100'), 500);
       let filters = {};
       try { filters = JSON.parse(url.searchParams.get('filters') || '{}'); } catch {}
       if (!runId) return json({ error: 'run_id requis' }, 400);
+
+      // ── INSTAGRAM NATIVE (sans Apify) ─────────────────────────────────────
+      if (scanType === 'ig_native') {
+        const rawState = await env.RATE_LIMIT.get(`igscan:${runId}`);
+        if (!rawState) return json({ done: true, error: 'Scan expiré ou introuvable. Relance le scan.' });
+
+        const state = JSON.parse(rawState);
+        const { sessionId, usernames, processed, profiles: existingProfiles, min_score: stateMinScore, filters: stateFilters, platform: statePlatform } = state;
+        const stateHandle = state.handle;
+
+        // Traite un batch de 20 profils par poll
+        const BATCH = 20;
+        const batch = usernames.slice(processed, processed + BATCH);
+        const newProfiles = [...existingProfiles];
+
+        for (let i = 0; i < batch.length; i++) {
+          const p = await igGetProfileDetails(batch[i], sessionId);
+          if (p) newProfiles.push(p);
+          if (i < batch.length - 1) await new Promise(r => setTimeout(r, 300));
+        }
+
+        const newProcessed = processed + batch.length;
+        const isDone = newProcessed >= usernames.length;
+
+        if (!isDone) {
+          await env.RATE_LIMIT.put(`igscan:${runId}`, JSON.stringify({ ...state, processed: newProcessed, profiles: newProfiles }), { expirationTtl: 3600 });
+          return json({
+            done: false,
+            type: 'ig_native',
+            run_id: runId,
+            phase: 1,
+            progress: { done: newProcessed, total: usernames.length },
+            label: `Analyse des profils… ${newProcessed}/${usernames.length}`,
+          });
+        }
+
+        // Tous les profils récupérés — score, filtre, sauvegarde
+        await env.RATE_LIMIT.delete(`igscan:${runId}`).catch(() => {});
+        const { profiles, deduped, scored, saved, saveError } = await processAndSaveProfiles(env, newProfiles, stateHandle, statePlatform || 'ig', stateMinScore, stateFilters);
+        return json({
+          status: 'SUCCEEDED',
+          done: true,
+          type: 'ig_native',
+          total_found: usernames.length,
+          unique_profiles: profiles.length,
+          scored: scored.length,
+          saved: saved.length,
+          filtered_out: deduped.length - scored.length,
+          message: saveError ? `Erreur sauvegarde: ${saveError}` : `${saved.length} prospects importés`,
+        });
+      }
 
       const APIFY_TOKEN = env.APIFY_TOKEN;
 
@@ -949,6 +1272,85 @@ export default {
         return json({ error: err.message || `Erreur Supabase (${res.status})` }, res.status);
       }
       return json({ success: true, deleted: userId });
+    }
+
+    // POST /instagram-connect — Connecte un compte Instagram (étape 1 : login)
+    // Body: { username, password }
+    if (request.method === 'POST' && path === '/instagram-connect') {
+      let body;
+      try { body = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
+      const { username, password } = body;
+      if (!username || !password) return json({ error: 'username et password requis' }, 400);
+
+      const token = (request.headers.get('Authorization') || '').slice(7);
+      const igUser = await verifyAuth(request);
+      if (!igUser) return json({ error: 'Non authentifié' }, 401);
+
+      const { csrf, igDid } = await igGetCsrf();
+      const result = await igDoLogin(username, password, csrf, igDid);
+
+      if (result.error) return json({ error: result.error }, 400);
+
+      if (result.two_factor_required) {
+        // Stocke le contexte 2FA temporairement en KV (5 min)
+        const challengeKey = crypto.randomUUID().replace(/-/g, '');
+        await env.RATE_LIMIT.put(`igchallenge:${challengeKey}`, JSON.stringify({
+          username, csrf: result.csrf, igDid: result.igDid, identifier: result.identifier, userId: igUser.id, token,
+        }), { expirationTtl: 300 });
+        return json({ two_factor_required: true, challenge_key: challengeKey });
+      }
+
+      // Login réussi — stocke le sessionid + credentials chiffrés dans Supabase
+      const fields = { instagram_username: username, instagram_session_id: result.sessionId };
+      if (env.ENCRYPT_KEY) fields.instagram_password_enc = await encryptText(password, env.ENCRYPT_KEY);
+      await updateSupabaseProfile(igUser.id, token, fields);
+
+      return json({ success: true, username });
+    }
+
+    // POST /instagram-challenge — Valide le code 2FA (étape 2)
+    // Body: { challenge_key, code }
+    if (request.method === 'POST' && path === '/instagram-challenge') {
+      let body;
+      try { body = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
+      const { challenge_key, code } = body;
+      if (!challenge_key || !code) return json({ error: 'challenge_key et code requis' }, 400);
+
+      const rawChallenge = await env.RATE_LIMIT.get(`igchallenge:${challenge_key}`);
+      if (!rawChallenge) return json({ error: 'Code expiré (5 min). Recommence la connexion.' }, 400);
+      const { username, csrf, igDid, identifier, userId, token } = JSON.parse(rawChallenge);
+
+      const result = await igDoChallenge(username, code, identifier, csrf, igDid);
+      if (result.error) return json({ error: result.error }, 400);
+
+      await env.RATE_LIMIT.delete(`igchallenge:${challenge_key}`).catch(() => {});
+
+      const fields = { instagram_username: username, instagram_session_id: result.sessionId };
+      const password = null; // On n'a plus le password ici (non stocké en KV)
+      await updateSupabaseProfile(userId, token, fields);
+
+      return json({ success: true, username });
+    }
+
+    // GET /instagram-status — Vérifie si un compte Instagram est connecté
+    if (request.method === 'GET' && path === '/instagram-status') {
+      const igUser = await verifyAuth(request);
+      if (!igUser) return json({ error: 'Non authentifié' }, 401);
+      const token = (request.headers.get('Authorization') || '').slice(7);
+      const profile = await getSupabaseProfile(igUser.id, token);
+      if (profile?.instagram_username && profile?.instagram_session_id) {
+        return json({ connected: true, username: profile.instagram_username });
+      }
+      return json({ connected: false });
+    }
+
+    // POST /instagram-disconnect — Déconnecte le compte Instagram
+    if (request.method === 'POST' && path === '/instagram-disconnect') {
+      const igUser = await verifyAuth(request);
+      if (!igUser) return json({ error: 'Non authentifié' }, 401);
+      const token = (request.headers.get('Authorization') || '').slice(7);
+      await updateSupabaseProfile(igUser.id, token, { instagram_username: null, instagram_session_id: null, instagram_password_enc: null });
+      return json({ success: true });
     }
 
     // POST /send-dm

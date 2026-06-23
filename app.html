@@ -669,6 +669,11 @@
         <div class="sidebar-plan-badge" id="planBadge"></div>
       </div>
     </div>
+    <button class="nav-item" id="igSidebarBtn" onclick="openIgConnect()" style="position:relative">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+      <span id="igSidebarLabel">Instagram</span>
+      <span id="igSidebarStatus" style="margin-left:auto;font-size:9px;font-weight:700;font-family:'Space Mono',monospace;padding:2px 6px;border-radius:20px;background:var(--surface2);color:var(--muted)">—</span>
+    </button>
     <button class="nav-item" onclick="signOut()" style="color:var(--accent2)">
       <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
       Déconnexion
@@ -962,10 +967,71 @@
 </div>
 
 <!-- MODAL SCAN -->
+<!-- ── MODAL : Connexion Instagram ──────────────────────────────────────── -->
+<div class="modal-overlay" id="igConnectModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <div class="modal-title">📸 Connecter Instagram</div>
+      <button class="modal-close" onclick="closeModal('igConnectModal')">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Disclaimer -->
+      <div style="background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.3);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:16px;">
+        ⚠️ <strong style="color:var(--text)">Recommandé :</strong> utilise un compte agence ou un compte Instagram dédié — pas ton compte personnel. En cas d'utilisation intensive, Instagram peut temporairement limiter le compte.
+      </div>
+
+      <!-- Étape 1 : Identifiants -->
+      <div id="igStep1">
+        <div class="form-group">
+          <label class="form-label">Nom d'utilisateur Instagram</label>
+          <input class="form-input" id="igUsername" placeholder="nom_utilisateur" autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mot de passe</label>
+          <input class="form-input" type="password" id="igPassword" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <p style="font-size:11px;color:var(--muted);margin-top:-4px;margin-bottom:16px;">Tes identifiants sont chiffrés et stockés de façon sécurisée. Ils ne sont jamais partagés.</p>
+        <button class="btn btn-primary" style="width:100%" onclick="connectInstagram()">Connecter</button>
+      </div>
+
+      <!-- Étape 2 : Code 2FA -->
+      <div id="igStep2" style="display:none">
+        <div style="text-align:center;margin-bottom:16px;">
+          <div style="font-size:28px;margin-bottom:8px;">📲</div>
+          <div style="font-size:14px;font-weight:700;margin-bottom:6px;">Vérification en deux étapes</div>
+          <div style="font-size:12px;color:var(--muted)">Instagram t'a envoyé un code par SMS ou e-mail.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Code de vérification</label>
+          <input class="form-input" id="igCode" placeholder="123456" maxlength="6" inputmode="numeric" style="text-align:center;letter-spacing:4px;font-size:18px;font-weight:700">
+        </div>
+        <button class="btn btn-primary" style="width:100%;margin-top:4px" onclick="submitIgChallenge()">Valider le code</button>
+        <button class="btn btn-ghost" style="width:100%;margin-top:8px" onclick="resetIgConnect()">← Recommencer</button>
+      </div>
+
+      <!-- Loading -->
+      <div id="igConnectLoading" style="display:none;text-align:center;padding:24px 0">
+        <div style="font-size:28px;margin-bottom:10px;animation:spin 1s linear infinite">⏳</div>
+        <div style="font-size:13px;color:var(--muted)" id="igConnectLoadingText">Connexion en cours…</div>
+      </div>
+
+      <!-- Succès -->
+      <div id="igConnectSuccess" style="display:none;text-align:center;padding:24px 0">
+        <div style="font-size:36px;margin-bottom:10px;">✅</div>
+        <div style="font-size:15px;font-weight:700;margin-bottom:6px;">Compte connecté !</div>
+        <div style="font-size:12px;color:var(--muted)" id="igConnectSuccessUser"></div>
+        <button class="btn btn-primary" style="margin-top:18px" onclick="closeModal('igConnectModal')">Fermer</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="scanModal">
   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title">🔍 Scan automatique — Apify</div>
+      <div class="modal-title">🔍 Scan automatique</div>
       <button class="modal-close" onclick="closeModal('scanModal')">✕</button>
     </div>
     <div class="modal-body">
@@ -981,6 +1047,21 @@
             <button class="plat-pick-btn" data-platform="th" onclick="pickScanPlatform(this)">🧵 Threads</button>
           </div>
         </div>
+        <!-- Alerte Instagram non connecté -->
+        <div id="igNotConnectedAlert" style="display:none;background:rgba(240,67,108,0.08);border:1px solid rgba(240,67,108,0.3);border-radius:10px;padding:12px 14px;font-size:12px;line-height:1.6;">
+          <strong style="color:var(--accent2)">📸 Compte Instagram non connecté</strong><br>
+          <span style="color:var(--muted)">Pour scanner Instagram, connecte d'abord ton compte de référence.</span><br>
+          <button class="btn btn-primary" style="margin-top:10px;font-size:12px;padding:7px 14px" onclick="closeModal('scanModal');openIgConnect()">Connecter mon compte Instagram</button>
+        </div>
+        <!-- Compte Instagram connecté -->
+        <div id="igConnectedBadge" style="display:none;background:rgba(5,150,105,0.07);border:1px solid rgba(5,150,105,0.25);border-radius:10px;padding:10px 14px;font-size:12px;display:flex;align-items:center;gap:10px;">
+          <span style="font-size:16px">✅</span>
+          <div>
+            <span style="color:var(--text);font-weight:600">Instagram connecté : </span><span id="igConnectedUser" style="color:var(--accent)">@…</span>
+            <span style="color:var(--muted);margin-left:8px;cursor:pointer;text-decoration:underline;font-size:11px" onclick="disconnectInstagram()">Changer</span>
+          </div>
+        </div>
+
         <div>
           <label class="form-label">Compte de référence</label>
           <div style="position:relative;">
@@ -1249,10 +1330,11 @@
       <div id="scanProgress" style="display:none;text-align:center;padding:24px 0;">
         <div style="font-size:36px;margin-bottom:12px;">⚡</div>
         <div id="scanProgressLabel" style="font-size:14px;font-weight:700;margin-bottom:8px;">Scan en cours…</div>
-        <div id="scanProgressSub" style="font-size:12px;color:var(--muted);">Apify scrape les profils, ça peut prendre 1-2 min</div>
-        <div style="margin-top:18px;height:4px;background:var(--surface2);border-radius:4px;overflow:hidden;">
-          <div id="scanProgressBar" style="height:100%;width:30%;background:linear-gradient(90deg,var(--accent),var(--pink));border-radius:4px;animation:scanPulse 1.5s ease-in-out infinite alternate;"></div>
+        <div id="scanProgressSub" style="font-size:12px;color:var(--muted);margin-bottom:14px;">Récupération des profils en cours…</div>
+        <div style="margin-top:4px;height:6px;background:var(--surface2);border-radius:4px;overflow:hidden;max-width:280px;margin:0 auto;">
+          <div id="scanProgressBar" style="height:100%;width:5%;background:linear-gradient(90deg,var(--accent),var(--pink));border-radius:4px;transition:width 0.5s ease;"></div>
         </div>
+        <div id="scanProgressCount" style="font-size:11px;color:var(--muted);margin-top:8px;font-family:'Space Mono',monospace;min-height:16px;"></div>
       </div>
       <!-- Résultat -->
       <div id="scanResult" style="display:none;text-align:center;padding:20px 0;"></div>
@@ -1443,6 +1525,7 @@ sb.auth.getSession().then(async ({ data }) => {
   startGmailPolling();
   initTeam().then(() => checkInviteToken());
   navTo('home');
+  checkIgStatus();
 });
 
 // Google Identity Services (Gmail OAuth)
@@ -1848,6 +1931,7 @@ function openScanModal() {
   if (selBtn) pickScanPlatform(selBtn);
   document.getElementById('scanModal').classList.add('open');
   setTimeout(initScheduleUI, 50);
+  checkIgStatus();
 }
 
 function toggleAdvanced() {
@@ -1869,6 +1953,8 @@ function pickScanPlatform(el) {
     const platforms = block.dataset.platforms;
     block.style.display = (!platforms || platforms === plat) ? '' : 'none';
   });
+  // Affiche/cache l'alerte Instagram selon le compte connecté
+  checkIgStatus();
 }
 
 function pickPlatform(el) { document.querySelectorAll('.plat-pick-btn').forEach(b=>b.classList.remove('sel')); el.classList.add('sel'); }
@@ -1876,6 +1962,7 @@ function pickPlatform(el) { document.querySelectorAll('.plat-pick-btn').forEach(
 let _scanPollInterval = null;
 let _scanCurrentRunId = null;
 let _scanCurrentPhase = 1;
+let _scanCurrentType = ''; // 'ig_native' ou ''
 let _scanFilters = {};
 let _scanPollCount = 0;
 const SCAN_MAX_POLLS = 120; // 10 minutes max (120 × 5s)
@@ -1965,6 +2052,7 @@ async function launchScan() {
 
     _scanCurrentRunId = startData.run_id;
     _scanCurrentPhase = startData.phase || 1;
+    _scanCurrentType = startData.type || '';
     _scanFilters = filters;
 
     // Polling toutes les 5 secondes
@@ -1990,6 +2078,7 @@ async function launchScan() {
           platform,
           results_limit: resultsLimit,
           filters: JSON.stringify(_scanFilters),
+          type: _scanCurrentType,
         });
         const pollRes = await wFetch(`${WORKER}/scan-poll?${qs}`);
         const pollData = await pollRes.json();
@@ -1999,7 +2088,18 @@ async function launchScan() {
           throw new Error(pollData.error);
         }
 
-        // Transition phase 1 → phase 2
+        // Mise à jour barre de progression ig_native
+        if (_scanCurrentType === 'ig_native' && pollData.progress) {
+          const { done: pdone, total } = pollData.progress;
+          const pct = total > 0 ? Math.round((pdone / total) * 100) : 5;
+          document.getElementById('scanProgressBar').style.width = `${pct}%`;
+          document.getElementById('scanProgressCount').textContent = `${pdone} / ${total} profils analysés`;
+          document.getElementById('scanProgressLabel').textContent = 'Analyse des profils Instagram…';
+          if (subEl) subEl.textContent = `Récupération des données (bio, followers, score…) · ${elapsedStr}`;
+          return;
+        }
+
+        // Transition phase 1 → phase 2 (Apify)
         if (!pollData.done && pollData.run_id && pollData.phase === 2) {
           _scanCurrentRunId = pollData.run_id;
           _scanCurrentPhase = 2;
@@ -2055,6 +2155,128 @@ function _showScanError(msg) {
     <button class="btn btn-ghost" style="margin-top:14px;" onclick="resetScanModal()">Réessayer</button>
   `;
   document.getElementById('scanFooter').style.display = 'none';
+}
+
+// ─── INSTAGRAM CONNECT ────────────────────────────────────────────────────────
+
+let _igChallengeKey = null;
+
+async function checkIgStatus() {
+  try {
+    const res = await wFetch(`${WORKER}/instagram-status`);
+    const data = await res.json();
+    const badge = document.getElementById('igConnectedBadge');
+    const alert = document.getElementById('igNotConnectedAlert');
+    const sidebarStatus = document.getElementById('igSidebarStatus');
+    const platform = document.querySelector('#scanPlatformPick .plat-pick-btn.sel')?.dataset?.platform;
+
+    if (data.connected) {
+      const uname = data.username || '';
+      if (badge) { badge.style.display = 'flex'; document.getElementById('igConnectedUser').textContent = '@' + uname; }
+      if (alert) alert.style.display = 'none';
+      if (sidebarStatus) { sidebarStatus.textContent = '@' + uname; sidebarStatus.style.background = 'rgba(5,150,105,0.15)'; sidebarStatus.style.color = '#10b981'; }
+    } else {
+      if (badge) badge.style.display = 'none';
+      if (alert && platform === 'ig') alert.style.display = 'block';
+      if (sidebarStatus) { sidebarStatus.textContent = 'Non connecté'; sidebarStatus.style.background = 'rgba(240,67,108,0.1)'; sidebarStatus.style.color = 'var(--accent2)'; }
+    }
+    return data;
+  } catch { return { connected: false }; }
+}
+
+function openIgConnect() {
+  resetIgConnect();
+  document.getElementById('igConnectModal').classList.add('open');
+}
+
+function resetIgConnect() {
+  _igChallengeKey = null;
+  document.getElementById('igStep1').style.display = '';
+  document.getElementById('igStep2').style.display = 'none';
+  document.getElementById('igConnectLoading').style.display = 'none';
+  document.getElementById('igConnectSuccess').style.display = 'none';
+  document.getElementById('igUsername').value = '';
+  document.getElementById('igPassword').value = '';
+  document.getElementById('igCode').value = '';
+}
+
+function _igShowLoading(text) {
+  document.getElementById('igStep1').style.display = 'none';
+  document.getElementById('igStep2').style.display = 'none';
+  document.getElementById('igConnectLoading').style.display = 'block';
+  document.getElementById('igConnectSuccess').style.display = 'none';
+  document.getElementById('igConnectLoadingText').textContent = text || 'Connexion en cours…';
+}
+
+async function connectInstagram() {
+  const username = document.getElementById('igUsername').value.trim().replace(/^@/, '');
+  const password = document.getElementById('igPassword').value;
+  if (!username || !password) { showToast('Remplis tous les champs', 'error'); return; }
+
+  _igShowLoading('Connexion à Instagram…');
+  try {
+    const res = await wFetch(`${WORKER}/instagram-connect`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    });
+    const data = await res.json();
+
+    if (data.two_factor_required) {
+      _igChallengeKey = data.challenge_key;
+      document.getElementById('igConnectLoading').style.display = 'none';
+      document.getElementById('igStep2').style.display = '';
+      return;
+    }
+    if (data.error) throw new Error(data.error);
+
+    // Succès
+    document.getElementById('igConnectLoading').style.display = 'none';
+    document.getElementById('igConnectSuccess').style.display = 'block';
+    document.getElementById('igConnectSuccessUser').textContent = '@' + (data.username || username);
+    await checkIgStatus();
+  } catch(e) {
+    document.getElementById('igConnectLoading').style.display = 'none';
+    document.getElementById('igStep1').style.display = '';
+    showToast(e.message || 'Erreur connexion Instagram', 'error');
+  }
+}
+
+async function submitIgChallenge() {
+  const code = document.getElementById('igCode').value.trim();
+  if (!code) { showToast('Entre le code reçu', 'error'); return; }
+  if (!_igChallengeKey) { showToast('Session expirée, recommence', 'error'); resetIgConnect(); return; }
+
+  _igShowLoading('Vérification du code…');
+  try {
+    const res = await wFetch(`${WORKER}/instagram-challenge`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ challenge_key: _igChallengeKey, code }),
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    document.getElementById('igConnectLoading').style.display = 'none';
+    document.getElementById('igConnectSuccess').style.display = 'block';
+    document.getElementById('igConnectSuccessUser').textContent = '@' + (data.username || '');
+    await checkIgStatus();
+  } catch(e) {
+    document.getElementById('igConnectLoading').style.display = 'none';
+    document.getElementById('igStep2').style.display = '';
+    showToast(e.message || 'Code incorrect', 'error');
+  }
+}
+
+async function disconnectInstagram() {
+  if (!confirm('Déconnecter le compte Instagram ?')) return;
+  try {
+    await wFetch(`${WORKER}/instagram-disconnect`, { method: 'POST' });
+    await checkIgStatus();
+    showToast('Compte Instagram déconnecté', 'success');
+  } catch(e) {
+    showToast('Erreur déconnexion', 'error');
+  }
 }
 
 function resetScanModal() {
