@@ -2189,9 +2189,16 @@ async function checkIgStatus() {
   } catch { return { connected: false }; }
 }
 
-function openIgConnect() {
+async function openIgConnect() {
   resetIgConnect();
   document.getElementById('igConnectModal').classList.add('open');
+  // Si déjà connecté, afficher directement l'état connecté
+  const status = await checkIgStatus();
+  if (status.connected) {
+    document.getElementById('igStep1').style.display = 'none';
+    document.getElementById('igConnectSuccess').style.display = 'block';
+    document.getElementById('igConnectSuccessUser').textContent = '@' + status.username;
+  }
 }
 
 function resetIgConnect() {
