@@ -612,7 +612,7 @@ export default {
         return { success: true, sessionId };
       }
       if (data.user === false) return { error: 'Compte Instagram introuvable' };
-      return { error: data.message || 'Identifiants incorrects' };
+      return { error: data.message || 'Identifiants incorrects', _raw: data };
     }
 
     async function igDoChallenge(username, code, identifier, csrf, igDid) {
@@ -1274,38 +1274,35 @@ export default {
       return json({ success: true, deleted: userId });
     }
 
-    // POST /instagram-connect — Connecte un compte Instagram (étape 1 : login)
-    // Body: { username, password }
+    // POST /instagram-connect — Connecte un compte Instagram via sessionid
+    // Body: { username, sessionId }
     if (request.method === 'POST' && path === '/instagram-connect') {
       let body;
       try { body = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
-      const { username, password } = body;
-      if (!username || !password) return json({ error: 'username et password requis' }, 400);
+      const { username, sessionId } = body;
+      if (!username || !sessionId) return json({ error: 'username et sessionId requis' }, 400);
 
-      const token = (request.headers.get('Authorization') || '').slice(7);
       const igUser = await verifyAuth(request);
       if (!igUser) return json({ error: 'Non authentifié' }, 401);
+      const token = (request.headers.get('Authorization') || '').slice(7);
 
-      const { csrf, igDid } = await igGetCsrf();
-      const result = await igDoLogin(username, password, csrf, igDid);
-
-      if (result.error) return json({ error: result.error }, 400);
-
-      if (result.two_factor_required) {
-        // Stocke le contexte 2FA temporairement en KV (5 min)
-        const challengeKey = crypto.randomUUID().replace(/-/g, '');
-        await env.RATE_LIMIT.put(`igchallenge:${challengeKey}`, JSON.stringify({
-          username, csrf: result.csrf, igDid: result.igDid, identifier: result.identifier, userId: igUser.id, token,
-        }), { expirationTtl: 300 });
-        return json({ two_factor_required: true, challenge_key: challengeKey });
+      // Vérifie que le sessionid est valide en appelant l'API Instagram
+      let verifiedUsername = username;
+      try {
+        const verifyRes = await fetch(`https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(username)}`, {
+          headers: { 'Cookie': `sessionid=${sessionId}`, 'X-IG-App-ID': IG_APP_ID, 'User-Agent': IG_UA_WEB, 'Referer': 'https://www.instagram.com/' },
+        });
+        if (verifyRes.status === 401 || verifyRes.status === 403) {
+          return json({ error: 'Session ID invalide ou expiré. Reconnecte-toi sur Instagram et récupère un nouveau sessionid.' }, 400);
+        }
+        const vData = await verifyRes.json().catch(() => ({}));
+        verifiedUsername = vData?.data?.user?.username || username;
+      } catch(e) {
+        return json({ error: 'Impossible de vérifier le compte Instagram : ' + e.message }, 400);
       }
 
-      // Login réussi — stocke le sessionid + credentials chiffrés dans Supabase
-      const fields = { instagram_username: username, instagram_session_id: result.sessionId };
-      if (env.ENCRYPT_KEY) fields.instagram_password_enc = await encryptText(password, env.ENCRYPT_KEY);
-      await updateSupabaseProfile(igUser.id, token, fields);
-
-      return json({ success: true, username });
+      await updateSupabaseProfile(igUser.id, token, { instagram_username: verifiedUsername, instagram_session_id: sessionId, instagram_password_enc: null });
+      return json({ success: true, username: verifiedUsername });
     }
 
     // POST /instagram-challenge — Valide le code 2FA (étape 2)

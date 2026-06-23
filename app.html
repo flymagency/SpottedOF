@@ -978,42 +978,41 @@
 
       <!-- Disclaimer -->
       <div style="background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.3);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:16px;">
-        ⚠️ <strong style="color:var(--text)">Recommandé :</strong> utilise un compte agence ou un compte Instagram dédié — pas ton compte personnel. En cas d'utilisation intensive, Instagram peut temporairement limiter le compte.
+        ⚠️ <strong style="color:var(--text)">Recommandé :</strong> utilise un compte agence ou un compte Instagram dédié — pas ton compte personnel.
       </div>
 
-      <!-- Étape 1 : Identifiants -->
+      <!-- Formulaire session -->
       <div id="igStep1">
         <div class="form-group">
           <label class="form-label">Nom d'utilisateur Instagram</label>
-          <input class="form-input" id="igUsername" placeholder="nom_utilisateur" autocomplete="username">
+          <input class="form-input" id="igUsername" placeholder="nom_utilisateur (sans @)" autocomplete="off">
         </div>
-        <div class="form-group">
-          <label class="form-label">Mot de passe</label>
-          <input class="form-input" type="password" id="igPassword" placeholder="••••••••" autocomplete="current-password">
+        <div class="form-group" style="margin-top:12px;">
+          <label class="form-label" style="display:flex;align-items:center;gap:6px;">
+            Session ID
+            <span style="font-size:10px;color:var(--muted);font-weight:400;">(cookie de ton navigateur)</span>
+          </label>
+          <input class="form-input" id="igSessionId" placeholder="Colle ton sessionid ici" autocomplete="off" style="font-family:'Space Mono',monospace;font-size:11px;">
         </div>
-        <p style="font-size:12px;color:var(--muted);margin-top:8px;margin-bottom:16px;">Tes identifiants sont chiffrés et stockés de façon sécurisée. Ils ne sont jamais partagés.</p>
-        <button class="btn btn-primary" style="width:100%" onclick="connectInstagram()">Connecter</button>
-      </div>
 
-      <!-- Étape 2 : Code 2FA -->
-      <div id="igStep2" style="display:none">
-        <div style="text-align:center;margin-bottom:16px;">
-          <div style="font-size:28px;margin-bottom:8px;">📲</div>
-          <div style="font-size:14px;font-weight:700;margin-bottom:6px;">Vérification en deux étapes</div>
-          <div style="font-size:12px;color:var(--muted)">Instagram t'a envoyé un code par SMS ou e-mail.</div>
+        <!-- Guide -->
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-top:12px;margin-bottom:16px;">
+          <div style="font-size:12px;font-weight:700;margin-bottom:10px;color:var(--text)">📋 Comment obtenir ton Session ID :</div>
+          <div style="display:flex;flex-direction:column;gap:8px;font-size:12px;color:var(--muted);line-height:1.5;">
+            <div><span style="color:var(--accent);font-weight:700;margin-right:6px;">1</span>Connecte-toi sur <strong style="color:var(--text)">instagram.com</strong> dans Chrome</div>
+            <div><span style="color:var(--accent);font-weight:700;margin-right:6px;">2</span>Appuie sur <strong style="color:var(--text)">F12</strong> → onglet <strong style="color:var(--text)">Application</strong></div>
+            <div><span style="color:var(--accent);font-weight:700;margin-right:6px;">3</span><strong style="color:var(--text)">Cookies</strong> → <strong style="color:var(--text)">https://www.instagram.com</strong></div>
+            <div><span style="color:var(--accent);font-weight:700;margin-right:6px;">4</span>Copie la valeur de <strong style="color:var(--text)">sessionid</strong></div>
+          </div>
         </div>
-        <div class="form-group">
-          <label class="form-label">Code de vérification</label>
-          <input class="form-input" id="igCode" placeholder="123456" maxlength="6" inputmode="numeric" style="text-align:center;letter-spacing:4px;font-size:18px;font-weight:700">
-        </div>
-        <button class="btn btn-primary" style="width:100%;margin-top:4px" onclick="submitIgChallenge()">Valider le code</button>
-        <button class="btn btn-ghost" style="width:100%;margin-top:8px" onclick="resetIgConnect()">← Recommencer</button>
+
+        <button class="btn btn-primary" style="width:100%" onclick="connectInstagram()">Connecter</button>
       </div>
 
       <!-- Loading -->
       <div id="igConnectLoading" style="display:none;text-align:center;padding:24px 0">
-        <div style="font-size:28px;margin-bottom:10px;animation:spin 1s linear infinite">⏳</div>
-        <div style="font-size:13px;color:var(--muted)" id="igConnectLoadingText">Connexion en cours…</div>
+        <div style="font-size:28px;margin-bottom:10px;">⏳</div>
+        <div style="font-size:13px;color:var(--muted)" id="igConnectLoadingText">Vérification en cours…</div>
       </div>
 
       <!-- Succès -->
@@ -2196,8 +2195,7 @@ function resetIgConnect() {
   document.getElementById('igConnectLoading').style.display = 'none';
   document.getElementById('igConnectSuccess').style.display = 'none';
   document.getElementById('igUsername').value = '';
-  document.getElementById('igPassword').value = '';
-  document.getElementById('igCode').value = '';
+  document.getElementById('igSessionId').value = '';
 }
 
 function _igShowLoading(text) {
@@ -2210,27 +2208,19 @@ function _igShowLoading(text) {
 
 async function connectInstagram() {
   const username = document.getElementById('igUsername').value.trim().replace(/^@/, '');
-  const password = document.getElementById('igPassword').value;
-  if (!username || !password) { showToast('Remplis tous les champs', 'error'); return; }
+  const sessionId = document.getElementById('igSessionId').value.trim();
+  if (!username || !sessionId) { showToast('Remplis le nom d\'utilisateur et le Session ID', 'error'); return; }
 
-  _igShowLoading('Connexion à Instagram…');
+  _igShowLoading('Vérification du compte…');
   try {
     const res = await wFetch(`${WORKER}/instagram-connect`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ username, sessionId }),
     });
     const data = await res.json();
-
-    if (data.two_factor_required) {
-      _igChallengeKey = data.challenge_key;
-      document.getElementById('igConnectLoading').style.display = 'none';
-      document.getElementById('igStep2').style.display = '';
-      return;
-    }
     if (data.error) throw new Error(data.error);
 
-    // Succès
     document.getElementById('igConnectLoading').style.display = 'none';
     document.getElementById('igConnectSuccess').style.display = 'block';
     document.getElementById('igConnectSuccessUser').textContent = '@' + (data.username || username);
