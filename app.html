@@ -996,19 +996,29 @@
         </div>
 
         <!-- Guide -->
-        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-top:12px;margin-bottom:16px;">
-          <div style="font-size:12px;font-weight:700;margin-bottom:12px;color:var(--text)">📋 Comment obtenir ton Session ID en 30 secondes :</div>
-          <div style="display:flex;flex-direction:column;gap:10px;font-size:12px;color:var(--muted);line-height:1.5;">
-            <div><span style="color:var(--accent);font-weight:700;margin-right:8px;">1</span>Va sur <strong style="color:var(--text)">instagram.com</strong> dans Chrome et <strong style="color:var(--text)">connecte-toi</strong> à ton compte dédié</div>
-            <div><span style="color:var(--accent);font-weight:700;margin-right:8px;">2</span>Appuie sur <strong style="color:var(--text)">F12</strong> → clique sur l'onglet <strong style="color:var(--text)">Console</strong></div>
-            <div><span style="color:var(--accent);font-weight:700;margin-right:8px;">3</span>Colle cette ligne et appuie sur <strong style="color:var(--text)">Entrée</strong> :</div>
-          </div>
-          <div style="margin-top:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:10px;">
-            <code style="font-family:'Space Mono',monospace;font-size:11px;color:var(--accent);flex:1;word-break:break-all;">copy(document.cookie.match(/sessionid=([^;]+)/)[1])</code>
-            <button onclick="navigator.clipboard.writeText(`copy(document.cookie.match(/sessionid=([^;]+)/)[1])`).then(()=>showToast('Copié !','success'))" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:5px 10px;color:var(--muted);font-size:11px;cursor:pointer;flex-shrink:0;font-family:'Inter',sans-serif;">Copier</button>
-          </div>
-          <div style="margin-top:10px;font-size:12px;color:var(--muted);line-height:1.5;">
-            <span style="color:var(--accent);font-weight:700;margin-right:8px;">4</span>Le Session ID est copié automatiquement — colle-le dans le champ ci-dessus
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-top:12px;margin-bottom:16px;">
+          <div style="font-size:12px;font-weight:700;margin-bottom:14px;color:var(--text)">📋 Comment obtenir ton Session ID :</div>
+          <div style="display:flex;flex-direction:column;gap:12px;font-size:12px;color:var(--muted);line-height:1.6;">
+            <div style="display:flex;gap:10px;align-items:flex-start;">
+              <span style="color:var(--accent);font-weight:700;min-width:18px;">1</span>
+              <span>Va sur <strong style="color:var(--text)">instagram.com</strong> dans Chrome et connecte-toi à ton compte dédié</span>
+            </div>
+            <div style="display:flex;gap:10px;align-items:flex-start;">
+              <span style="color:var(--accent);font-weight:700;min-width:18px;">2</span>
+              <span>Appuie sur <strong style="color:var(--text)">F12</strong> → clique sur l'onglet <strong style="color:var(--text)">Application</strong> <span style="color:var(--muted);font-size:11px;">(si tu ne le vois pas, clique sur »)</span></span>
+            </div>
+            <div style="display:flex;gap:10px;align-items:flex-start;">
+              <span style="color:var(--accent);font-weight:700;min-width:18px;">3</span>
+              <span>Dans le menu gauche → <strong style="color:var(--text)">Storage</strong> → <strong style="color:var(--text)">Cookies</strong> → clique sur <strong style="color:var(--text)">https://www.instagram.com</strong></span>
+            </div>
+            <div style="display:flex;gap:10px;align-items:flex-start;">
+              <span style="color:var(--accent);font-weight:700;min-width:18px;">4</span>
+              <span>Dans le tableau, trouve la ligne <strong style="color:var(--text)">sessionid</strong> → clique dessus → copie la valeur complète dans la colonne <strong style="color:var(--text)">Value</strong></span>
+            </div>
+            <div style="display:flex;gap:10px;align-items:flex-start;">
+              <span style="color:var(--accent);font-weight:700;min-width:18px;">5</span>
+              <span>Colle cette valeur dans le champ <strong style="color:var(--text)">Session ID</strong> ci-dessus</span>
+            </div>
           </div>
         </div>
 
