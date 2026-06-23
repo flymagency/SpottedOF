@@ -2234,6 +2234,7 @@ async function connectInstagram() {
   const username = document.getElementById('igUsername').value.trim().replace(/^@/, '');
   const sessionId = document.getElementById('igSessionId').value.trim();
   if (!username || !sessionId) { showToast('Remplis le nom d\'utilisateur et le Session ID', 'error'); return; }
+  if (username.includes('@') || username.includes('.com')) { showToast('Entre ton pseudo Instagram, pas ton email (ex: flymagency)', 'error'); return; }
 
   _igShowLoading('Vérification du compte…');
   try {
