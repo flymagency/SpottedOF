@@ -726,9 +726,8 @@
       <!-- Starter -->
       <div class="price-card" id="pc1">
         <div class="plan-name">Starter</div>
-        <div class="plan-price"><sup>€</sup><span id="priceStarter">49</span></div>
-        <div class="plan-period" id="periodStarter">par mois</div>
-        <div id="annualNoteStarter" style="display:none;font-size:11px;color:var(--muted);margin-top:-2px;margin-bottom:4px;">facturé 490€/an</div>
+        <div class="plan-price"><sup>€</sup>49</div>
+        <div class="plan-period">par mois</div>
         <div class="plan-divider"></div>
         <ul class="plan-features">
           <li class="on"><span class="feat-check">✓</span> 200 prospects/mois</li>
@@ -761,8 +760,9 @@
       <!-- Agence -->
       <div class="price-card" id="pc3">
         <div class="plan-name">Agence</div>
-        <div class="plan-price"><sup>€</sup>199</div>
-        <div class="plan-period">par mois</div>
+        <div class="plan-price"><sup>€</sup><span id="priceAgence">199</span></div>
+        <div class="plan-period" id="periodAgence">par mois</div>
+        <div id="annualNoteAgence" style="display:none;font-size:11px;color:var(--muted);margin-top:-2px;margin-bottom:4px;">facturé 1 990€/an</div>
         <div class="plan-divider"></div>
         <ul class="plan-features">
           <li class="on"><span class="feat-check">✓</span> Prospects illimités</li>
@@ -836,12 +836,12 @@
     thumb.style.transform = _isAnnual ? 'translateX(22px)' : 'translateX(0)';
     labelM.style.color = _isAnnual ? 'var(--muted)' : '#fff';
     labelA.style.color = _isAnnual ? '#fff' : 'var(--muted)';
-    // Starter
-    document.getElementById('priceStarter').textContent = _isAnnual ? '41' : '49';
-    document.getElementById('annualNoteStarter').style.display = _isAnnual ? 'block' : 'none';
     // Pro
     document.getElementById('pricePro').textContent = _isAnnual ? '83' : '99';
     document.getElementById('annualNotePro').style.display = _isAnnual ? 'block' : 'none';
+    // Agence
+    document.getElementById('priceAgence').textContent = _isAnnual ? '166' : '199';
+    document.getElementById('annualNoteAgence').style.display = _isAnnual ? 'block' : 'none';
   }
 
   /* ── HERO ANIMATION ── */
