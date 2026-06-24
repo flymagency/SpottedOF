@@ -882,6 +882,9 @@ export default {
       let body;
       try { body = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
 
+      const user = await verifyAuth(request);
+      if (!user) return json({ error: 'Non authentifié' }, 401);
+
       const handle = (body.handle || '').replace(/^@/, '').trim();
       if (!handle) return json({ error: 'handle requis' }, 400);
 
