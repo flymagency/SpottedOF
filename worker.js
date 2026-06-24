@@ -610,7 +610,7 @@ export default {
       const enc = s => new TextEncoder().encode(s);
 
       // 1. TCP connect to proxy
-      const proxySocket = connect({ hostname: env.PROXY_HOST, port: parseInt(env.PROXY_PORT) });
+      const proxySocket = connect({ hostname: env.PROXY_HOST, port: parseInt(env.PROXY_PORT) }, { secureTransport: 'starttls' });
 
       // 2. Send HTTP CONNECT to tunnel to instagram.com:443
       const proxyWriter = proxySocket.writable.getWriter();
