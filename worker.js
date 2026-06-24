@@ -384,6 +384,31 @@ export default {
       return json({ success: true, deleted: id });
     }
 
+    // POST /add-test-prospect — insère un prospect de test (à supprimer après)
+    if (request.method === 'POST' && path === '/add-test-prospect') {
+      const user = await verifyAuth(request);
+      if (!user) return json({ error: 'Non authentifié' }, 401);
+      const res = await airtableRequest(env, 'POST', 'Prospects', {
+        records: [{
+          fields: {
+            handle: '@test_prospect',
+            name: 'Sophie Martin',
+            platform: 'ig',
+            followers: 48500,
+            engagement: 4.2,
+            niche: 'lifestyle',
+            bio: 'Content creator 🌸 | Lifestyle & Fashion | Lien Onlyfans en bio 👇',
+            has_of: true,
+            score: 87,
+            status: 'nouveau',
+            scan_source: '@test',
+            user_id: user.id,
+          }
+        }]
+      });
+      return json({ success: true, airtable_response: res });
+    }
+
     // POST /delete-all-prospects — supprime tous les prospects (max 10 par batch Airtable)
     if (request.method === 'POST' && path === '/delete-all-prospects') {
       const all = await getProspects(env, new URLSearchParams('min_score=0'));
