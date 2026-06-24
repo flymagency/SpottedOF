@@ -2250,7 +2250,7 @@ async function submitIgChallenge() {
     await checkIgStatus();
   } catch(e) {
     document.getElementById('igConnectLoading').style.display = 'none';
-    document.getElementById('igStep2').style.display = '';
+    document.getElementById('igStep1').style.display = '';
     showToast(e.message || 'Code incorrect', 'error');
   }
 }
