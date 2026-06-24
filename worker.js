@@ -567,7 +567,7 @@ export default {
     }
 
     async function getSupabaseProfile(userId, token) {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=instagram_username,instagram_session_id,instagram_password_enc`, {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=instagram_username,instagram_session_id,instagram_password_enc,geelark_api_key,geelark_profile_id,geelark_profile_name`, {
         headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${token}` },
       });
       const data = await res.json();
@@ -1447,41 +1447,90 @@ export default {
       return json({ success: true });
     }
 
-    // POST /send-dm
-    // Body: { appId, apiKey, profileId, targetUsername, dmMessage }
-    if (request.method === 'POST' && path === '/send-dm') {
+    // POST /geelark-connect — Sauvegarde l'API key Geelark + profileId du client
+    if (request.method === 'POST' && path === '/geelark-connect') {
+      const user = await verifyAuth(request);
+      if (!user) return json({ error: 'Non authentifié' }, 401);
+      const token = (request.headers.get('Authorization') || '').slice(7);
       let body;
       try { body = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
-      const { appId, apiKey, profileId, targetUsername, dmMessage } = body;
-      if (!appId || !apiKey || !profileId || !targetUsername || !dmMessage) {
-        return json({ error: 'Champs requis: appId, apiKey, profileId, targetUsername, dmMessage' }, 400);
+      const { apiKey, profileId, profileName } = body;
+      if (!apiKey || !profileId) return json({ error: 'apiKey et profileId requis' }, 400);
+      await updateSupabaseProfile(user.id, token, { geelark_api_key: apiKey, geelark_profile_id: profileId, geelark_profile_name: profileName || '' });
+      return json({ success: true });
+    }
+
+    // GET /geelark-status — Vérifie si Geelark est connecté
+    if (request.method === 'GET' && path === '/geelark-status') {
+      const user = await verifyAuth(request);
+      if (!user) return json({ error: 'Non authentifié' }, 401);
+      const token = (request.headers.get('Authorization') || '').slice(7);
+      const profile = await getSupabaseProfile(user.id, token);
+      if (profile?.geelark_api_key && profile?.geelark_profile_id) {
+        return json({ connected: true, profileName: profile.geelark_profile_name || profile.geelark_profile_id });
+      }
+      return json({ connected: false });
+    }
+
+    // POST /geelark-disconnect — Déconnecte Geelark
+    if (request.method === 'POST' && path === '/geelark-disconnect') {
+      const user = await verifyAuth(request);
+      if (!user) return json({ error: 'Non authentifié' }, 401);
+      const token = (request.headers.get('Authorization') || '').slice(7);
+      await updateSupabaseProfile(user.id, token, { geelark_api_key: null, geelark_profile_id: null, geelark_profile_name: null });
+      return json({ success: true });
+    }
+
+    // POST /geelark-phones — Liste les téléphones Geelark du client
+    if (request.method === 'POST' && path === '/geelark-phones') {
+      const user = await verifyAuth(request);
+      if (!user) return json({ error: 'Non authentifié' }, 401);
+      const token = (request.headers.get('Authorization') || '').slice(7);
+      let body;
+      try { body = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
+      const { apiKey } = body;
+      if (!apiKey) return json({ error: 'apiKey requis' }, 400);
+      const traceId = crypto.randomUUID();
+      const res = await fetch('https://openapi.geelark.com/open/v1/phone/list', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}`, 'traceId': traceId },
+        body: JSON.stringify({ page: 1, pageSize: 50 }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.code !== 0) return json({ error: data.msg || `Erreur Geelark (${res.status})` }, 502);
+      const phones = (data.data?.items || []).map(p => ({ id: p.id, name: p.serialName || p.serialNo || p.id }));
+      return json({ phones });
+    }
+
+    // POST /send-dm — Envoie un DM via Geelark
+    if (request.method === 'POST' && path === '/send-dm') {
+      const user = await verifyAuth(request);
+      if (!user) return json({ error: 'Non authentifié' }, 401);
+      const token = (request.headers.get('Authorization') || '').slice(7);
+      let body;
+      try { body = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
+      const { targetUsername, dmMessage } = body;
+      if (!targetUsername || !dmMessage) return json({ error: 'targetUsername et dmMessage requis' }, 400);
+
+      const profile = await getSupabaseProfile(user.id, token);
+      if (!profile?.geelark_api_key || !profile?.geelark_profile_id) {
+        return json({ error: 'Geelark non connecté. Configure ton compte Geelark d\'abord.' }, 400);
       }
 
-      // Build Geelark HMAC signature
-      const traceId = crypto.randomUUID().replace(/-/g, '');
-      const timestamp = String(Math.floor(Date.now() / 1000));
-      const nonce = crypto.randomUUID().replace(/-/g, '').slice(0, 8);
-      const signStr = appId + traceId + timestamp + nonce;
-      const keyData = new TextEncoder().encode(apiKey);
-      const msgData = new TextEncoder().encode(signStr);
-      const cryptoKey = await crypto.subtle.importKey('raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-      const sigBuf = await crypto.subtle.sign('HMAC', cryptoKey, msgData);
-      const signature = Array.from(new Uint8Array(sigBuf)).map(b => b.toString(16).padStart(2,'0')).join('');
-
-      const geelarkRes = await fetch('https://openapi.geelark.com/open/v1/rpa/task/', {
+      const traceId = crypto.randomUUID();
+      const geelarkRes = await fetch('https://openapi.geelark.com/open/v1/task/rpa/add', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-APP-ID': appId,
-          'X-TRACE-ID': traceId,
-          'X-TIMESTAMP': timestamp,
-          'X-NONCE': nonce,
-          'X-SIGNATURE': signature,
+          'Authorization': `Bearer ${profile.geelark_api_key}`,
+          'traceId': traceId,
         },
         body: JSON.stringify({
-          templateId: '625154503368245370',
-          profileIds: [profileId],
-          variables: { targetUsername, dmMessage },
+          scheduleAt: 0,
+          id: profile.geelark_profile_id,
+          flowId: '625154801130274938',
+          name: `DM @${targetUsername}`,
+          paramMap: { targetUsername, dmMessage },
         }),
       });
 

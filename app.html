@@ -937,31 +937,45 @@
 <div class="modal-overlay" id="geelarkConfigModal">
   <div class="modal" style="max-width:460px">
     <div class="modal-header">
-      <div class="modal-title">⚙️ Configuration Geelark</div>
+      <div class="modal-title">📱 Connecter Geelark</div>
       <button class="modal-close" onclick="closeModal('geelarkConfigModal')">✕</button>
     </div>
     <div class="modal-body" style="display:flex;flex-direction:column;gap:14px;">
-      <p style="font-size:13px;color:var(--muted);line-height:1.6">Entre tes identifiants Geelark pour envoyer des DMs Instagram automatiquement. Ces données sont stockées uniquement dans ton navigateur.</p>
-      <div>
-        <label class="form-label">App ID</label>
-        <input type="text" class="form-input" id="glAppId" placeholder="Ex: 123456789" autocomplete="off">
+
+      <!-- État connecté -->
+      <div id="glConnectedState" style="display:none;text-align:center;padding:16px 0">
+        <div style="font-size:28px;margin-bottom:8px">✅</div>
+        <div style="font-weight:600;margin-bottom:4px">Geelark connecté</div>
+        <div style="font-size:13px;color:var(--muted)" id="glConnectedName">—</div>
+        <button class="btn btn-ghost" style="margin-top:16px;font-size:12px" onclick="disconnectGeelark()">Déconnecter</button>
       </div>
-      <div>
-        <label class="form-label">API Key</label>
+
+      <!-- Étape 1 : API Key -->
+      <div id="glStep1">
+        <div style="background:rgba(6,182,212,0.06);border:1px solid rgba(6,182,212,0.2);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:4px">
+          <strong style="color:var(--text)">📋 Comment obtenir ta clé API :</strong><br>
+          1. Va sur <strong style="color:white">open.geelark.com</strong><br>
+          2. Connecte-toi avec ton compte Geelark<br>
+          3. Copie ta clé API et colle-la ici
+        </div>
+        <label class="form-label" style="margin-top:12px">Clé API Geelark</label>
         <input type="password" class="form-input" id="glApiKey" placeholder="Ta clé API Geelark" autocomplete="off">
+        <button class="btn btn-primary" style="width:100%;margin-top:12px" onclick="loadGeelarkPhones()">Suivant →</button>
       </div>
-      <div>
-        <label class="form-label">Profile ID (téléphone virtuel)</label>
-        <input type="text" class="form-input" id="glProfileId" placeholder="ID du profil Geelark avec Instagram" autocomplete="off">
+
+      <!-- Étape 2 : Choix du téléphone -->
+      <div id="glStep2" style="display:none">
+        <label class="form-label">Choisis le téléphone virtuel avec Instagram</label>
+        <div id="glPhoneList" style="display:flex;flex-direction:column;gap:6px;margin-top:8px;max-height:220px;overflow-y:auto"></div>
+        <button class="btn btn-ghost" style="width:100%;margin-top:10px;font-size:12px" onclick="document.getElementById('glStep1').style.display='';document.getElementById('glStep2').style.display='none'">← Retour</button>
       </div>
-      <div style="background:rgba(6,182,212,0.06);border:1px solid rgba(6,182,212,0.2);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--muted);line-height:1.6">
-        💡 Trouve l'App ID et l'API Key dans <strong style="color:white">Geelark → Settings → API</strong><br>
-        Le Profile ID est l'identifiant du téléphone virtuel qui a Instagram connecté.
+
+      <!-- Loading -->
+      <div id="glLoading" style="display:none;text-align:center;padding:24px 0">
+        <div class="spinner" style="margin:0 auto 10px"></div>
+        <div style="font-size:13px;color:var(--muted)" id="glLoadingText">Chargement…</div>
       </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-primary" style="flex:1" onclick="saveGeelarkConfig()">Enregistrer</button>
-      <button class="btn btn-ghost" onclick="closeModal('geelarkConfigModal')">Annuler</button>
+
     </div>
   </div>
 </div>
@@ -2356,41 +2370,120 @@ function renderDmGeelarkSection() {
   }
 }
 
-function getGeelarkConfig() {
-  try {
-    const raw = localStorage.getItem('geelark_config');
-    if (!raw) return null;
-    const cfg = JSON.parse(raw);
-    return (cfg.appId && cfg.apiKey && cfg.profileId) ? cfg : null;
-  } catch { return null; }
-}
-
-function openGeelarkConfig() {
-  const cfg = getGeelarkConfig();
-  if (cfg) {
-    document.getElementById('glAppId').value = cfg.appId || '';
-    document.getElementById('glApiKey').value = cfg.apiKey || '';
-    document.getElementById('glProfileId').value = cfg.profileId || '';
-  }
+async function openGeelarkConfig() {
+  document.getElementById('glStep1').style.display = '';
+  document.getElementById('glStep2').style.display = 'none';
+  document.getElementById('glLoading').style.display = 'none';
+  document.getElementById('glConnectedState').style.display = 'none';
+  document.getElementById('glApiKey').value = '';
   document.getElementById('geelarkConfigModal').classList.add('open');
+  // Vérifie si déjà connecté
+  try {
+    const res = await wFetch(`${WORKER}/geelark-status`);
+    const data = await res.json();
+    if (data.connected) {
+      document.getElementById('glStep1').style.display = 'none';
+      document.getElementById('glConnectedState').style.display = 'block';
+      document.getElementById('glConnectedName').textContent = data.profileName;
+    }
+  } catch {}
 }
 
-function saveGeelarkConfig() {
-  const appId = document.getElementById('glAppId').value.trim();
+async function loadGeelarkPhones() {
   const apiKey = document.getElementById('glApiKey').value.trim();
-  const profileId = document.getElementById('glProfileId').value.trim();
-  if (!appId || !apiKey || !profileId) {
-    showToast('Tous les champs sont requis', 'error'); return;
+  if (!apiKey) { showToast('Entre ta clé API', 'error'); return; }
+  document.getElementById('glStep1').style.display = 'none';
+  document.getElementById('glLoading').style.display = 'block';
+  document.getElementById('glLoadingText').textContent = 'Chargement des téléphones…';
+  try {
+    const res = await wFetch(`${WORKER}/geelark-phones`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ apiKey }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Erreur API');
+    document.getElementById('glLoading').style.display = 'none';
+    document.getElementById('glStep2').style.display = 'block';
+    const list = document.getElementById('glPhoneList');
+    if (!data.phones || data.phones.length === 0) {
+      list.innerHTML = '<div style="font-size:13px;color:var(--muted);text-align:center;padding:16px">Aucun téléphone trouvé</div>';
+      return;
+    }
+    list.innerHTML = data.phones.map(p => `
+      <div onclick="selectGeelarkPhone('${apiKey}','${p.id}','${p.name.replace(/'/g,"\\'")}',this)"
+        style="padding:10px 14px;border-radius:9px;border:1px solid var(--border);cursor:pointer;font-size:13px;transition:all 0.15s"
+        onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+        <strong style="color:var(--text)">${p.name}</strong>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${p.id}</div>
+      </div>`).join('');
+  } catch (e) {
+    document.getElementById('glLoading').style.display = 'none';
+    document.getElementById('glStep1').style.display = 'block';
+    showToast(`Erreur: ${e.message}`, 'error');
   }
-  localStorage.setItem('geelark_config', JSON.stringify({ appId, apiKey, profileId }));
-  closeModal('geelarkConfigModal');
-  showToast('Configuration Geelark enregistrée ✓');
-  renderDmGeelarkSection();
+}
+
+async function selectGeelarkPhone(apiKey, profileId, profileName, el) {
+  document.getElementById('glStep2').style.display = 'none';
+  document.getElementById('glLoading').style.display = 'block';
+  document.getElementById('glLoadingText').textContent = 'Enregistrement…';
+  try {
+    const res = await wFetch(`${WORKER}/geelark-connect`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ apiKey, profileId, profileName }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Erreur');
+    document.getElementById('glLoading').style.display = 'none';
+    document.getElementById('glConnectedState').style.display = 'block';
+    document.getElementById('glConnectedName').textContent = profileName;
+    showToast('Geelark connecté ✓');
+    renderDmGeelarkSection();
+  } catch (e) {
+    document.getElementById('glLoading').style.display = 'none';
+    document.getElementById('glStep1').style.display = 'block';
+    showToast(`Erreur: ${e.message}`, 'error');
+  }
+}
+
+async function disconnectGeelark() {
+  try {
+    await wFetch(`${WORKER}/geelark-disconnect`, { method: 'POST' });
+    document.getElementById('glConnectedState').style.display = 'none';
+    document.getElementById('glStep1').style.display = 'block';
+    showToast('Geelark déconnecté');
+    renderDmGeelarkSection();
+  } catch (e) { showToast(`Erreur: ${e.message}`, 'error'); }
+}
+
+async function renderDmGeelarkSection() {
+  const el = document.getElementById('dmGeelarkSection');
+  const sendBtn = document.getElementById('dmSendBtn');
+  if (!el) return;
+  try {
+    const res = await wFetch(`${WORKER}/geelark-status`);
+    const data = await res.json();
+    if (data.connected) {
+      el.innerHTML = `<div style="display:flex;align-items:center;gap:8px;background:rgba(6,182,212,0.06);border:1px solid rgba(6,182,212,0.2);border-radius:10px;padding:10px 14px;">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0"></div>
+        <div style="font-size:12px;color:var(--muted)">Geelark connecté — <strong style="color:white">${data.profileName}</strong></div>
+        <button onclick="openGeelarkConfig()" style="margin-left:auto;font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline">Modifier</button>
+      </div>`;
+      if (sendBtn) sendBtn.style.display = 'inline-flex';
+    } else {
+      el.innerHTML = `<div style="display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--muted);flex-shrink:0"></div>
+        <div style="font-size:12px;color:var(--muted)">Geelark non configuré</div>
+        <button onclick="openGeelarkConfig()" style="margin-left:auto;font-size:12px;font-weight:700;color:var(--accent);background:none;border:none;cursor:pointer">Configurer →</button>
+      </div>`;
+      if (sendBtn) sendBtn.style.display = 'none';
+    }
+  } catch {}
 }
 
 async function sendDmViaGeelark() {
-  const cfg = getGeelarkConfig();
-  if (!cfg) { openGeelarkConfig(); return; }
   const username = document.getElementById('dmTargetHandle').textContent.replace('@','').trim();
   const message = document.getElementById('dmMessage').value.trim();
   if (!username || !message) { showToast('Nom d\'utilisateur ou message manquant', 'error'); return; }
@@ -2403,13 +2496,7 @@ async function sendDmViaGeelark() {
     const res = await wFetch(`${WORKER}/send-dm`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        appId: cfg.appId,
-        apiKey: cfg.apiKey,
-        profileId: cfg.profileId,
-        targetUsername: username,
-        dmMessage: message,
-      }),
+      body: JSON.stringify({ targetUsername: username, dmMessage: message }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || `Erreur ${res.status}`);
