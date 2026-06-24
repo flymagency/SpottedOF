@@ -606,34 +606,46 @@ export default {
 
     async function igLoginViaProxy(username, password, env) {
       const { csrf, igDid } = await igGetCsrf();
-      const proxyAuth = btoa(`${env.PROXY_USER}:${env.PROXY_PASS}`);
       const enc = s => new TextEncoder().encode(s);
 
-      // 1. TCP connect to proxy
-      const proxySocket = connect({ hostname: env.PROXY_HOST, port: parseInt(env.PROXY_PORT) }, { secureTransport: 'starttls' });
+      // 1. TCP connect to proxy via SOCKS5 (port 1080)
+      const proxySocket = connect({ hostname: env.PROXY_HOST, port: 1080 }, { secureTransport: 'starttls' });
+      const pw = proxySocket.writable.getWriter();
+      const pr = proxySocket.readable.getReader();
+      const read = async (n) => {
+        let buf = new Uint8Array(0);
+        while (buf.length < n) {
+          const { value, done } = await pr.read();
+          if (done) break;
+          const next = new Uint8Array(buf.length + value.length);
+          next.set(buf); next.set(value, buf.length);
+          buf = next;
+        }
+        return buf;
+      };
 
-      // 2. Send HTTP CONNECT to tunnel to instagram.com:443
-      const proxyWriter = proxySocket.writable.getWriter();
-      await proxyWriter.write(enc(
-        `CONNECT www.instagram.com:443 HTTP/1.1\r\n` +
-        `Host: www.instagram.com:443\r\n` +
-        `Proxy-Authorization: Basic ${proxyAuth}\r\n\r\n`
-      ));
-      proxyWriter.releaseLock();
+      // 2. SOCKS5 greeting: version 5, 1 method: username/password auth
+      await pw.write(new Uint8Array([0x05, 0x01, 0x02]));
+      const greet = await read(2);
+      if (greet[1] !== 0x02) throw new Error('SOCKS5: méthode auth non acceptée');
 
-      // 3. Read CONNECT response (wait for 200)
-      const proxyReader = proxySocket.readable.getReader();
-      let connectResp = '';
-      while (true) {
-        const { value, done } = await proxyReader.read();
-        if (done) break;
-        connectResp += new TextDecoder().decode(value);
-        if (connectResp.includes('\r\n\r\n')) break;
-      }
-      proxyReader.releaseLock();
-      if (!connectResp.includes('200')) throw new Error('Proxy CONNECT échoué : ' + connectResp.split('\r\n')[0]);
+      // 3. SOCKS5 auth: username/password
+      const user = enc(env.PROXY_USER);
+      const pass = enc(env.PROXY_PASS);
+      const authMsg = new Uint8Array([0x01, user.length, ...user, pass.length, ...pass]);
+      await pw.write(authMsg);
+      const authResp = await read(2);
+      if (authResp[1] !== 0x00) throw new Error('SOCKS5: authentification échouée');
 
-      // 4. Upgrade to TLS
+      // 4. SOCKS5 CONNECT to instagram.com:443
+      const host = enc('www.instagram.com');
+      await pw.write(new Uint8Array([0x05, 0x01, 0x00, 0x03, host.length, ...host, 0x01, 0xBB]));
+      const connResp = await read(10);
+      if (connResp[1] !== 0x00) throw new Error('SOCKS5: connexion Instagram refusée (code ' + connResp[1] + ')');
+
+      // 5. Tunnel établi — libérer les locks et upgrade TLS
+      pw.releaseLock();
+      pr.releaseLock();
       const tlsSocket = proxySocket.startTls({ serverName: 'www.instagram.com' });
 
       // 5. Build POST login request
