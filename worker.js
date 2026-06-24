@@ -1383,39 +1383,39 @@ export default {
       return json({ success: true, deleted: userId });
     }
 
-    // POST /instagram-connect — Connecte un compte Instagram via username + password (proxy résidentiel)
-    // Body: { username, password }
+    // POST /instagram-connect — Connecte un compte Instagram via sessionid
+    // Body: { username, sessionId }
     if (request.method === 'POST' && path === '/instagram-connect') {
       let body;
       try { body = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
-      const { username, password } = body;
-      if (!username || !password) return json({ error: 'username et password requis' }, 400);
+      const { username, sessionId } = body;
+      if (!username || !sessionId) return json({ error: 'username et sessionId requis' }, 400);
 
       const igUser = await verifyAuth(request);
       if (!igUser) return json({ error: 'Non authentifié' }, 401);
       const token = (request.headers.get('Authorization') || '').slice(7);
 
-      // Login via proxy résidentiel Webshare
-      let loginResult;
+      // Vérifie que le sessionid est valide
+      let verifiedUsername = username;
       try {
-        loginResult = await igLoginViaProxy(username, password, env);
+        const verifyRes = await fetch(`https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(username)}`, {
+          headers: { 'Cookie': `sessionid=${sessionId}`, 'X-IG-App-ID': IG_APP_ID, 'User-Agent': IG_UA_WEB, 'Referer': 'https://www.instagram.com/' },
+          redirect: 'manual',
+        });
+        if (verifyRes.status === 301 || verifyRes.status === 302 || verifyRes.status === 0) {
+          return json({ error: 'Session ID invalide ou expiré — récupère un nouveau sessionid depuis instagram.com' }, 400);
+        }
+        if (verifyRes.status === 401 || verifyRes.status === 403) {
+          return json({ error: 'Session ID invalide ou expiré — récupère un nouveau sessionid depuis instagram.com' }, 400);
+        }
+        const vData = await verifyRes.json().catch(() => ({}));
+        verifiedUsername = vData?.data?.user?.username || username;
       } catch(e) {
-        return json({ error: 'Erreur connexion proxy : ' + e.message }, 500);
+        return json({ error: 'Impossible de vérifier le compte Instagram : ' + e.message }, 400);
       }
 
-      if (loginResult.error) return json({ error: loginResult.error }, 400);
-
-      if (loginResult.two_factor_required) {
-        // Stocker temporairement pour le challenge 2FA
-        const challengeKey = crypto.randomUUID().replace(/-/g, '');
-        await env.RATE_LIMIT.put(`ig2fa:${challengeKey}`, JSON.stringify({ username, password, identifier: loginResult.identifier, csrf: loginResult.csrf, igDid: loginResult.igDid, userId: igUser.id, token }), { expirationTtl: 300 });
-        return json({ two_factor_required: true, challenge_key: challengeKey });
-      }
-
-      // Stocker le mot de passe chiffré + sessionid
-      const pwdEnc = env.ENCRYPT_KEY ? await encryptText(password, env.ENCRYPT_KEY) : null;
-      await updateSupabaseProfile(igUser.id, token, { instagram_username: username, instagram_session_id: loginResult.sessionId, instagram_password_enc: pwdEnc });
-      return json({ success: true, username });
+      await updateSupabaseProfile(igUser.id, token, { instagram_username: verifiedUsername, instagram_session_id: sessionId, instagram_password_enc: null });
+      return json({ success: true, username: verifiedUsername });
     }
 
     // POST /instagram-challenge — Valide le code 2FA (étape 2)
