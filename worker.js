@@ -1,3 +1,4 @@
+import { connect } from 'cloudflare:sockets';
 // SpottedOF — Cloudflare Worker
 // Endpoints:
 //   POST /score-profiles  — reçoit profils Phantombuster, score + push Airtable
@@ -587,6 +588,102 @@ export default {
       const csrf = setCookie.match(/csrftoken=([^;,\s]+)/)?.[1] || 'missing';
       const igDid = crypto.randomUUID();
       return { csrf, igDid };
+    }
+
+    function dechunkHttp(chunked) {
+      let result = '';
+      let remaining = chunked;
+      while (remaining.length > 0) {
+        const crlfIdx = remaining.indexOf('\r\n');
+        if (crlfIdx === -1) break;
+        const chunkSize = parseInt(remaining.slice(0, crlfIdx), 16);
+        if (isNaN(chunkSize) || chunkSize === 0) break;
+        result += remaining.slice(crlfIdx + 2, crlfIdx + 2 + chunkSize);
+        remaining = remaining.slice(crlfIdx + 2 + chunkSize + 2);
+      }
+      return result || chunked;
+    }
+
+    async function igLoginViaProxy(username, password, env) {
+      const { csrf, igDid } = await igGetCsrf();
+      const proxyAuth = btoa(`${env.PROXY_USER}:${env.PROXY_PASS}`);
+      const enc = s => new TextEncoder().encode(s);
+
+      // 1. TCP connect to proxy
+      const proxySocket = connect({ hostname: env.PROXY_HOST, port: parseInt(env.PROXY_PORT) });
+
+      // 2. Send HTTP CONNECT to tunnel to instagram.com:443
+      const proxyWriter = proxySocket.writable.getWriter();
+      await proxyWriter.write(enc(
+        `CONNECT www.instagram.com:443 HTTP/1.1\r\n` +
+        `Host: www.instagram.com:443\r\n` +
+        `Proxy-Authorization: Basic ${proxyAuth}\r\n\r\n`
+      ));
+      proxyWriter.releaseLock();
+
+      // 3. Read CONNECT response (wait for 200)
+      const proxyReader = proxySocket.readable.getReader();
+      let connectResp = '';
+      while (true) {
+        const { value, done } = await proxyReader.read();
+        if (done) break;
+        connectResp += new TextDecoder().decode(value);
+        if (connectResp.includes('\r\n\r\n')) break;
+      }
+      proxyReader.releaseLock();
+      if (!connectResp.includes('200')) throw new Error('Proxy CONNECT échoué : ' + connectResp.split('\r\n')[0]);
+
+      // 4. Upgrade to TLS
+      const tlsSocket = proxySocket.startTls({ serverName: 'www.instagram.com' });
+
+      // 5. Build POST login request
+      const body = new URLSearchParams({ username, password, queryParams: '{}', optIntoOneTap: 'false' }).toString();
+      const bodyBytes = enc(body);
+      const reqStr =
+        `POST /accounts/login/ajax/ HTTP/1.1\r\n` +
+        `Host: www.instagram.com\r\n` +
+        `Content-Type: application/x-www-form-urlencoded\r\n` +
+        `Content-Length: ${bodyBytes.length}\r\n` +
+        `User-Agent: ${IG_UA_WEB}\r\n` +
+        `X-CSRFToken: ${csrf}\r\n` +
+        `X-IG-App-ID: ${IG_APP_ID}\r\n` +
+        `Referer: https://www.instagram.com/\r\n` +
+        `Cookie: csrftoken=${csrf}; ig_did=${igDid}\r\n` +
+        `Connection: close\r\n\r\n`;
+
+      // 6. Send request over TLS
+      const tlsWriter = tlsSocket.writable.getWriter();
+      await tlsWriter.write(enc(reqStr));
+      await tlsWriter.write(bodyBytes);
+      tlsWriter.releaseLock();
+
+      // 7. Read full response
+      const tlsReader = tlsSocket.readable.getReader();
+      let rawBuf = new Uint8Array(0);
+      while (true) {
+        const { value, done } = await tlsReader.read();
+        if (done) break;
+        const next = new Uint8Array(rawBuf.length + value.length);
+        next.set(rawBuf); next.set(value, rawBuf.length);
+        rawBuf = next;
+      }
+      tlsReader.releaseLock();
+
+      // 8. Parse response
+      const rawStr = new TextDecoder().decode(rawBuf);
+      const sep = rawStr.indexOf('\r\n\r\n');
+      const headerStr = rawStr.slice(0, sep);
+      let bodyStr = rawStr.slice(sep + 4);
+      if (headerStr.toLowerCase().includes('transfer-encoding: chunked')) bodyStr = dechunkHttp(bodyStr);
+
+      const sessionId = headerStr.match(/[Ss]et-[Cc]ookie:\s*sessionid=([^;,\s]+)/)?.[1] || '';
+      let data = {};
+      try { data = JSON.parse(bodyStr); } catch { data = {}; }
+
+      if (data.two_factor_required) return { two_factor_required: true, identifier: data.two_factor_info?.two_factor_identifier, csrf, igDid };
+      if (data.authenticated && sessionId) return { success: true, sessionId };
+      if (data.user === false) return { error: 'Compte Instagram introuvable' };
+      return { error: data.message || 'Identifiants incorrects' };
     }
 
     async function igDoLogin(username, password, csrf, igDid) {
@@ -1274,39 +1371,39 @@ export default {
       return json({ success: true, deleted: userId });
     }
 
-    // POST /instagram-connect — Connecte un compte Instagram via sessionid
-    // Body: { username, sessionId }
+    // POST /instagram-connect — Connecte un compte Instagram via username + password (proxy résidentiel)
+    // Body: { username, password }
     if (request.method === 'POST' && path === '/instagram-connect') {
       let body;
       try { body = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
-      const { username, sessionId } = body;
-      if (!username || !sessionId) return json({ error: 'username et sessionId requis' }, 400);
+      const { username, password } = body;
+      if (!username || !password) return json({ error: 'username et password requis' }, 400);
 
       const igUser = await verifyAuth(request);
       if (!igUser) return json({ error: 'Non authentifié' }, 401);
       const token = (request.headers.get('Authorization') || '').slice(7);
 
-      // Vérifie que le sessionid est valide en appelant l'API Instagram
-      let verifiedUsername = username;
+      // Login via proxy résidentiel Webshare
+      let loginResult;
       try {
-        const verifyRes = await fetch(`https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(username)}`, {
-          headers: { 'Cookie': `sessionid=${sessionId}`, 'X-IG-App-ID': IG_APP_ID, 'User-Agent': IG_UA_WEB, 'Referer': 'https://www.instagram.com/' },
-          redirect: 'manual',
-        });
-        if (verifyRes.status === 301 || verifyRes.status === 302 || verifyRes.status === 0) {
-          return json({ error: 'Session ID invalide ou expiré. Reconnecte-toi sur Instagram et récupère un nouveau sessionid.' }, 400);
-        }
-        if (verifyRes.status === 401 || verifyRes.status === 403) {
-          return json({ error: 'Session ID invalide ou expiré. Reconnecte-toi sur Instagram et récupère un nouveau sessionid.' }, 400);
-        }
-        const vData = await verifyRes.json().catch(() => ({}));
-        verifiedUsername = vData?.data?.user?.username || username;
+        loginResult = await igLoginViaProxy(username, password, env);
       } catch(e) {
-        return json({ error: 'Impossible de vérifier le compte Instagram : ' + e.message }, 400);
+        return json({ error: 'Erreur connexion proxy : ' + e.message }, 500);
       }
 
-      await updateSupabaseProfile(igUser.id, token, { instagram_username: verifiedUsername, instagram_session_id: sessionId, instagram_password_enc: null });
-      return json({ success: true, username: verifiedUsername });
+      if (loginResult.error) return json({ error: loginResult.error }, 400);
+
+      if (loginResult.two_factor_required) {
+        // Stocker temporairement pour le challenge 2FA
+        const challengeKey = crypto.randomUUID().replace(/-/g, '');
+        await env.RATE_LIMIT.put(`ig2fa:${challengeKey}`, JSON.stringify({ username, password, identifier: loginResult.identifier, csrf: loginResult.csrf, igDid: loginResult.igDid, userId: igUser.id, token }), { expirationTtl: 300 });
+        return json({ two_factor_required: true, challenge_key: challengeKey });
+      }
+
+      // Stocker le mot de passe chiffré + sessionid
+      const pwdEnc = env.ENCRYPT_KEY ? await encryptText(password, env.ENCRYPT_KEY) : null;
+      await updateSupabaseProfile(igUser.id, token, { instagram_username: username, instagram_session_id: loginResult.sessionId, instagram_password_enc: pwdEnc });
+      return json({ success: true, username });
     }
 
     // POST /instagram-challenge — Valide le code 2FA (étape 2)

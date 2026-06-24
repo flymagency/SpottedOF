@@ -988,40 +988,12 @@
           <input class="form-input" id="igUsername" placeholder="nom_utilisateur (sans @)" autocomplete="off">
         </div>
         <div class="form-group" style="margin-top:12px;">
-          <label class="form-label" style="display:flex;align-items:center;gap:6px;">
-            Session ID
-            <span style="font-size:10px;color:var(--muted);font-weight:400;">(cookie de ton navigateur)</span>
-          </label>
-          <input class="form-input" id="igSessionId" placeholder="Colle ton sessionid ici" autocomplete="off" style="font-family:'Space Mono',monospace;font-size:11px;">
+          <label class="form-label">Mot de passe Instagram</label>
+          <input class="form-input" id="igPassword" type="password" placeholder="••••••••••" autocomplete="off">
         </div>
-
-        <!-- Guide -->
-        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-top:12px;margin-bottom:16px;">
-          <div style="font-size:12px;font-weight:700;margin-bottom:14px;color:var(--text)">📋 Comment obtenir ton Session ID :</div>
-          <div style="display:flex;flex-direction:column;gap:12px;font-size:12px;color:var(--muted);line-height:1.6;">
-            <div style="display:flex;gap:10px;align-items:flex-start;">
-              <span style="color:var(--accent);font-weight:700;min-width:18px;">1</span>
-              <span>Va sur <strong style="color:var(--text)">instagram.com</strong> dans Chrome et connecte-toi à ton compte dédié</span>
-            </div>
-            <div style="display:flex;gap:10px;align-items:flex-start;">
-              <span style="color:var(--accent);font-weight:700;min-width:18px;">2</span>
-              <span>Appuie sur <strong style="color:var(--text)">F12</strong> → clique sur l'onglet <strong style="color:var(--text)">Application</strong> <span style="color:var(--muted);font-size:11px;">(si tu ne le vois pas, clique sur »)</span></span>
-            </div>
-            <div style="display:flex;gap:10px;align-items:flex-start;">
-              <span style="color:var(--accent);font-weight:700;min-width:18px;">3</span>
-              <span>Dans le menu gauche → <strong style="color:var(--text)">Storage</strong> → <strong style="color:var(--text)">Cookies</strong> → clique sur <strong style="color:var(--text)">https://www.instagram.com</strong></span>
-            </div>
-            <div style="display:flex;gap:10px;align-items:flex-start;">
-              <span style="color:var(--accent);font-weight:700;min-width:18px;">4</span>
-              <span>Dans le tableau, trouve la ligne <strong style="color:var(--text)">sessionid</strong> → clique dessus → copie la valeur complète dans la colonne <strong style="color:var(--text)">Value</strong></span>
-            </div>
-            <div style="display:flex;gap:10px;align-items:flex-start;">
-              <span style="color:var(--accent);font-weight:700;min-width:18px;">5</span>
-              <span>Colle cette valeur dans le champ <strong style="color:var(--text)">Session ID</strong> ci-dessus</span>
-            </div>
-          </div>
+        <div style="background:rgba(6,182,212,0.06);border:1px solid rgba(6,182,212,0.2);border-radius:8px;padding:10px 14px;margin-top:12px;margin-bottom:16px;font-size:11px;color:var(--muted);line-height:1.6;">
+          🔒 Tes identifiants sont chiffrés et stockés de façon sécurisée. La connexion passe par un serveur proxy résidentiel pour protéger ton compte.
         </div>
-
         <button class="btn btn-primary" style="width:100%" onclick="connectInstagram()">Connecter</button>
       </div>
 
@@ -2220,7 +2192,7 @@ function resetIgConnect() {
   document.getElementById('igConnectLoading').style.display = 'none';
   document.getElementById('igConnectSuccess').style.display = 'none';
   document.getElementById('igUsername').value = '';
-  document.getElementById('igSessionId').value = '';
+  document.getElementById('igPassword').value = '';
 }
 
 function _igShowLoading(text) {
@@ -2232,16 +2204,16 @@ function _igShowLoading(text) {
 
 async function connectInstagram() {
   const username = document.getElementById('igUsername').value.trim().replace(/^@/, '');
-  const sessionId = document.getElementById('igSessionId').value.trim();
-  if (!username || !sessionId) { showToast('Remplis le nom d\'utilisateur et le Session ID', 'error'); return; }
+  const password = document.getElementById('igPassword').value.trim();
+  if (!username || !password) { showToast('Remplis le nom d\'utilisateur et le mot de passe', 'error'); return; }
   if (username.includes('@') || username.includes('.com')) { showToast('Entre ton pseudo Instagram, pas ton email (ex: flymagency)', 'error'); return; }
 
-  _igShowLoading('Vérification du compte…');
+  _igShowLoading('Connexion en cours…');
   try {
     const res = await wFetch(`${WORKER}/instagram-connect`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, sessionId }),
+      body: JSON.stringify({ username, password }),
     });
     const data = await res.json();
     if (data.error) throw new Error(data.error);
