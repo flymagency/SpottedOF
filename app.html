@@ -2481,8 +2481,9 @@ async function renderDmGeelarkSection() {
 }
 
 async function sendDmViaGeelark() {
-  const username = document.getElementById('dmTargetHandle').textContent.replace('@','').trim();
-  const message = document.getElementById('dmMessage').value.trim();
+  const p = DATA.find(x => x.id === window._dmProspectId);
+  const username = (p?.handle || '').replace('@','').trim();
+  const message = (document.getElementById('dmText')?.value || '').trim();
   if (!username || !message) { showToast('Nom d\'utilisateur ou message manquant', 'error'); return; }
 
   const btn = document.getElementById('dmSendBtn');
@@ -3091,10 +3092,12 @@ function openDMModal(id) {
         </button>
         <button onclick="document.getElementById('dmModal').remove()" style="background:var(--surface2);color:var(--muted);border:1px solid var(--border);padding:13px 14px;border-radius:12px;font-size:14px;font-family:'Inter',sans-serif;cursor:pointer">✕</button>
       </div>
-      <div style="margin-top:10px;font-size:11px;color:var(--text-3);text-align:center;font-family:'Space Mono',monospace">Copie → ouvre Instagram → colle dans les DMs</div>
+      <div id="dmGeelarkSection" style="margin-top:10px"></div>
+      <div style="margin-top:6px;font-size:11px;color:var(--text-3);text-align:center;font-family:'Space Mono',monospace">Copie → ouvre Instagram → colle dans les DMs</div>
     </div>`;
   modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
   document.body.appendChild(modal);
+  renderDmGeelarkSection();
 
   // Stocker pour les fonctions globales
   window._dmTemplates = templates;
