@@ -1395,27 +1395,8 @@ export default {
       if (!igUser) return json({ error: 'Non authentifié' }, 401);
       const token = (request.headers.get('Authorization') || '').slice(7);
 
-      // Vérifie que le sessionid est valide
-      let verifiedUsername = username;
-      try {
-        const verifyRes = await fetch(`https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(username)}`, {
-          headers: { 'Cookie': `sessionid=${sessionId}`, 'X-IG-App-ID': IG_APP_ID, 'User-Agent': IG_UA_WEB, 'Referer': 'https://www.instagram.com/' },
-          redirect: 'manual',
-        });
-        if (verifyRes.status === 301 || verifyRes.status === 302 || verifyRes.status === 0) {
-          return json({ error: 'Session ID invalide ou expiré — récupère un nouveau sessionid depuis instagram.com' }, 400);
-        }
-        if (verifyRes.status === 401 || verifyRes.status === 403) {
-          return json({ error: 'Session ID invalide ou expiré — récupère un nouveau sessionid depuis instagram.com' }, 400);
-        }
-        const vData = await verifyRes.json().catch(() => ({}));
-        verifiedUsername = vData?.data?.user?.username || username;
-      } catch(e) {
-        return json({ error: 'Impossible de vérifier le compte Instagram : ' + e.message }, 400);
-      }
-
-      await updateSupabaseProfile(igUser.id, token, { instagram_username: verifiedUsername, instagram_session_id: sessionId, instagram_password_enc: null });
-      return json({ success: true, username: verifiedUsername });
+      await updateSupabaseProfile(igUser.id, token, { instagram_username: username, instagram_session_id: sessionId, instagram_password_enc: null });
+      return json({ success: true, username });
     }
 
     // POST /instagram-challenge — Valide le code 2FA (étape 2)
