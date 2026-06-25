@@ -1551,7 +1551,7 @@ export default {
           'traceId': traceId,
         },
         body: JSON.stringify({
-          scheduleAt: 0,
+          scheduleAt: Math.floor(Date.now() / 1000),
           id: profile.geelark_profile_id,
           flowId: '625154801130274938',
           name: `DM @${targetUsername}`,
