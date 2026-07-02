@@ -632,6 +632,10 @@
 
     <!-- OUTILS -->
     <div class="nav-section">Outils</div>
+    <button class="nav-item" id="nav-geelark" onclick="navTo('geelark')">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
+      Geelark
+    </button>
     <button class="nav-item" id="nav-reminders" onclick="navTo('reminders')">
       <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
       Rappels
@@ -773,6 +777,11 @@
   <!-- ═══ VUE À CONTACTER ═══ -->
   <div id="view-contact" style="display:none">
     <div id="contact-body"></div>
+  </div>
+
+  <!-- ═══ VUE GEELARK ═══ -->
+  <div id="view-geelark" style="display:none">
+    <div id="geelark-body"></div>
   </div>
 
   <!-- ═══ VUE PROSPECTS (défaut) ═══ -->
@@ -3315,9 +3324,10 @@ const NAV_TITLES = {
   reminders:   'Rappels',
   replies:     'Réponses',
   team:        'Équipe',
+  geelark:     'Geelark',
 };
 const NAV_TAB_MAP = { prospects: 'all' };
-const SEPARATE_VIEWS = new Set(['home', 'blacklist', 'stats', 'performance', 'reminders', 'replies', 'team', 'saved', 'private', 'contact']);
+const SEPARATE_VIEWS = new Set(['home', 'blacklist', 'stats', 'performance', 'reminders', 'replies', 'team', 'saved', 'private', 'contact', 'geelark']);
 
 function toggleMobileSidebar() {
   document.getElementById('mainSidebar').classList.toggle('open');
@@ -3340,7 +3350,7 @@ function navTo(section) {
   document.getElementById('topbarTitle').textContent = NAV_TITLES[section] || section;
 
   // Show/hide views
-  const allViews = ['home', 'prospects', 'blacklist', 'stats', 'performance', 'reminders', 'replies', 'team', 'scheduled', 'saved', 'private', 'contact'];
+  const allViews = ['home', 'prospects', 'blacklist', 'stats', 'performance', 'reminders', 'replies', 'team', 'scheduled', 'saved', 'private', 'contact', 'geelark'];
   allViews.forEach(v => {
     const el = document.getElementById(`view-${v}`);
     if (el) el.style.display = (v === section) ? '' : 'none';
@@ -3358,6 +3368,7 @@ function navTo(section) {
     if (section === 'saved')       renderSaved();
     if (section === 'private')     renderPrivate();
     if (section === 'contact')     renderContact();
+    if (section === 'geelark')     renderGeelark();
     return;
   }
 
@@ -3631,6 +3642,137 @@ async function unblacklistProspect(id) {
   } catch(e) {
     showToast('Erreur', 'error');
   }
+}
+
+async function renderGeelark() {
+  const el = document.getElementById('geelark-body');
+  el.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;padding:60px"><div class="loading-spinner"></div></div>`;
+
+  const token = _workerToken;
+  let connected = false, profileName = '';
+  try {
+    const r = await fetch(`${WORKER}/geelark-status`, { headers: { 'Authorization': `Bearer ${token}` } });
+    const d = await r.json();
+    connected = d.connected;
+    profileName = d.profileName || '';
+  } catch(e) {}
+
+  const DM_JSON = {"startParamMap":[{"id":"f66bb255-d944-4cff-8ef7-85e704b4b0ef","isNotRequired":false,"key":"Username","type":"textarea","value":[]},{"id":"87ac0e4b-f529-4ab1-b12b-1810328901d9","isNotRequired":false,"key":"Content","length":1000,"type":"string","value":""}],"contents":[{"config":{"timeout":15000,"timeoutType":"fixedValue"},"id":"wait-boot","name":"等待时间","type":"waitTime"},{"config":{"packgename":"com.instagram.android"},"id":"84e98a28-4543-4985-8a8c-79ed13b6e85f","name":"打开应用","type":"openApp"},{"config":{"filterType":"equal","filters":[{"content":"Log in","type":"desc"}],"hiddenChildren":false,"searchTime":10000,"serial":1,"serialType":"fixedValue","variable":"isNotLogin"},"id":"ddab53a3-5b51-46a9-bb7f-4f59ece7ce27","name":"等待元素出现","type":"waitEle"},{"config":{"apposition":"and","children":[{"config":{},"id":"6f6bdea2-eae8-49e4-a90e-be3a93b5d463","name":"结束任务","type":"endTask"}],"conditionList":[{"probability":50,"relation":"exist","useVariable":"isNotLogin"}],"remark":"not login, end"},"id":"60c3093c-53f2-4113-b144-d8fdae1a9696","name":"IF条件","type":"ifElse"},{"config":{"children":[{"config":{"packgename":"com.instagram.android"},"id":"15f27fe7-3c60-451a-a049-51236690e354","name":"打开应用","type":"openApp"},{"config":{"filterType":"contain","filters":[{"content":"Search and explore","type":"desc"}],"hiddenChildren":false,"randomDistance":0,"searchTime":3000,"serial":1,"serialType":"fixedValue","useOffset":false},"id":"d1b341c2-2939-4cb6-99ee-8a01e7141575","name":"点击元素","type":"click"},{"config":{"content":"${name}"},"id":"8c2cad48-4322-47f7-be1c-c8c5d3e3631c","name":"日志","type":"log"},{"config":{"filterType":"equal","filters":[{"content":"com.instagram.android:id/action_bar_search_edit_text","type":"id"}],"hiddenChildren":false,"randomDistance":0,"searchTime":3000,"serial":1,"serialType":"fixedValue","useOffset":false},"id":"9ba87d39-38eb-4544-9e57-0451a58cbdee","name":"点击元素","type":"click"},{"config":{"content":["${name}"],"filterType":"equal","filters":[{"content":"com.instagram.android:id/action_bar_search_edit_text","type":"id"}],"hiddenChildren":false,"inputType":"taskOrder","searchTime":3000,"serial":1,"serialType":"fixedValue"},"id":"132ef0ca-03c3-4730-96f7-446af12376c7","name":"输入Content","type":"inputContent"},{"config":{"keyType":"enter"},"id":"f9228bc9-2c7d-48c1-a73a-939f9a86c5c3","name":"键盘操作","type":"keyOption"},{"config":{"timeout":3000,"timeoutMax":5000,"timeoutMin":3000,"timeoutType":"randomInterval"},"id":"128ab38e-ecd5-4439-af09-de6182bb405d","name":"等待时间","type":"waitTime"},{"config":{"filterType":"equal","filters":[{"content":"Accounts","type":"text"}],"hiddenChildren":false,"randomDistance":0,"searchTime":10000,"serial":1,"serialType":"fixedValue","useOffset":false},"id":"f4e0559a-264f-41bf-ba9c-4b0913855813","name":"点击元素","type":"click"},{"config":{"timeout":3000,"timeoutMax":5000,"timeoutMin":3000,"timeoutType":"randomInterval"},"id":"491f1fe0-4c01-4520-8a77-6c60b4dd1d7b","name":"等待时间","type":"waitTime"},{"config":{"filterType":"equal","filters":[{"content":"com.instagram.android:id/row_search_user_container","type":"id"}],"hiddenChildren":false,"randomDistance":0,"searchTime":10000,"serial":1,"serialType":"fixedValue","useOffset":false},"id":"4b38be05-b4c9-4689-9b2a-ff772c3f3a64","name":"点击元素","type":"click"},{"config":{"timeout":3000,"timeoutMax":5000,"timeoutMin":3000,"timeoutType":"randomInterval"},"id":"c0aaf496-c632-44de-9711-f69d71489f07","name":"等待时间","type":"waitTime"},{"config":{"filterType":"equal","filters":[{"content":"Message","type":"desc"}],"hiddenChildren":false,"randomDistance":0,"searchTime":10000,"serial":1,"serialType":"fixedValue","useOffset":false,"variable":"ishasMessage"},"id":"66b1c4d1-bf2c-4adb-b61c-2667c3e0cc8c","name":"点击元素","type":"click"},{"config":{},"id":"fda9473b-0ce9-4ddd-9789-5597a9abd792","name":"页面截图","type":"screenshotPage"},{"config":{"apposition":"and","children":[{"config":{"timeout":3000,"timeoutType":"fixedValue"},"id":"wait-dm-load","name":"等待时间","type":"waitTime"},{"config":{"command":"input tap 360 1545","remark":"Focus compose field"},"id":"adb-focus","name":"Run ADB","type":"runADB"},{"config":{"timeout":1500,"timeoutType":"fixedValue"},"id":"wait-keyboard","name":"等待时间","type":"waitTime"},{"config":{"command":"input text ${Content}","remark":"Type message"},"id":"adb-type","name":"Run ADB","type":"runADB"},{"config":{"timeout":500,"timeoutType":"fixedValue"},"id":"wait-type","name":"等待时间","type":"waitTime"},{"config":{"command":"input tap 660 1150","remark":"Tap send button"},"id":"adb-send","name":"Run ADB","type":"runADB"},{"config":{"timeout":2000,"timeoutType":"fixedValue"},"id":"wait-after","name":"等待时间","type":"waitTime"},{"config":{},"id":"4203c0f9-9e4d-4ce8-a9fb-a603eaf8502f","name":"页面截图","type":"screenshotPage"}],"conditionList":[{"probability":50,"relation":"exist","useVariable":"ishasMessage"}]},"id":"0817f475-4d02-4b1a-93dc-100d4f5083e4","name":"IF条件","type":"ifElse"}],"content":["${Username}"],"reversal":false,"variable":"name","variableIndex":"nameIndex"},"id":"0af1393b-dd4a-4a2c-a16d-689cc79bd882","name":"For循环数据","type":"forData"}],"contentType":"phone","errorType":"skip"};
+  const jsonStr = JSON.stringify(DM_JSON, null, 2);
+
+  el.innerHTML = `
+    <div class="page-header">
+      <div class="page-eyebrow">OUTILS</div>
+      <div class="page-title">Geelark</div>
+      <div class="page-subtitle">Connecte ton téléphone virtuel Geelark pour envoyer des DMs Instagram automatiquement.</div>
+    </div>
+
+    <div style="max-width:680px">
+
+      ${connected ? `
+      <div style="display:flex;align-items:center;gap:12px;padding:14px 18px;border-radius:12px;background:rgba(5,150,105,0.08);border:1px solid rgba(5,150,105,0.25);margin-bottom:24px">
+        <div style="width:8px;height:8px;border-radius:50%;background:#10b981;flex-shrink:0"></div>
+        <span style="font-size:13px;color:#10b981;font-weight:600">Connecté — ${profileName}</span>
+        <button onclick="glDisconnect()" style="margin-left:auto;padding:5px 12px;border-radius:7px;background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:12px;cursor:pointer;font-family:'Inter',sans-serif">Déconnecter</button>
+      </div>` : `
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:10px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);margin-bottom:24px">
+        <div style="width:8px;height:8px;border-radius:50%;background:#ef4444;flex-shrink:0"></div>
+        <span style="font-size:13px;color:#ef4444">Non connecté</span>
+      </div>`}
+
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:20px">
+        <div style="font-size:14px;font-weight:700;margin-bottom:18px">Connexion Geelark</div>
+
+        <label class="form-label">Bearer Token (API Key)</label>
+        <input id="gl-apikey" type="password" class="form-input" placeholder="ey..." style="margin-bottom:4px">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:14px">Geelark → GeeHub → API → Generated</div>
+
+        <div style="display:flex;gap:10px;margin-bottom:4px">
+          <div style="flex:1">
+            <label class="form-label">ID Téléphone</label>
+            <input id="gl-phoneid" type="text" class="form-input" placeholder="ex: 619458412127715622">
+          </div>
+          <div style="display:flex;align-items:flex-end;padding-bottom:0">
+            <button onclick="glListPhones()" class="btn btn-ghost" style="white-space:nowrap">📋 Lister</button>
+          </div>
+        </div>
+        <div id="gl-phones-list" style="display:none;margin-bottom:14px;padding:10px;border-radius:8px;background:var(--surface2);border:1px solid var(--border)"></div>
+
+        <label class="form-label">Custom Task ID (DM Instagram)</label>
+        <input id="gl-taskid" type="text" class="form-input" placeholder="ex: 626546475559551369" style="margin-bottom:4px">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:18px">L'ID de ta custom task importée dans Geelark (voir ci-dessous)</div>
+
+        <button onclick="glSave()" class="btn btn-primary" style="width:100%">Sauvegarder</button>
+        <div id="gl-save-msg" style="display:none;margin-top:10px;text-align:center;font-size:13px"></div>
+      </div>
+
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px">
+        <div style="font-size:14px;font-weight:700;margin-bottom:16px">Comment créer la Custom Task DM</div>
+        <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:20px">
+          <div style="display:flex;gap:12px">
+            <div style="width:26px;height:26px;border-radius:50%;background:var(--accent);color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">1</div>
+            <div><div style="font-size:13px;font-weight:600;margin-bottom:2px">Geelark → Automation → Custom Tasks</div><div style="font-size:12px;color:var(--muted)">Ouvre l'app desktop Geelark et va dans l'onglet Automation.</div></div>
+          </div>
+          <div style="display:flex;gap:12px">
+            <div style="width:26px;height:26px;border-radius:50%;background:var(--accent);color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">2</div>
+            <div><div style="font-size:13px;font-weight:600;margin-bottom:2px">Importer le JSON ci-dessous</div><div style="font-size:12px;color:var(--muted)">Clique sur Import, colle le JSON, valide.</div></div>
+          </div>
+          <div style="display:flex;gap:12px">
+            <div style="width:26px;height:26px;border-radius:50%;background:var(--accent);color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">3</div>
+            <div><div style="font-size:13px;font-weight:600;margin-bottom:2px">Copier l'ID</div><div style="font-size:12px;color:var(--muted)">3 points → Copy ID → colle dans le champ "Custom Task ID" ci-dessus.</div></div>
+          </div>
+        </div>
+        <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.06em;font-family:'Space Mono',monospace">JSON à importer :</div>
+        <div style="position:relative">
+          <pre id="gl-json-pre" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;font-size:10px;font-family:'Space Mono',monospace;overflow-x:auto;white-space:pre-wrap;word-break:break-all;max-height:260px;overflow-y:auto;line-height:1.5">${jsonStr.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>
+          <button id="gl-copy-btn" onclick="glCopyJson('${JSON.stringify(DM_JSON).replace(/'/g,"\\'")}',this)" style="position:absolute;top:8px;right:8px;padding:5px 12px;background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);color:var(--accent);border-radius:6px;font-size:11px;cursor:pointer;font-family:'Space Mono',monospace">Copier</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+async function glListPhones() {
+  const apiKey = document.getElementById('gl-apikey').value.trim();
+  if (!apiKey) { alert('Entre ton Bearer Token d\'abord'); return; }
+  const r = await fetch(`${WORKER}/geelark-phones`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${_workerToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ apiKey }),
+  });
+  const d = await r.json();
+  const list = document.getElementById('gl-phones-list');
+  if (!d.phones?.length) { list.style.display='block'; list.innerHTML='<span style="color:var(--muted);font-size:12px">Aucun téléphone trouvé</span>'; return; }
+  list.style.display = 'block';
+  list.innerHTML = d.phones.map(p =>
+    `<div onclick="document.getElementById('gl-phoneid').value='${p.id}';this.parentNode.querySelectorAll('div').forEach(d=>d.style.background='');this.style.background='rgba(99,102,241,0.1)'" style="padding:7px 10px;border-radius:6px;cursor:pointer;font-size:12px;margin-bottom:3px"><span style="font-family:'Space Mono',monospace;color:var(--muted);font-size:10px">${p.id}</span> — ${p.name}</div>`
+  ).join('');
+}
+
+async function glSave() {
+  const apiKey = document.getElementById('gl-apikey').value.trim();
+  const profileId = document.getElementById('gl-phoneid').value.trim();
+  const dmTaskId = document.getElementById('gl-taskid').value.trim();
+  if (!apiKey || !profileId) { alert('Bearer Token et ID téléphone requis'); return; }
+  const msg = document.getElementById('gl-save-msg');
+  msg.style.display='block'; msg.style.color='var(--muted)'; msg.textContent='Sauvegarde...';
+  const r = await fetch(`${WORKER}/geelark-connect`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${_workerToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ apiKey, profileId, dmTaskId }),
+  });
+  const d = await r.json();
+  if (d.success) { msg.style.color='#10b981'; msg.textContent='✓ Sauvegardé'; renderGeelark(); }
+  else { msg.style.color='#ef4444'; msg.textContent = d.error || 'Erreur'; }
+}
+
+async function glDisconnect() {
+  await fetch(`${WORKER}/geelark-disconnect`, { method:'POST', headers:{ 'Authorization':`Bearer ${_workerToken}` } });
+  renderGeelark();
+}
+
+function glCopyJson(jsonStr, btn) {
+  navigator.clipboard.writeText(jsonStr).then(() => { btn.textContent='✓ Copié !'; setTimeout(()=>btn.textContent='Copier',2000); });
 }
 
 function renderHome() {
