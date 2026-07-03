@@ -3662,23 +3662,23 @@ async function renderGeelark() {
 
   el.innerHTML = `
     <div class="page-header">
-      <div class="page-eyebrow">OUTILS</div>
-      <div class="page-title">Geelark</div>
-      <div class="page-subtitle">Connecte ton téléphone virtuel Geelark pour envoyer des DMs Instagram automatiquement.</div>
+      <div>
+        <div class="page-eyebrow">OUTILS</div>
+        <h1 class="page-title">Geelark</h1>
+      </div>
+      ${connected ? `
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:10px;background:rgba(5,150,105,0.08);border:1px solid rgba(5,150,105,0.25)">
+        <div style="width:7px;height:7px;border-radius:50%;background:#10b981;flex-shrink:0"></div>
+        <span style="font-size:13px;color:#10b981;font-weight:600">${profileName}</span>
+        <button onclick="glDisconnect()" style="margin-left:8px;padding:4px 10px;border-radius:6px;background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:11px;cursor:pointer;font-family:'Inter',sans-serif">Déconnecter</button>
+      </div>` : `
+      <div style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:10px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2)">
+        <div style="width:7px;height:7px;border-radius:50%;background:#ef4444;flex-shrink:0"></div>
+        <span style="font-size:13px;color:#ef4444">Non connecté</span>
+      </div>`}
     </div>
 
-    <div style="max-width:700px;display:flex;flex-direction:column;gap:24px">
-
-      ${connected ? `
-      <div style="display:flex;align-items:center;gap:12px;padding:16px 20px;border-radius:12px;background:rgba(5,150,105,0.08);border:1px solid rgba(5,150,105,0.25)">
-        <div style="width:8px;height:8px;border-radius:50%;background:#10b981;flex-shrink:0"></div>
-        <span style="font-size:13px;color:#10b981;font-weight:600">Connecté — ${profileName}</span>
-        <button onclick="glDisconnect()" style="margin-left:auto;padding:6px 14px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:12px;cursor:pointer;font-family:'Inter',sans-serif">Déconnecter</button>
-      </div>` : `
-      <div style="display:flex;align-items:center;gap:10px;padding:14px 18px;border-radius:12px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2)">
-        <div style="width:8px;height:8px;border-radius:50%;background:#ef4444;flex-shrink:0"></div>
-        <span style="font-size:13px;color:#ef4444">Non connecté — remplis le formulaire ci-dessous</span>
-      </div>`}
+    <div class="content" style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start">
 
       <!-- CONNEXION -->
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:32px">
@@ -3745,7 +3745,7 @@ async function renderGeelark() {
         </div>
       </div>
 
-    </div>
+    </div></div>
   `;
 }
 
