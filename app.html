@@ -3667,67 +3667,84 @@ async function renderGeelark() {
       <div class="page-subtitle">Connecte ton téléphone virtuel Geelark pour envoyer des DMs Instagram automatiquement.</div>
     </div>
 
-    <div style="max-width:680px">
+    <div style="max-width:700px;display:flex;flex-direction:column;gap:24px">
 
       ${connected ? `
-      <div style="display:flex;align-items:center;gap:12px;padding:14px 18px;border-radius:12px;background:rgba(5,150,105,0.08);border:1px solid rgba(5,150,105,0.25);margin-bottom:24px">
+      <div style="display:flex;align-items:center;gap:12px;padding:16px 20px;border-radius:12px;background:rgba(5,150,105,0.08);border:1px solid rgba(5,150,105,0.25)">
         <div style="width:8px;height:8px;border-radius:50%;background:#10b981;flex-shrink:0"></div>
         <span style="font-size:13px;color:#10b981;font-weight:600">Connecté — ${profileName}</span>
-        <button onclick="glDisconnect()" style="margin-left:auto;padding:5px 12px;border-radius:7px;background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:12px;cursor:pointer;font-family:'Inter',sans-serif">Déconnecter</button>
+        <button onclick="glDisconnect()" style="margin-left:auto;padding:6px 14px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:12px;cursor:pointer;font-family:'Inter',sans-serif">Déconnecter</button>
       </div>` : `
-      <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:10px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);margin-bottom:24px">
+      <div style="display:flex;align-items:center;gap:10px;padding:14px 18px;border-radius:12px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2)">
         <div style="width:8px;height:8px;border-radius:50%;background:#ef4444;flex-shrink:0"></div>
-        <span style="font-size:13px;color:#ef4444">Non connecté</span>
+        <span style="font-size:13px;color:#ef4444">Non connecté — remplis le formulaire ci-dessous</span>
       </div>`}
 
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:20px">
-        <div style="font-size:14px;font-weight:700;margin-bottom:18px">Connexion Geelark</div>
+      <!-- CONNEXION -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:32px">
+        <div style="font-size:16px;font-weight:700;margin-bottom:24px">Connexion Geelark</div>
 
-        <label class="form-label">Bearer Token (API Key)</label>
-        <input id="gl-apikey" type="password" class="form-input" placeholder="ey..." style="margin-bottom:4px">
-        <div style="font-size:11px;color:var(--muted);margin-bottom:14px">Geelark → GeeHub → API → Generated</div>
-
-        <div style="display:flex;gap:10px;margin-bottom:4px">
-          <div style="flex:1">
-            <label class="form-label">ID Téléphone</label>
-            <input id="gl-phoneid" type="text" class="form-input" placeholder="ex: 619458412127715622">
-          </div>
-          <div style="display:flex;align-items:flex-end;padding-bottom:0">
-            <button onclick="glListPhones()" class="btn btn-ghost" style="white-space:nowrap">📋 Lister</button>
-          </div>
+        <div style="margin-bottom:20px">
+          <label class="form-label">Bearer Token (API Key)</label>
+          <input id="gl-apikey" type="password" class="form-input" placeholder="ey...">
+          <div style="font-size:11px;color:var(--muted);margin-top:6px">Geelark → GeeHub → API → Generated</div>
         </div>
-        <div id="gl-phones-list" style="display:none;margin-bottom:14px;padding:10px;border-radius:8px;background:var(--surface2);border:1px solid var(--border)"></div>
 
-        <label class="form-label">Custom Task ID (DM Instagram)</label>
-        <input id="gl-taskid" type="text" class="form-input" placeholder="ex: 626546475559551369" style="margin-bottom:4px">
-        <div style="font-size:11px;color:var(--muted);margin-bottom:18px">L'ID de ta custom task importée dans Geelark (voir ci-dessous)</div>
+        <div style="margin-bottom:20px">
+          <label class="form-label">ID Téléphone</label>
+          <div style="display:flex;gap:10px">
+            <input id="gl-phoneid" type="text" class="form-input" placeholder="ex: 619458412127715622" style="flex:1;margin-bottom:0">
+            <button onclick="glListPhones()" class="btn btn-ghost" style="white-space:nowrap;flex-shrink:0">📋 Lister mes téléphones</button>
+          </div>
+          <div id="gl-phones-list" style="display:none;margin-top:10px;padding:10px;border-radius:8px;background:var(--surface2);border:1px solid var(--border)"></div>
+        </div>
 
-        <button onclick="glSave()" class="btn btn-primary" style="width:100%">Sauvegarder</button>
-        <div id="gl-save-msg" style="display:none;margin-top:10px;text-align:center;font-size:13px"></div>
+        <div style="margin-bottom:28px">
+          <label class="form-label">Custom Task ID (DM Instagram)</label>
+          <input id="gl-taskid" type="text" class="form-input" placeholder="ex: 626546475559551369">
+          <div style="font-size:11px;color:var(--muted);margin-top:6px">L'ID de ta custom task créée dans Geelark — voir les instructions ci-dessous</div>
+        </div>
+
+        <button onclick="glSave()" class="btn btn-primary" style="width:100%;padding:12px">Sauvegarder la connexion</button>
+        <div id="gl-save-msg" style="display:none;margin-top:12px;text-align:center;font-size:13px"></div>
       </div>
 
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px">
-        <div style="font-size:14px;font-weight:700;margin-bottom:16px">Comment créer la Custom Task DM</div>
-        <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:20px">
-          <div style="display:flex;gap:12px">
-            <div style="width:26px;height:26px;border-radius:50%;background:var(--accent);color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">1</div>
-            <div><div style="font-size:13px;font-weight:600;margin-bottom:2px">Geelark → Automation → Custom Tasks</div><div style="font-size:12px;color:var(--muted)">Ouvre l'app desktop Geelark et va dans l'onglet Automation.</div></div>
+      <!-- INSTRUCTIONS -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:32px">
+        <div style="font-size:16px;font-weight:700;margin-bottom:8px">Comment créer la Custom Task DM</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:28px">Suis ces étapes une seule fois pour connecter le flow d'envoi de DMs à ton compte Geelark.</div>
+
+        <div style="display:flex;flex-direction:column;gap:20px;margin-bottom:32px">
+          <div style="display:flex;gap:16px">
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--accent);color:white;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;margin-top:2px">1</div>
+            <div>
+              <div style="font-size:14px;font-weight:600;margin-bottom:4px">Ouvre Geelark → Automation → Custom Tasks</div>
+              <div style="font-size:13px;color:var(--muted);line-height:1.6">Dans l'app desktop Geelark, clique sur <strong style="color:var(--text)">Automation</strong> dans la barre latérale, puis sur <strong style="color:var(--text)">Custom Tasks</strong>.</div>
+            </div>
           </div>
-          <div style="display:flex;gap:12px">
-            <div style="width:26px;height:26px;border-radius:50%;background:var(--accent);color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">2</div>
-            <div><div style="font-size:13px;font-weight:600;margin-bottom:2px">Importer le JSON ci-dessous</div><div style="font-size:12px;color:var(--muted)">Clique sur Import, colle le JSON, valide.</div></div>
+          <div style="display:flex;gap:16px">
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--accent);color:white;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;margin-top:2px">2</div>
+            <div>
+              <div style="font-size:14px;font-weight:600;margin-bottom:4px">Clique sur "Create Flow"</div>
+              <div style="font-size:13px;color:var(--muted);line-height:1.6">En haut à droite, clique sur <strong style="color:var(--text)">Create Flow</strong>. Une fenêtre s'ouvre avec un éditeur JSON. <strong style="color:var(--text)">Copie le JSON ci-dessous</strong> et colle-le dans le champ prévu, puis valide.</div>
+            </div>
           </div>
-          <div style="display:flex;gap:12px">
-            <div style="width:26px;height:26px;border-radius:50%;background:var(--accent);color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">3</div>
-            <div><div style="font-size:13px;font-weight:600;margin-bottom:2px">Copier l'ID</div><div style="font-size:12px;color:var(--muted)">3 points → Copy ID → colle dans le champ "Custom Task ID" ci-dessus.</div></div>
+          <div style="display:flex;gap:16px">
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--accent);color:white;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;margin-top:2px">3</div>
+            <div>
+              <div style="font-size:14px;font-weight:600;margin-bottom:4px">Copie l'ID du flow créé</div>
+              <div style="font-size:13px;color:var(--muted);line-height:1.6">Le flow apparaît dans la liste. Clique sur les <strong style="color:var(--text)">3 points (···)</strong> → <strong style="color:var(--text)">Copy ID</strong>. Colle cet ID dans le champ <em>Custom Task ID</em> dans le formulaire ci-dessus.</div>
+            </div>
           </div>
         </div>
-        <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.06em;font-family:'Space Mono',monospace">JSON à importer :</div>
+
+        <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.08em;font-family:'Space Mono',monospace">JSON du flow à coller dans Geelark :</div>
         <div style="position:relative">
-          <pre id="gl-json-pre" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;font-size:10px;font-family:'Space Mono',monospace;overflow-x:auto;white-space:pre-wrap;word-break:break-all;max-height:260px;overflow-y:auto;line-height:1.5">${jsonStr.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>
-          <button id="gl-copy-btn" onclick="glCopyJson('${JSON.stringify(DM_JSON).replace(/'/g,"\\'")}',this)" style="position:absolute;top:8px;right:8px;padding:5px 12px;background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);color:var(--accent);border-radius:6px;font-size:11px;cursor:pointer;font-family:'Space Mono',monospace">Copier</button>
+          <pre style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px 16px 16px 16px;font-size:10px;font-family:'Space Mono',monospace;overflow-x:auto;white-space:pre-wrap;word-break:break-all;max-height:280px;overflow-y:auto;line-height:1.6">${jsonStr.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>
+          <button id="gl-copy-btn" onclick="glCopyJson('${JSON.stringify(DM_JSON).replace(/'/g,"\\'")}',this)" style="position:absolute;top:10px;right:10px;padding:6px 14px;background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);color:var(--accent);border-radius:7px;font-size:11px;cursor:pointer;font-family:'Space Mono',monospace">Copier</button>
         </div>
       </div>
+
     </div>
   `;
 }
