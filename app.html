@@ -1605,7 +1605,6 @@ function renderProspects() {
 
   el.className = '';
   el.innerHTML = list.map((p, idx) => {
-    const cl = sc(p.score);
     const sv = savedSet.has(p.id);
     return `<div class="prospect-row row-enter" style="animation-delay:${(idx*0.025).toFixed(3)}s" onclick="openProspect('${p.id}')">
       <div class="profile-cell">
@@ -1733,7 +1732,6 @@ function openProspect(id) {
   const p = DATA.find(x=>x.id===id);
   if (!p) return;
   currentProspect = p;
-  const cl = sc(p.score);
   document.getElementById('modalBody').innerHTML = `
     <div class="modal-profile">
       <div class="modal-avatar">${avatarHTML(p.handle, p.platform, 60)}</div>
@@ -1745,10 +1743,10 @@ function openProspect(id) {
     </div>
     <div class="modal-bio">${p.bio ? esc(p.bio) : '<em style="color:var(--muted)">Pas de bio disponible</em>'}</div>
     <div class="score-breakdown">
-      <div class="score-item"><div class="score-item-label">Score global</div><div class="score-item-val s-${cl}">${p.score}%</div></div>
       <div class="score-item"><div class="score-item-label">Followers</div><div class="score-item-val">${fmt(p.followers)}</div></div>
-      <div class="score-item"><div class="score-item-label">Engagement</div><div class="score-item-val" style="color:var(--yellow)">${p.engagement}%</div></div>
       <div class="score-item"><div class="score-item-label">Plateforme privée</div><div class="score-item-val" style="color:${p.privatePlatform?'var(--pink)':'var(--muted);font-size:12px'}">${p.privatePlatform || '—'}</div></div>
+      <div class="score-item"><div class="score-item-label">Lien OF</div><div class="score-item-val" style="color:${p.hasOf?'var(--pink)':'var(--muted);font-size:12px'}">${p.hasOf ? '🔥 Oui' : '—'}</div></div>
+      <div class="score-item"><div class="score-item-label">Lien externe</div><div class="score-item-val" style="color:${p.ofLink?'var(--accent)':'var(--muted);font-size:12px'}">${p.ofLink ? '🔗 Oui' : '—'}</div></div>
     </div>`;
   document.getElementById('prospectModal').classList.add('open');
 }
@@ -3309,7 +3307,6 @@ function renderSaved() {
     </div>
     <div class="saved-grid">
       ${list.map(p => {
-        const cl = sc(p.score);
         const note = p.note || '';
         return `
         <div class="saved-card" onclick="openProspect('${p.id}')">
@@ -3320,7 +3317,7 @@ function renderSaved() {
               <div class="saved-name">${esc(p.name)}</div>
               <div style="font-size:11px;color:var(--muted);font-family:'Space Mono',monospace;margin-top:2px">${fmt(p.followers)} · ${esc(p.niche)||'—'}</div>
             </div>
-            <div class="saved-score s-${cl}">${p.score}%</div>
+            ${p.hasOf ? `<span style="font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;background:rgba(240,67,108,0.12);color:var(--pink);border:1px solid rgba(240,67,108,0.2)">🔥 OF</span>` : ''}
           </div>
           ${note ? `<div class="saved-note">💬 ${esc(note)}</div>` : ''}
           <div class="saved-footer" onclick="event.stopPropagation()">
@@ -3697,7 +3694,7 @@ function renderHome() {
   const since30 = new Date(now - 30 * 24 * 60 * 60 * 1000);
   const recent = DATA.filter(p => new Date(p.created_at || 0) >= since30);
   const total30 = recent.length || DATA.length; // fallback si pas de date
-  const avgScore = DATA.length ? Math.round(DATA.reduce((s, p) => s + (p.score || 0), 0) / DATA.length) : 0;
+
   const withOf = DATA.filter(p => p.hasOf || p.has_of).length;
   const toContact = DATA.filter(p => !(p.hasOf || p.has_of)).length;
 
@@ -3933,10 +3930,7 @@ function renderStats() {
   DATA.forEach(p => { if (p.niche) nicheCounts[p.niche] = (nicheCounts[p.niche]||0) + 1; });
   const topNiches = Object.entries(nicheCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
 
-  // Score distribution
-  const scoreHi = DATA.filter(p => p.score >= 80).length;
-  const scoreMd = DATA.filter(p => p.score >= 65 && p.score < 80).length;
-  const scoreLo = DATA.filter(p => p.score < 65).length;
+
 
   el.innerHTML = `
     <!-- KPIs -->
@@ -3947,9 +3941,9 @@ function renderStats() {
         <div class="stat-sub">base totale</div>
       </div>
       <div class="analytics-card">
-        <div class="stat-label">Score moyen</div>
-        <div class="stat-value" style="color:var(--yellow)">${avgScore}<span style="font-size:16px;color:var(--muted)">%</span></div>
-        <div class="stat-sub">tous profils</div>
+        <div class="stat-label">Avec lien OF</div>
+        <div class="stat-value" style="color:var(--yellow)">${withOf}</div>
+        <div class="stat-sub">${total ? Math.round(withOf/total*100) : 0}% des profils</div>
       </div>
       <div class="analytics-card pink" style="border-color:rgba(240,67,108,0.25)">
         <div class="stat-label">Plateforme privée</div>
@@ -3981,38 +3975,19 @@ function renderStats() {
 
       <!-- Répartition plateforme -->
       <div class="analytics-section">
-        <div class="analytics-title">Par plateforme</div>
+        <div class="analytics-title">Signaux détectés</div>
         ${[
-          { key: 'ig', label: 'Instagram', color: 'var(--accent2)' },
-          { key: 'tt', label: 'TikTok',    color: 'var(--green)' },
-          { key: 'th', label: 'Threads',   color: 'var(--accent)' },
-        ].map(pl => {
-          const c = platCounts[pl.key] || 0;
-          const pct = total ? Math.round(c/total*100) : 0;
+          { label: 'Lien OF/plateforme privée', count: withOf, color: 'var(--pink)' },
+          { label: 'Sans lien OF', count: total - withOf, color: 'var(--accent)' },
+        ].map(s => {
+          const pct = total ? Math.round(s.count/total*100) : 0;
           return `<div class="funnel-row">
-            <div class="funnel-label">${pl.label}</div>
-            <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:${pct}%;background:${pl.color}"></div></div>
-            <div class="funnel-count">${c}</div>
+            <div class="funnel-label">${s.label}</div>
+            <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:${pct}%;background:${s.color}"></div></div>
+            <div class="funnel-count">${s.count}</div>
             <div class="funnel-pct">${pct}%</div>
           </div>`;
         }).join('')}
-
-        <div style="margin-top:20px">
-          <div class="analytics-title">Distribution des scores</div>
-          ${[
-            { label: 'Excellent (80%+)', count: scoreHi, color: 'var(--green)' },
-            { label: 'Bon (65-79%)',     count: scoreMd, color: 'var(--yellow)' },
-            { label: 'Moyen (<65%)',     count: scoreLo, color: 'var(--accent2)' },
-          ].map(s => {
-            const pct = total ? Math.round(s.count/total*100) : 0;
-            return `<div class="funnel-row">
-              <div class="funnel-label" style="font-size:11px">${s.label}</div>
-              <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:${pct}%;background:${s.color}"></div></div>
-              <div class="funnel-count">${s.count}</div>
-              <div class="funnel-pct">${pct}%</div>
-            </div>`;
-          }).join('')}
-        </div>
       </div>
     </div>
 
@@ -4020,17 +3995,17 @@ function renderStats() {
     <div class="analytics-section">
       <div class="analytics-title">Top niches</div>
       <table class="table-analytics">
-        <thead><tr><th>Niche</th><th>Prospects</th><th>%</th><th>Score moyen</th></tr></thead>
+        <thead><tr><th>Niche</th><th>Prospects</th><th>%</th><th>Avec OF</th></tr></thead>
         <tbody>
           ${topNiches.map(([niche, count]) => {
             const niched = DATA.filter(p => p.niche === niche);
-            const avg = Math.round(niched.reduce((a,b)=>a+b.score,0) / niched.length);
+            const withOfNiche = niched.filter(p => p.hasOf).length;
             const pct = total ? Math.round(count/total*100) : 0;
             return `<tr>
               <td><strong>${niche}</strong></td>
               <td><span style="font-family:'Space Mono',monospace;font-size:12px">${count}</span></td>
               <td><span style="font-family:'Space Mono',monospace;font-size:12px;color:var(--muted)">${pct}%</span></td>
-              <td><span class="score-num s-${sc(avg)}" style="font-size:12px">${avg}%</span></td>
+              <td><span style="font-size:12px;color:var(--pink)">${withOfNiche}</span></td>
             </tr>`;
           }).join('')}
         </tbody>
@@ -5821,36 +5796,33 @@ function exportPDF() {
 
   // Get current filtered list
   const q = document.getElementById('searchInput').value.toLowerCase();
-  const minScore = parseInt(document.getElementById('scoreFilter')?.value || '0');
   let list = DATA.filter(p => {
     if (q && !p.handle.toLowerCase().includes(q)) return false;
     if (activeTab === 'of' && !p.hasOf) return false;
     if (activeTab === 'convert' && p.hasOf) return false;
     if (activeTab === 'saved' && !savedSet.has(p.id)) return false;
     if ((p.status||'').toLowerCase() === 'blacklistée') return false;
-    if (p.score < minScore) return false;
     return true;
-  }).sort((a,b) => b.score - a.score);
+  }).sort((a,b) => relevanceScore(b) - relevanceScore(a));
 
   // Summary
   doc.setTextColor(100, 100, 120);
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.text(`${list.length} prospects exportés · Score moyen : ${list.length ? Math.round(list.reduce((s,p)=>s+p.score,0)/list.length) : 0}%`, 14, 28);
+  const withOfExport = list.filter(p => p.hasOf).length;
+  doc.text(`${list.length} prospects exportés · ${withOfExport} avec lien OF`, 14, 28);
 
   // Table
   doc.autoTable({
     startY: 33,
-    head: [['Handle', 'Nom', 'Plateforme', 'Followers', 'Engagement', 'Niche', 'Statut', 'Score', 'Tags']],
+    head: [['Handle', 'Nom', 'Followers', 'Niche', 'Statut', 'OF détecté', 'Tags']],
     body: list.map(p => [
       p.handle,
       p.name || '—',
-      p.platform.toUpperCase(),
       p.followers >= 1000 ? (p.followers/1000).toFixed(0)+'K' : p.followers,
-      p.engagement + '%',
       p.niche || '—',
       p.status || 'nouveau',
-      p.score + '%',
+      p.hasOf ? '🔥 Oui' : '—',
       (TAGS_MAP[p.id] || []).map(t => t.tag).join(', ') || '—',
     ]),
     styles: { fontSize: 8, cellPadding: 3 },
