@@ -269,20 +269,21 @@ async function saveProspects(env, profiles, scanSource) {
 }
 
 async function getProspects(env, params) {
-  const minScore = params.get('min_score') || '0';
   const platform = params.get('platform') || '';
   const status = params.get('status') || '';
 
-  let formula = `{score} >= ${minScore}`;
-  if (platform) formula = `AND(${formula}, {platform} = "${platform}")`;
-  if (status) formula = `AND(${formula}, {status} = "${status}")`;
+  let formula = '';
+  if (platform) formula = `{platform} = "${platform}"`;
+  if (status) formula = formula ? `AND(${formula}, {status} = "${status}")` : `{status} = "${status}"`;
 
   const qs = new URLSearchParams({
-    filterByFormula: formula,
-    'sort[0][field]': 'score',
+    'sort[0][field]': 'has_of',
     'sort[0][direction]': 'desc',
+    'sort[1][field]': 'followers',
+    'sort[1][direction]': 'desc',
     maxRecords: '200',
   });
+  if (formula) qs.set('filterByFormula', formula);
 
   const res = await airtableRequest(env, 'GET', `Prospects?${qs}`);
   return (res.records || []).map(r => ({ id: r.id, ...r.fields }));
@@ -854,10 +855,13 @@ export default {
 
       filtered.forEach(p => { if (!p.niche) p.niche = detectNiche2(p.biography); });
 
+      const relevance = p => {
+        const hasOf = OF_KEYWORDS.some(k => (p.biography || '').toLowerCase().includes(k));
+        return (hasOf ? 300000 : 0) + (p.externalUrl ? 100000 : 0) + (p.followersCount || 0);
+      };
       const scored = filtered
         .map(p => ({ ...p, score: scoreProfile(p) }))
-        .filter(p => p.score >= minScore)
-        .sort((a, b) => b.score - a.score);
+        .sort((a, b) => relevance(b) - relevance(a));
 
       const scanSource = `@${handle} (${platform})`;
       let saved = [], saveError = null;
@@ -1242,11 +1246,13 @@ export default {
         if (!p.niche) p.niche = detectNiche(p.biography);
       });
 
-      // Scorer et filtrer par score minimum
+      const relevance2 = p => {
+        const hasOf = OF_KEYWORDS.some(k => (p.biography || '').toLowerCase().includes(k));
+        return (hasOf ? 300000 : 0) + (p.externalUrl ? 100000 : 0) + (p.followersCount || 0);
+      };
       const scored = filtered
         .map(p => ({ ...p, score: scoreProfile(p) }))
-        .filter(p => p.score >= minScore)
-        .sort((a, b) => b.score - a.score);
+        .sort((a, b) => relevance2(b) - relevance2(a));
 
       const scanSource = `@${handle} (${platform})`;
       let saved = [], saveError = null;

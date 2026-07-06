@@ -793,9 +793,9 @@
       <div class="stat-sub">depuis 3 scans</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Score moyen</div>
-      <div class="stat-value" style="color:var(--yellow)">71<span style="font-size:16px;color:var(--muted)">%</span></div>
-      <div class="stat-sub">seuil actuel : 60%</div>
+      <div class="stat-label">Avec lien OF</div>
+      <div class="stat-value" style="color:var(--yellow)" id="statWithOf">—</div>
+      <div class="stat-sub" id="statWithOfPct">% des profils</div>
     </div>
     <div class="stat-card pink">
       <div class="stat-label">Plateforme privée</div>
@@ -827,15 +827,8 @@
     </div>
 
     <select class="sort-select" onchange="sortBy=this.value;renderProspects()">
-      <option value="score">Score ↓</option>
+      <option value="relevance">Pertinence ↓</option>
       <option value="followers">Followers ↓</option>
-      <option value="engagement">Engagement ↓</option>
-    </select>
-    <select class="sort-select" id="scoreFilter" onchange="renderProspects()" style="min-width:110px">
-      <option value="0">Score: Tous</option>
-      <option value="70">Score: 70%+</option>
-      <option value="50">Score: 50%+</option>
-      <option value="30">Score: 30%+</option>
     </select>
     <button class="btn btn-ghost" onclick="confirmDeleteAll()" style="color:#F0436C;border-color:rgba(240,67,108,0.25);white-space:nowrap" title="Supprimer tous les prospects">
       🗑️ Vider la liste
@@ -857,7 +850,7 @@
       <div class="th">Engagement</div>
       <div class="th">Niche</div>
       <div class="th">Statut</div>
-      <div class="th">Score</div>
+      <div class="th">Signaux</div>
       <div class="th">Email</div>
       <div class="th" style="cursor:default;justify-content:flex-end">Actions</div>
     </div>
@@ -1478,7 +1471,10 @@ let DATA = [];
 let savedSet = new Set();
 let activeTab = 'all';
 let activePlatforms = new Set();
-let sortBy = 'score';
+let sortBy = 'relevance';
+function relevanceScore(p) {
+  return (p.hasOf ? 300000 : 0) + (p.ofLink || p.privatePlatformUrl ? 100000 : 0) + (p.followers || 0);
+}
 let loading = false;
 let currentView = 'list';
 
@@ -1558,7 +1554,9 @@ async function loadStats() {
     document.querySelector('.stats-row .stat-card:nth-child(1) .stat-sub').textContent = `${DATA.length} chargés`;
     const nb = document.getElementById('nav-count-badge');
     if (nb) { nb.textContent = s.total || ''; nb.style.display = s.total ? '' : 'none'; }
-    document.querySelector('.stats-row .stat-card:nth-child(2) .stat-value').innerHTML = `${s.avg_score}<span style="font-size:16px;color:var(--muted)">%</span>`;
+    const withOf = DATA.filter(p => p.hasOf).length;
+    document.getElementById('statWithOf').textContent = withOf;
+    document.getElementById('statWithOfPct').textContent = `${DATA.length ? Math.round(withOf/DATA.length*100) : 0}% des profils`;
     document.querySelector('.stats-row .stat-card:nth-child(3) .stat-value').textContent = s.with_of;
     document.querySelector('.stats-row .stat-card:nth-child(3) .stat-sub').textContent = `${s.total ? Math.round(s.with_of/s.total*100) : 0}% des profils`;
     document.querySelector('.stats-row .stat-card:nth-child(4) .stat-value').textContent = s.to_convert;
@@ -1570,19 +1568,16 @@ const PIPELINE_STATUSES = ['contactée', 'en discussion', 'signée', 'refus'];
 
 function renderProspects() {
   const q = document.getElementById('searchInput').value.toLowerCase();
-  const minScore = parseInt(document.getElementById('scoreFilter')?.value || '0');
   let list = DATA.filter(p => {
-    // Recherche globale : handle + nom + niche + bio
     if (q && !p.handle.toLowerCase().includes(q) && !p.name.toLowerCase().includes(q) && !(p.niche||'').toLowerCase().includes(q) && !(p.bio||'').toLowerCase().includes(q)) return false;
     if (activeTab==='of' && !p.hasOf) return false;
     if (activeTab==='convert' && p.hasOf) return false;
     if (activeTab==='saved' && !savedSet.has(p.id)) return false;
     if (activeTab==='pipeline' && !PIPELINE_STATUSES.includes((p.status||'').toLowerCase())) return false;
-    if ((p.status||'').toLowerCase() === 'blacklistée') return false; // toujours caché dans la vue principale
+    if ((p.status||'').toLowerCase() === 'blacklistée') return false;
     if (activePlatforms.size>0 && !activePlatforms.has(p.platform)) return false;
-    if (p.score < minScore) return false;
     return true;
-  }).sort((a,b) => b[sortBy]-a[sortBy]);
+  }).sort((a,b) => sortBy === 'relevance' ? relevanceScore(b) - relevanceScore(a) : b[sortBy] - a[sortBy]);
 
   const el = document.getElementById('prospectList');
   if (!list.length) {
@@ -1594,16 +1589,13 @@ function renderProspects() {
   if (currentView === 'grid') {
     el.className = 'grid-view';
     el.innerHTML = list.map(p => {
-      const cl = sc(p.score);
       return `<div class="prospect-card" onclick="openProspect('${p.id}')">
-        <div class="card-platform dot-${p.platform}" style="background:${p.platform==='ig'?'var(--accent2)':p.platform==='tt'?'var(--green)':'var(--accent)'}"></div>
+        <div class="card-platform dot-${p.platform}" style="background:var(--accent2)"></div>
         <div class="card-avatar">${avatarHTML(p.handle, p.platform, 72)}</div>
         <div class="card-handle">${esc(p.handle)}</div>
         <div class="card-name">${esc(p.name)}</div>
-        <div class="card-score s-${cl}">${p.score}%</div>
         <div class="card-stats">
           <span class="card-stat">${fmt(p.followers)} followers</span>
-          <span class="card-stat" style="color:var(--yellow)">${p.engagement}% eng.</span>
         </div>
         ${p.hasOf ? privatePlatformBadge(p) : '<span class="badge badge-convert">À contacter</span>'}
       </div>`;
@@ -1627,11 +1619,10 @@ function renderProspects() {
       <div class="cell cell-mono" style="color:var(--yellow)">${p.engagement}%</div>
       <div class="cell" style="font-size:12px;color:var(--muted)">${esc(p.niche)}</div>
       <div class="cell">${statusBadge(p)}</div>
-      <div class="cell">
-        <div class="score-wrap">
-          <div class="score-bar"><div class="score-fill sf-${cl}" style="width:${p.score}%"></div></div>
-          <span class="score-num s-${cl}">${p.score}%</span>
-        </div>
+      <div class="cell" style="display:flex;gap:4px;flex-wrap:wrap">
+        ${p.hasOf ? `<span style="font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;background:rgba(240,67,108,0.12);color:var(--pink);border:1px solid rgba(240,67,108,0.2)">🔥 OF</span>` : ''}
+        ${p.privatePlatformUrl || p.ofLink ? `<span style="font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;background:rgba(6,182,212,0.1);color:var(--accent);border:1px solid rgba(6,182,212,0.2)">🔗 Lien</span>` : ''}
+        ${!p.hasOf && !p.privatePlatformUrl ? `<span style="font-size:10px;color:var(--muted)">—</span>` : ''}
       </div>
       <div class="cell" id="email-cell-${p.id}" onclick="event.stopPropagation()" style="min-width:0">
         ${p.email
