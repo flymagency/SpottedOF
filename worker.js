@@ -171,40 +171,41 @@ function scoreProfile(profile) {
   const bio = (profile.biography || profile.bio || '').toLowerCase();
   const followers = profile.followersCount || profile.followers || 0;
   const following = profile.followingCount || profile.following || 1;
-  const engagement = profile.engagementRate || profile.engagement || 0;
   const niche = (profile.niche || '').toLowerCase();
 
   // 1. Followers (30 pts) — sweet spot 10k–300k
   if (followers >= 10000 && followers < 300000) score += 30;
   else if (followers >= 5000 && followers < 10000) score += 22;
   else if (followers >= 1000 && followers < 5000) score += 14;
-  else if (followers >= 300000) score += 12; // trop grosse = prix élevé
+  else if (followers >= 300000) score += 12;
   else score += 4;
 
-  // 2. Engagement rate (25 pts)
-  if (engagement >= 6) score += 25;
-  else if (engagement >= 4) score += 20;
-  else if (engagement >= 2.5) score += 13;
-  else if (engagement >= 1) score += 6;
-  else score += 1;
-
-  // 3. OF link détecté dans la bio (20 pts)
+  // 2. OF link détecté dans la bio (20 pts)
   const hasOfLink = OF_KEYWORDS.some(kw => bio.includes(kw));
   if (hasOfLink) score += 20;
 
-  // 4. Mots-clés collab/promo dans la bio (15 pts)
+  // 3. Mots-clés collab/promo dans la bio (15 pts)
   const collabCount = COLLAB_KEYWORDS.filter(kw => bio.includes(kw)).length;
   if (collabCount >= 2) score += 15;
   else if (collabCount === 1) score += 8;
 
-  // 5. Ratio followers/following (10 pts) — ratio > 3 = créatrice établie
+  // 4. Ratio followers/following (15 pts) — ratio > 3 = créatrice établie
   const ratio = followers / following;
-  if (ratio >= 5) score += 10;
-  else if (ratio >= 3) score += 7;
-  else if (ratio >= 1.5) score += 4;
-  else score += 1;
+  if (ratio >= 5) score += 15;
+  else if (ratio >= 3) score += 11;
+  else if (ratio >= 1.5) score += 6;
+  else score += 2;
 
-  // 6. Bonus/malus niche (+8 à -8 pts)
+  // 5. Lien externe dans le profil (10 pts) — compte actif qui se promeut
+  if (profile.externalUrl) score += 10;
+
+  // 6. Posts suffisants (10 pts) — compte actif
+  const posts = profile.postsCount || 0;
+  if (posts >= 50) score += 10;
+  else if (posts >= 20) score += 6;
+  else if (posts >= 5) score += 3;
+
+  // 7. Bonus/malus niche (+8 à -8 pts)
   for (const [key, bonus] of Object.entries(NICHE_SCORES)) {
     if (niche.includes(key)) { score += bonus; break; }
   }
@@ -884,7 +885,7 @@ export default {
 
       const platform = (body.platform || 'ig').toLowerCase();
       const resultsLimit = Math.min(body.results_limit || 100, 500);
-      const minScore = body.min_score ?? 20;
+      const minScore = body.min_score ?? 0;
 
       const APIFY_TOKEN = env.APIFY_TOKEN;
       if (!APIFY_TOKEN) return json({ error: 'APIFY_TOKEN non configuré' }, 500);
@@ -980,7 +981,7 @@ export default {
     if (request.method === 'GET' && path === '/scan-poll') {
       const runId      = url.searchParams.get('run_id');
       const phase      = parseInt(url.searchParams.get('phase') || '2');
-      const minScore   = parseInt(url.searchParams.get('min_score') || '20');
+      const minScore   = parseInt(url.searchParams.get('min_score') || '0');
       const handle     = url.searchParams.get('handle') || '';
       const platform   = url.searchParams.get('platform') || 'ig';
       const scanType   = url.searchParams.get('type') || '';

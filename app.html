@@ -1181,16 +1181,6 @@
               </select>
             </div>
             <div>
-              <label class="form-label">Engagement minimum</label>
-              <select class="form-input" id="filterEngagement" style="padding:8px 10px;">
-                <option value="0">Pas de minimum</option>
-                <option value="1">1%+</option>
-                <option value="2">2%+</option>
-                <option value="4">4%+</option>
-                <option value="6">6%+</option>
-              </select>
-            </div>
-            <div>
               <label class="form-label" style="margin-bottom:8px;">Options</label>
               <div style="display:flex;flex-direction:column;gap:6px;">
                 <label class="scan-check-label" style="font-size:11px;"><input type="checkbox" id="filterHasExternalUrl"> 🔗 Lien externe (Linktree…)</label>
@@ -1199,88 +1189,7 @@
             </div>
           </div>
 
-          <!-- ═══ TIKTOK ════════════════════════════════════════════════ -->
-
-          <div class="scan-section-title scan-filter-block" data-platforms="tt" style="margin-top:16px;">📊 Taille du compte</div>
-          <div class="scan-filter-block" data-platforms="tt" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-            <div>
-              <label class="form-label">Fans min</label>
-              <select class="form-input" id="filterTTFollowersMin" style="padding:8px 10px;">
-                <option value="0">Pas de minimum</option>
-                <option value="1000">1 000+</option>
-                <option value="5000" selected>5 000+</option>
-                <option value="10000">10 000+</option>
-                <option value="100000">100 000+</option>
-              </select>
-            </div>
-            <div>
-              <label class="form-label">Fans max</label>
-              <select class="form-input" id="filterTTFollowersMax" style="padding:8px 10px;">
-                <option value="0">Pas de maximum</option>
-                <option value="50000">50 000</option>
-                <option value="100000">100 000</option>
-                <option value="500000" selected>500 000</option>
-                <option value="1000000">1M</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="scan-section-title scan-filter-block" data-platforms="tt" style="margin-top:16px;">⚡ Activité</div>
-          <div class="scan-filter-block" data-platforms="tt" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-            <div>
-              <label class="form-label">Vidéos minimum</label>
-              <select class="form-input" id="filterTTPostsMin" style="padding:8px 10px;">
-                <option value="0">Pas de minimum</option>
-                <option value="10">10+</option>
-                <option value="20">20+</option>
-                <option value="50">50+</option>
-              </select>
-            </div>
-            <div>
-              <label class="form-label">Likes totaux min</label>
-              <select class="form-input" id="filterTTLikesMin" style="padding:8px 10px;">
-                <option value="0">Pas de minimum</option>
-                <option value="1000">1 000+</option>
-                <option value="10000" selected>10 000+</option>
-                <option value="100000">100 000+</option>
-              </select>
-            </div>
-          </div>
-          <div class="scan-filter-block" data-platforms="tt" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;">
-            <label class="scan-check-label"><input type="checkbox" id="filterTTVerified"><span>Non vérifié seulement</span></label>
-          </div>
-
-          <!-- ═══ THREADS ═══════════════════════════════════════════════ -->
-
-          <div class="scan-section-title scan-filter-block" data-platforms="th" style="margin-top:16px;">📊 Taille du compte</div>
-          <div class="scan-filter-block" data-platforms="th" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-            <div>
-              <label class="form-label">Followers min</label>
-              <select class="form-input" id="filterTHFollowersMin" style="padding:8px 10px;">
-                <option value="0">Pas de minimum</option>
-                <option value="500">500+</option>
-                <option value="1000" selected>1 000+</option>
-                <option value="5000">5 000+</option>
-                <option value="10000">10 000+</option>
-              </select>
-            </div>
-            <div>
-              <label class="form-label">Followers max</label>
-              <select class="form-input" id="filterTHFollowersMax" style="padding:8px 10px;">
-                <option value="0">Pas de maximum</option>
-                <option value="10000">10 000</option>
-                <option value="50000" selected>50 000</option>
-                <option value="200000">200 000</option>
-              </select>
-            </div>
-          </div>
-          <div class="scan-filter-block" data-platforms="th" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;">
-            <label class="scan-check-label"><input type="checkbox" id="filterTHNoOf"><span>Pas encore sur plateforme privée</span></label>
-            <label class="scan-check-label"><input type="checkbox" id="filterTHHasOf"><span>Déjà sur plateforme privée</span></label>
-            <label class="scan-check-label"><input type="checkbox" id="filterTHVerified"><span>Non vérifié seulement</span></label>
-          </div>
-
-          <!-- ═══ COMMUN (toutes plateformes) ═══════════════════════════ -->
+          <!-- ═══ COMMUN ═══════════════════════════════════════════════ -->
 
           <!-- Mots-clés bio -->
           <div class="scan-section-title" style="margin-top:16px;">🔎 Mots-clés dans la bio</div>
