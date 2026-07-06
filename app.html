@@ -1860,8 +1860,7 @@ function downloadTemplate() {
   const csv = [
     'handle,name,platform,followers,engagement,niche,bio',
     '@exemple_compte,Prénom Nom,ig,25000,4.5,Fitness,Coach fitness 💪 | Collab DM | Paris',
-    '@autre_compte,Autre Nom,tt,80000,6.2,Beauty,Makeup & beauty | OF link in bio 🔥',
-    '@threads_compte,Nom Threads,th,12000,3.8,Lifestyle,Lifestyle & mode | Open to collabs',
+    '@autre_compte,Autre Nom,ig,80000,6.2,Beauty,Makeup & beauty | OF link in bio 🔥',
   ].join('\n');
   const blob = new Blob([csv], { type: 'text/csv' });
   const a = document.createElement('a');
@@ -4698,12 +4697,10 @@ function openReplyModal(prospectId) {
   // Canaux disponibles selon la plateforme
   const channels = [
     { key: 'ig', label: 'Instagram', icon: '📸', css: '#F0436C' },
-    { key: 'tt', label: 'TikTok',    icon: '🎵', css: 'var(--green)' },
-    { key: 'th', label: 'Threads',   icon: '🧵', css: 'var(--accent)' },
     { key: 'email', label: 'Email',  icon: '📧', css: 'var(--yellow)' },
   ];
   // Pré-sélectionner le canal selon la plateforme du prospect
-  const defaultCh = p.platform === 'ig' ? 'ig' : p.platform === 'tt' ? 'tt' : p.platform === 'th' ? 'th' : 'ig';
+  const defaultCh = 'ig';
 
   const modal = document.createElement('div');
   modal.id = 'replyModal';
