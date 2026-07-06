@@ -537,37 +537,6 @@ export default {
       };
     }
 
-    function normalizeTTItem(item) {
-      const a = item.authorMeta || item;
-      const u = a.name || a.uniqueId || item.uniqueId || '';
-      if (!u) return null;
-      return {
-        username: u,
-        fullName: a.nickName || a.nickname || '',
-        biography: a.signature || item.signature || '',
-        followersCount: a.fans || a.followerCount || item.stats?.followerCount || 0,
-        followingCount: a.following || item.stats?.followingCount || 0,
-        engagementRate: 0,
-        platform: 'tt',
-        userId: a.id || item.id || '',
-      };
-    }
-
-    function normalizeTHItem(item) {
-      const u = item.username || item.handle || '';
-      if (!u) return null;
-      return {
-        username: u,
-        fullName: item.name || item.fullName || '',
-        biography: item.biography || item.bio || item.description || '',
-        followersCount: item.followersCount || item.followers || 0,
-        followingCount: item.followingCount || item.following || 0,
-        engagementRate: 0,
-        platform: 'th',
-        userId: item.id || item.userId || '',
-      };
-    }
-
     // ─── INSTAGRAM NATIVE API HELPERS ────────────────────────────────────────
 
     const IG_APP_ID = '936619743392459';
@@ -592,7 +561,7 @@ export default {
     }
 
     async function getSupabaseProfile(userId, token) {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=instagram_username,instagram_session_id,instagram_password_enc,geelark_api_key,geelark_profile_id,geelark_profile_name`, {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=instagram_username,instagram_session_id,instagram_password_enc,geelark_api_key,geelark_profile_id,geelark_profile_name,geelark_dm_task_id`, {
         headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${token}` },
       });
       const data = await res.json();
@@ -902,7 +871,7 @@ export default {
     // Body: { handle, platform, results_limit, min_score }
     // Instagram : phase 1 = posts du profil → extraire hashtags
     //             phase 2 = scrape ces hashtags → profils similaires
-    // TikTok/Threads : phase unique (hashtag search)
+
     if (request.method === 'POST' && path === '/scan-similar') {
       let body;
       try { body = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
@@ -988,24 +957,6 @@ export default {
             status: 'RUNNING',
             message: `${usernames.length} abonnements récupérés — analyse des profils en cours…`,
           });
-        }
-
-        if (platform === 'tt' || platform === 'tiktok') {
-          const runId = await apifyStartRun('clockworks~tiktok-scraper', {
-            hashtags: [handle],
-            resultsPerPage: resultsLimit * 3,
-            shouldDownloadVideos: false,
-            shouldDownloadCovers: false,
-          }, APIFY_TOKEN);
-          return json({ success: true, run_id: runId, phase: 2, handle, platform, min_score: minScore, status: 'RUNNING' });
-        }
-
-        if (platform === 'th' || platform === 'threads') {
-          const runId = await apifyStartRun('apify~threads-scraper', {
-            queries: [handle],
-            resultsLimit: resultsLimit * 3,
-          }, APIFY_TOKEN);
-          return json({ success: true, run_id: runId, phase: 2, handle, platform, min_score: minScore, status: 'RUNNING' });
         }
 
         return json({ error: `Plateforme non supportée : ${platform}` }, 400);
@@ -1159,10 +1110,6 @@ export default {
       if (platform === 'ig' || platform === 'instagram') {
         // Les items sont des profils complets (resultsType: 'details')
         rawProfiles = items.map(item => normalizeIGPost(item)).filter(Boolean);
-      } else if (platform === 'tt' || platform === 'tiktok') {
-        rawProfiles = items.map(normalizeTTItem).filter(Boolean);
-      } else if (platform === 'th' || platform === 'threads') {
-        rawProfiles = items.map(normalizeTHItem).filter(Boolean);
       }
 
       // Dédupliquer par username
@@ -1479,9 +1426,9 @@ export default {
       const token = (request.headers.get('Authorization') || '').slice(7);
       let body;
       try { body = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
-      const { apiKey, profileId, profileName } = body;
+      const { apiKey, profileId, profileName, dmTaskId } = body;
       if (!apiKey || !profileId) return json({ error: 'apiKey et profileId requis' }, 400);
-      await updateSupabaseProfile(user.id, token, { geelark_api_key: apiKey, geelark_profile_id: profileId, geelark_profile_name: profileName || '' });
+      await updateSupabaseProfile(user.id, token, { geelark_api_key: apiKey, geelark_profile_id: profileId, geelark_profile_name: profileName || '', geelark_dm_task_id: dmTaskId || null });
       return json({ success: true });
     }
 
@@ -1553,9 +1500,9 @@ export default {
         body: JSON.stringify({
           scheduleAt: Math.floor(Date.now() / 1000),
           id: profile.geelark_profile_id,
-          flowId: '625154801130274938',
+          flowId: profile.geelark_dm_task_id || '626546475559551369',
           name: `DM @${targetUsername}`,
-          paramMap: { targetUsername, dmMessage },
+          paramMap: { Username: [targetUsername], Content: dmMessage },
         }),
       });
 
