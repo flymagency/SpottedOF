@@ -3369,18 +3369,17 @@ function renderPrivate() {
       </div>
     </div>
     <div class="table-wrap">
-      <div class="prospect-header">
-        <div class="cell" style="flex:2">Profil</div>
+      <div class="table-head" style="grid-template-columns:2fr 1fr 1fr 1fr 1fr 1.3fr">
+        <div class="cell">Profil</div>
         <div class="cell">Followers</div>
-        <div class="cell">Engagement</div>
         <div class="cell">Plateforme</div>
-        <div class="cell">Score</div>
+        <div class="cell">Signaux</div>
         <div class="cell">Statut</div>
-        <div class="cell" style="min-width:90px"></div>
+        <div class="cell"></div>
       </div>
-      ${list.sort((a,b) => b.score - a.score).map((p,idx) => `
-        <div class="prospect-row row-enter" style="animation-delay:${(idx*0.025).toFixed(3)}s" onclick="openProspect('${p.id}')">
-          <div class="profile-cell" style="flex:2">
+      ${list.sort((a,b) => relevanceScore(b) - relevanceScore(a)).map((p,idx) => `
+        <div class="prospect-row row-enter" style="animation-delay:${(idx*0.025).toFixed(3)}s;grid-template-columns:2fr 1fr 1fr 1fr 1fr 1.3fr" onclick="openProspect('${p.id}')">
+          <div class="profile-cell">
             <div class="avatar">${avatarHTML(p.handle, p.platform)}</div>
             <div>
               <div class="profile-handle"><span class="platform-dot dot-${p.platform}"></span>${esc(p.handle)}</div>
@@ -3388,13 +3387,11 @@ function renderPrivate() {
             </div>
           </div>
           <div class="cell cell-mono">${fmt(p.followers)}</div>
-          <div class="cell cell-mono" style="color:var(--yellow)">${p.engagement}%</div>
           <div class="cell">${privatePlatformBadge(p)}</div>
-          <div class="cell">
-            <div class="score-wrap">
-              <div class="score-bar"><div class="score-fill sf-${sc(p.score)}" style="width:${p.score}%"></div></div>
-              <span class="score-num s-${sc(p.score)}">${p.score}%</span>
-            </div>
+          <div class="cell" style="display:flex;gap:4px;flex-wrap:wrap">
+            ${p.hasOf ? `<span style="background:rgba(244,63,94,0.15);color:#f43f5e;border-radius:4px;padding:2px 6px;font-size:10px;font-weight:600">🔥 OF</span>` : ''}
+            ${p.privatePlatformUrl || p.ofLink ? `<span style="background:rgba(6,182,212,0.12);color:var(--accent);border-radius:4px;padding:2px 6px;font-size:10px;font-weight:600">🔗 Lien</span>` : ''}
+            ${!p.hasOf && !p.privatePlatformUrl && !p.ofLink ? `<span style="font-size:10px;color:var(--muted)">—</span>` : ''}
           </div>
           <div class="cell">${statusBadge(p)}</div>
           <div class="actions-cell" onclick="event.stopPropagation()">
