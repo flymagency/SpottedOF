@@ -2014,8 +2014,8 @@ async function launchScan() {
           throw new Error(pollData.error);
         }
 
-        // Mise à jour barre de progression ig_native
-        if (_scanCurrentType === 'ig_native' && pollData.progress) {
+        // Mise à jour barre de progression ig_native / hiker
+        if ((_scanCurrentType === 'ig_native' || _scanCurrentType === 'hiker') && pollData.progress) {
           const { done: pdone, total } = pollData.progress;
           const pct = total > 0 ? Math.round((pdone / total) * 100) : 5;
           document.getElementById('scanProgressBar').style.width = `${pct}%`;

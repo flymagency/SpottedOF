@@ -499,6 +499,25 @@ export default {
       return runId;
     }
 
+    // ─── HIKERAPI HELPER ─────────────────────────────────────────────────────
+    function normalizeHikerProfile(u) {
+      if (!u || !u.username) return null;
+      return {
+        username: u.username,
+        fullName: u.full_name || '',
+        biography: u.biography || '',
+        followersCount: u.follower_count || u.edge_followed_by?.count || 0,
+        followingCount: u.following_count || u.edge_follow?.count || 0,
+        postsCount: u.media_count || u.edge_owner_to_timeline_media?.count || 0,
+        isPrivate: u.is_private || false,
+        isVerified: u.is_verified || false,
+        isBusinessAccount: u.is_business || u.is_business_account || false,
+        externalUrl: u.external_url || u.bio_links?.[0]?.url || '',
+        platform: 'ig',
+        userId: String(u.pk || u.id || ''),
+      };
+    }
+
     // Normalise un item Apify (post Instagram) → profil interne
     function normalizeIGPost(item) {
       // Supporte : profils complets (username), posts (ownerUsername), et champs snake_case
@@ -891,76 +910,54 @@ export default {
       const resultsLimit = Math.min(body.results_limit || 100, 500);
       const minScore = body.min_score ?? 0;
 
-      const APIFY_TOKEN = env.APIFY_TOKEN;
-      if (!APIFY_TOKEN) return json({ error: 'APIFY_TOKEN non configuré' }, 500);
+      const HIKER_KEY = env.HIKER_API_KEY;
+      if (!HIKER_KEY) return json({ error: 'HIKER_API_KEY non configuré' }, 500);
 
       try {
         if (platform === 'ig' || platform === 'instagram') {
-          // ── Instagram native (sans Apify) ──────────────────────────────────
-          const token = (request.headers.get('Authorization') || '').slice(7);
-          const igProfile = await getSupabaseProfile(user.id, token);
+          // ── HikerAPI : profils similaires sans session Instagram ────────────
 
-          let sessionId = igProfile?.instagram_session_id;
+          // 1. Récupérer le profil cible pour obtenir son pk
+          const profileRes = await fetch(
+            `https://api.hikerapi.com/v2/user/by/username?username=${encodeURIComponent(handle)}`,
+            { headers: { 'x-access-key': HIKER_KEY, 'accept': 'application/json' } }
+          );
+          if (!profileRes.ok) return json({ error: `Compte @${handle} introuvable sur Instagram` }, 400);
+          const profileData = await profileRes.json();
+          const targetPk = String(profileData.pk || profileData.id || '');
+          if (!targetPk) return json({ error: `Compte @${handle} introuvable` }, 400);
 
-          // Auto re-login si session manquante mais credentials stockés
-          if (!sessionId && igProfile?.instagram_username && igProfile?.instagram_password_enc && env.ENCRYPT_KEY) {
-            const pwd = await decryptText(igProfile.instagram_password_enc, env.ENCRYPT_KEY);
-            const { csrf, igDid } = await igGetCsrf();
-            const loginResult = await igDoLogin(igProfile.instagram_username, pwd, csrf, igDid);
-            if (loginResult.success) {
-              sessionId = loginResult.sessionId;
-              await updateSupabaseProfile(user.id, token, { instagram_session_id: sessionId });
-            }
-          }
+          // 2. Récupérer les profils similaires
+          const suggestedRes = await fetch(
+            `https://api.hikerapi.com/v2/user/suggested/profiles?user_id=${targetPk}`,
+            { headers: { 'x-access-key': HIKER_KEY, 'accept': 'application/json' } }
+          );
+          if (!suggestedRes.ok) return json({ error: 'Impossible de récupérer les profils similaires' }, 502);
+          const suggestedData = await suggestedRes.json();
+          const suggestedUsers = (suggestedData.users || []).slice(0, resultsLimit);
+          if (suggestedUsers.length === 0) return json({ error: `Aucun profil similaire trouvé pour @${handle}` }, 400);
 
-          if (!sessionId) {
-            return json({ error: 'Compte Instagram non connecté. Connecte ton compte dans les paramètres.', code: 'IG_NOT_CONNECTED' }, 400);
-          }
+          const userIds = suggestedUsers.map(u => String(u.pk || u.id)).filter(Boolean);
 
-          // Récupère l'ID du compte cible
-          let targetUserId;
-          try {
-            targetUserId = await igGetUserId(handle, sessionId);
-          } catch(e) {
-            // Session expirée → re-login automatique
-            if (e.message === 'SESSION_EXPIRED' && igProfile?.instagram_username && igProfile?.instagram_password_enc && env.ENCRYPT_KEY) {
-              const pwd = await decryptText(igProfile.instagram_password_enc, env.ENCRYPT_KEY);
-              const { csrf, igDid } = await igGetCsrf();
-              const loginResult = await igDoLogin(igProfile.instagram_username, pwd, csrf, igDid);
-              if (loginResult.success) {
-                sessionId = loginResult.sessionId;
-                await updateSupabaseProfile(user.id, token, { instagram_session_id: sessionId });
-                targetUserId = await igGetUserId(handle, sessionId);
-              }
-            }
-            if (!targetUserId) throw new Error(`Compte @${handle} introuvable ou inaccessible`);
-          }
-
-          if (!targetUserId) return json({ error: `Compte @${handle} introuvable ou privé` }, 400);
-
-          // Récupère la liste des following
-          const usernames = await igGetFollowing(targetUserId, sessionId, Math.min(resultsLimit, 200));
-          if (usernames.length === 0) return json({ error: `Aucun abonnement trouvé pour @${handle}. Compte privé ?` }, 400);
-
-          // Stocke l'état du scan dans KV
+          // Stocker l'état du scan dans KV
           const scanId = crypto.randomUUID().replace(/-/g, '');
-          await env.RATE_LIMIT.put(`igscan:${scanId}`, JSON.stringify({
-            type: 'ig_native', sessionId, handle, usernames,
-            processed: 0, profiles: [], min_score: minScore,
-            filters, results_limit: resultsLimit, platform: 'ig',
+          await env.RATE_LIMIT.put(`hikscan:${scanId}`, JSON.stringify({
+            type: 'hiker', handle, userIds,
+            processed: 0, profiles: [],
+            min_score: minScore, filters, platform: 'ig',
           }), { expirationTtl: 3600 });
 
           return json({
             success: true,
             run_id: scanId,
-            type: 'ig_native',
+            type: 'hiker',
             phase: 1,
             handle,
-            platform,
+            platform: 'ig',
             min_score: minScore,
-            total_following: usernames.length,
+            total_similar: userIds.length,
             status: 'RUNNING',
-            message: `${usernames.length} abonnements récupérés — analyse des profils en cours…`,
+            message: `${userIds.length} profils similaires trouvés — enrichissement en cours…`,
           });
         }
 
@@ -993,6 +990,65 @@ export default {
       let filters = {};
       try { filters = JSON.parse(url.searchParams.get('filters') || '{}'); } catch {}
       if (!runId) return json({ error: 'run_id requis' }, 400);
+
+      // ── HIKER API ─────────────────────────────────────────────────────────
+      if (scanType === 'hiker') {
+        const rawState = await env.RATE_LIMIT.get(`hikscan:${runId}`);
+        if (!rawState) return json({ done: true, error: 'Scan expiré ou introuvable. Relance le scan.' });
+
+        const state = JSON.parse(rawState);
+        const { userIds, processed, profiles: existingProfiles, min_score: stateMinScore, filters: stateFilters } = state;
+        const stateHandle = state.handle;
+        const HIKER_KEY = env.HIKER_API_KEY;
+
+        const BATCH = 10;
+        const batch = userIds.slice(processed, processed + BATCH);
+        const newProfiles = [...existingProfiles];
+
+        for (let i = 0; i < batch.length; i++) {
+          try {
+            const res = await fetch(
+              `https://api.hikerapi.com/v2/user/by/id?id=${batch[i]}`,
+              { headers: { 'x-access-key': HIKER_KEY, 'accept': 'application/json' } }
+            );
+            if (res.ok) {
+              const data = await res.json();
+              const p = normalizeHikerProfile(data);
+              if (p) newProfiles.push(p);
+            }
+          } catch {}
+          if (i < batch.length - 1) await new Promise(r => setTimeout(r, 150));
+        }
+
+        const newProcessed = processed + batch.length;
+        const isDone = newProcessed >= userIds.length;
+
+        if (!isDone) {
+          await env.RATE_LIMIT.put(`hikscan:${runId}`, JSON.stringify({ ...state, processed: newProcessed, profiles: newProfiles }), { expirationTtl: 3600 });
+          return json({
+            done: false,
+            type: 'hiker',
+            run_id: runId,
+            phase: 1,
+            progress: { done: newProcessed, total: userIds.length },
+            label: `Enrichissement des profils… ${newProcessed}/${userIds.length}`,
+          });
+        }
+
+        await env.RATE_LIMIT.delete(`hikscan:${runId}`).catch(() => {});
+        const { profiles, deduped, scored, saved, saveError } = await processAndSaveProfiles(env, newProfiles, stateHandle, 'ig', stateMinScore, stateFilters);
+        return json({
+          status: 'SUCCEEDED',
+          done: true,
+          type: 'hiker',
+          total_found: userIds.length,
+          unique_profiles: profiles.length,
+          scored: scored.length,
+          saved: saved.length,
+          filtered_out: deduped.length - scored.length,
+          message: saveError ? `Erreur sauvegarde: ${saveError}` : `${saved.length} prospects importés`,
+        });
+      }
 
       // ── INSTAGRAM NATIVE (sans Apify) ─────────────────────────────────────
       if (scanType === 'ig_native') {
