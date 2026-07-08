@@ -909,6 +909,8 @@ export default {
       const platform = (body.platform || 'ig').toLowerCase();
       const resultsLimit = Math.min(body.results_limit || 100, 500);
       const minScore = body.min_score ?? 0;
+      let filters = {};
+      try { filters = typeof body.filters === 'string' ? JSON.parse(body.filters) : (body.filters || {}); } catch {}
 
       const HIKER_KEY = env.HIKER_API_KEY;
       if (!HIKER_KEY) return json({ error: 'HIKER_API_KEY non configuré' }, 500);
@@ -924,20 +926,22 @@ export default {
           );
           if (!profileRes.ok) return json({ error: `Compte @${handle} introuvable sur Instagram` }, 400);
           const profileData = await profileRes.json();
-          const targetPk = String(profileData.pk || profileData.id || '');
+          const profileUser = profileData.user || profileData;
+          const targetPk = String(profileUser.pk || profileUser.id || '');
           if (!targetPk) return json({ error: `Compte @${handle} introuvable` }, 400);
 
-          // 2. Récupérer les profils similaires
-          const suggestedRes = await fetch(
-            `https://api.hikerapi.com/v2/user/suggested/profiles?user_id=${targetPk}`,
+          // 2. Récupérer la liste des abonnements du compte cible
+          const followingRes = await fetch(
+            `https://api.hikerapi.com/v2/user/following?user_id=${targetPk}&amount=${Math.min(resultsLimit, 200)}`,
             { headers: { 'x-access-key': HIKER_KEY, 'accept': 'application/json' } }
           );
-          if (!suggestedRes.ok) return json({ error: 'Impossible de récupérer les profils similaires' }, 502);
-          const suggestedData = await suggestedRes.json();
-          const suggestedUsers = (suggestedData.users || []).slice(0, resultsLimit);
-          if (suggestedUsers.length === 0) return json({ error: `Aucun profil similaire trouvé pour @${handle}` }, 400);
+          if (!followingRes.ok) return json({ error: 'Impossible de récupérer les abonnements' }, 502);
+          const followingData = await followingRes.json();
+          if (followingData.error) return json({ error: followingData.error }, 502);
+          const followingUsers = (followingData.users || []).slice(0, resultsLimit);
+          if (followingUsers.length === 0) return json({ error: `Aucun abonnement trouvé pour @${handle}. Compte privé ?` }, 400);
 
-          const userIds = suggestedUsers.map(u => String(u.pk || u.id)).filter(Boolean);
+          const userIds = followingUsers.map(u => String(u.pk || u.id)).filter(Boolean);
 
           // Stocker l'état du scan dans KV
           const scanId = crypto.randomUUID().replace(/-/g, '');
