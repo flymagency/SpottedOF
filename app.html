@@ -983,38 +983,39 @@
       <button class="modal-close" onclick="closeModal('scanModal')">✕</button>
     </div>
     <div class="modal-body">
-      <div class="scan-form" id="scanFormFields" style="max-height:72vh;overflow-y:auto;padding-right:4px;">
+      <div class="scan-form" id="scanFormFields" style="max-height:72vh;overflow-y:auto;padding-right:4px;display:flex;flex-direction:column;gap:20px;">
 
         <!-- Section : Cible -->
-        <div class="scan-section-title">🎯 Cible</div>
         <div>
-          <label class="form-label">Plateforme</label>
-          <div class="platform-pick" id="scanPlatformPick">
-            <button class="plat-pick-btn sel" data-platform="ig" onclick="pickScanPlatform(this)">📸 Instagram</button>
-          </div>
-        </div>
-
-        <div>
-          <label class="form-label">Compte de référence</label>
-          <div style="position:relative;">
-            <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px;">@</span>
-            <input class="form-input" id="refHandle" placeholder="fitmodel_123 (sans le @)" style="padding-left:26px;">
-          </div>
-          <div style="font-size:11px;color:var(--muted);margin-top:5px;">On analyse les profils similaires à ce compte via Instagram</div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-          <div>
-            <label class="form-label">Profils à analyser</label>
-            <div class="range-row">
-              <input type="range" class="range-input" id="countInput" min="20" max="300" value="100" step="10" oninput="document.getElementById('countVal').textContent=this.value">
-              <span class="range-val" id="countVal">100</span>
+          <div class="scan-section-title" style="margin-bottom:14px;">🎯 Cible</div>
+          <div style="display:flex;flex-direction:column;gap:16px;">
+            <div>
+              <label class="form-label">Plateforme</label>
+              <div class="platform-pick" id="scanPlatformPick" style="margin-top:6px;">
+                <button class="plat-pick-btn sel" data-platform="ig" onclick="pickScanPlatform(this)">📸 Instagram</button>
+              </div>
             </div>
+            <div>
+              <label class="form-label">Compte de référence</label>
+              <div style="position:relative;margin-top:6px;">
+                <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px;">@</span>
+                <input class="form-input" id="refHandle" placeholder="fitmodel_123 (sans le @)" style="padding-left:26px;">
+              </div>
+              <div style="font-size:11px;color:var(--muted);margin-top:6px;">On analyse les profils similaires à ce compte via Instagram</div>
+            </div>
+            <div>
+              <label class="form-label">Profils à analyser</label>
+              <div class="range-row" style="margin-top:6px;">
+                <input type="range" class="range-input" id="countInput" min="20" max="300" value="100" step="10" oninput="document.getElementById('countVal').textContent=this.value">
+                <span class="range-val" id="countVal">100</span>
+              </div>
+            </div>
+            <input type="hidden" id="scoreInput" value="0">
           </div>
-          <input type="hidden" id="scoreInput" value="0">
         </div>
 
         <!-- Toggle Options avancées -->
-        <div onclick="toggleAdvanced()" style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);font-size:13px;font-weight:600;cursor:pointer;color:var(--muted);transition:color .2s,border-color .2s;margin-top:4px" id="advToggleBtn">
+        <div onclick="toggleAdvanced()" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);font-size:13px;font-weight:600;cursor:pointer;color:var(--muted);transition:color .2s,border-color .2s;" id="advToggleBtn">
           <span>⚙️ Options avancées</span>
           <span id="advArrow" style="font-size:18px;transition:transform .25s">›</span>
         </div>
