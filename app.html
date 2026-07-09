@@ -818,7 +818,7 @@
   <div class="filters-bar">
     <div class="search-wrap">
       <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input type="text" class="search-input" placeholder="Rechercher un handle..." id="prospectHandleFilter" oninput="this.dataset.typed='1';renderProspects()" autocomplete="off"><script>(function(){var t=setInterval(function(){var e=document.getElementById('prospectHandleFilter');if(e&&e.value&&!e.dataset.typed){e.value='';e.dispatchEvent(new Event('input'));}},50);setTimeout(function(){clearInterval(t);},3000);})();</script>
+      <span id="prospectHandleFilterWrap"></span><script>(function(){var i=document.createElement('input');i.type='text';i.className='search-input';i.placeholder='Rechercher un handle...';i.id='prospectHandleFilter';i.autocomplete='off';i.setAttribute('autocomplete','off');i.oninput=function(){renderProspects();};document.getElementById('prospectHandleFilterWrap').appendChild(i);})();</script>
     </div>
 
     <select class="sort-select" onchange="sortBy=this.value;renderProspects()">
