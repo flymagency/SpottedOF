@@ -818,7 +818,7 @@
   <div class="filters-bar">
     <div class="search-wrap">
       <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input type="text" class="search-input" placeholder="Rechercher un handle..." id="prospectHandleFilter" oninput="renderProspects()" autocomplete="off" data-form-type="other" data-lpignore="true" data-1p-ignore="true">
+      <input type="text" class="search-input" placeholder="Rechercher un handle..." id="prospectHandleFilter" autocomplete="off" data-form-type="other" data-lpignore="true" oninput="this.dataset.typed='1';renderProspects()">
     </div>
 
     <select class="sort-select" onchange="sortBy=this.value;renderProspects()">
@@ -1360,17 +1360,14 @@ sb.auth.getSession().then(async ({ data }) => {
     showUpgradeBanner();
   }
 
-  // Empêcher l'autofill navigateur sur la recherche
-  (function() {
+  // Bloquer autofill email du gestionnaire de mots de passe Chrome
+  setInterval(() => {
     const si = document.getElementById('prospectHandleFilter');
-    if (!si) return;
-    let ticks = 0;
-    const t = setInterval(() => {
-      if (si.value && !si.dataset.userTyped) si.value = '';
-      if (++ticks > 20) clearInterval(t);
-    }, 100);
-    si.addEventListener('input', () => { si.dataset.userTyped = '1'; clearInterval(t); });
-  })();
+    if (si && si.value && si.value.includes('@') && !si.dataset.typed) {
+      si.value = '';
+      if (typeof renderProspects === 'function') renderProspects();
+    }
+  }, 300);
   loadProspects();
   loadNotifications();
   loadReplies();
