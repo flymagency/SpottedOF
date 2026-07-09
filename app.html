@@ -1360,6 +1360,7 @@ sb.auth.getSession().then(async ({ data }) => {
     showUpgradeBanner();
   }
 
+  const _si = document.getElementById('searchInput'); if (_si) _si.value = '';
   loadProspects();
   loadNotifications();
   loadReplies();
