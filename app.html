@@ -1363,11 +1363,11 @@ sb.auth.getSession().then(async ({ data }) => {
   // Bloquer autofill email du gestionnaire de mots de passe Chrome
   setInterval(() => {
     const si = document.getElementById('prospectHandleFilter');
-    if (si && si.value && si.value.includes('@') && !si.dataset.typed) {
+    if (si && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(si.value)) {
       si.value = '';
       if (typeof renderProspects === 'function') renderProspects();
     }
-  }, 300);
+  }, 200);
   loadProspects();
   loadNotifications();
   loadReplies();
