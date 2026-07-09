@@ -1796,6 +1796,7 @@ let _scanCurrentPhase = 1;
 let _scanCurrentType = ''; // 'ig_native' ou ''
 let _scanFilters = {};
 let _scanPollCount = 0;
+let _scanPollInFlight = false;
 const SCAN_MAX_POLLS = 120; // 10 minutes max (120 × 5s)
 
 async function launchScan() {
@@ -1888,7 +1889,10 @@ async function launchScan() {
 
     // Polling toutes les 5 secondes
     _scanPollCount = 0;
+    _scanPollInFlight = false;
     _scanPollInterval = setInterval(async () => {
+      if (_scanPollInFlight) return;
+      _scanPollInFlight = true;
       _scanPollCount++;
       // Timeout après 10 minutes (120 polls × 5s)
       if (_scanPollCount > SCAN_MAX_POLLS) {
@@ -1968,6 +1972,8 @@ async function launchScan() {
       } catch(e) {
         clearInterval(_scanPollInterval);
         _showScanError(e.message);
+      } finally {
+        _scanPollInFlight = false;
       }
     }, 5000);
 
