@@ -175,11 +175,11 @@
 
     /* TABLE */
     .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
-    .table-head { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1.4fr 1.3fr; padding: 12px 20px; border-bottom: 1px solid var(--border); background: var(--surface2); }
-    .th { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; display: flex; align-items: center; gap: 4px; cursor: pointer; user-select: none; }
+    .table-head { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1.4fr 1.3fr; gap: 0 8px; padding: 10px 20px; border-bottom: 1px solid var(--border); background: var(--surface2); }
+    .th { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; display: flex; align-items: center; gap: 4px; cursor: pointer; user-select: none; overflow: hidden; }
     .th:hover { color: var(--text); }
 
-    .prospect-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1.4fr 1.3fr; padding: 14px 20px; border-bottom: 1px solid var(--border); align-items: center; transition: background 0.18s, box-shadow 0.18s, transform 0.18s; cursor: pointer; }
+    .prospect-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1.4fr 1.3fr; gap: 0 8px; padding: 14px 20px; border-bottom: 1px solid var(--border); align-items: center; transition: background 0.18s, box-shadow 0.18s, transform 0.18s; cursor: pointer; }
     .prospect-row:last-child { border-bottom: none; }
     .prospect-row:hover { background: rgba(6,182,212,0.04); box-shadow: inset 3px 0 0 var(--accent); }
     .prospect-row.row-enter { animation: rowSlide 0.3s cubic-bezier(0.16,1,0.3,1) forwards; }
@@ -196,7 +196,7 @@
     .dot-tt { background: var(--green); }
     .dot-th { background: var(--accent); }
 
-    .cell { font-size: 13px; }
+    .cell { font-size: 13px; display: flex; align-items: center; overflow: hidden; }
     .cell-mono { font-family: 'Space Mono', monospace; font-size: 11px; }
 
     .score-wrap { display: flex; align-items: center; gap: 8px; }
