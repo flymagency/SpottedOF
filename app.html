@@ -818,7 +818,7 @@
   <div class="filters-bar">
     <div class="search-wrap">
       <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input type="text" class="search-input" placeholder="Rechercher un handle..." id="searchInput" oninput="this.dataset.typed='1';renderProspects()" autocomplete="off"><script>(function(){var t=setInterval(function(){var e=document.getElementById('searchInput');if(e&&e.value&&!e.dataset.typed){e.value='';e.dispatchEvent(new Event('input'));}},50);setTimeout(function(){clearInterval(t);},3000);})();</script>
+      <input type="text" class="search-input" placeholder="Rechercher un handle..." id="prospectHandleFilter" oninput="this.dataset.typed='1';renderProspects()" autocomplete="off"><script>(function(){var t=setInterval(function(){var e=document.getElementById('prospectHandleFilter');if(e&&e.value&&!e.dataset.typed){e.value='';e.dispatchEvent(new Event('input'));}},50);setTimeout(function(){clearInterval(t);},3000);})();</script>
     </div>
 
     <select class="sort-select" onchange="sortBy=this.value;renderProspects()">
@@ -1362,7 +1362,7 @@ sb.auth.getSession().then(async ({ data }) => {
 
   // Empêcher l'autofill navigateur sur la recherche
   (function() {
-    const si = document.getElementById('searchInput');
+    const si = document.getElementById('prospectHandleFilter');
     if (!si) return;
     let ticks = 0;
     const t = setInterval(() => {
@@ -1485,7 +1485,7 @@ async function loadStats() {
 const PIPELINE_STATUSES = ['contactée', 'en discussion', 'signée', 'refus'];
 
 function renderProspects() {
-  const q = document.getElementById('searchInput').value.toLowerCase();
+  const q = document.getElementById('prospectHandleFilter').value.toLowerCase();
   let list = DATA.filter(p => {
     if (q && !p.handle.toLowerCase().includes(q) && !p.name.toLowerCase().includes(q) && !(p.niche||'').toLowerCase().includes(q) && !(p.bio||'').toLowerCase().includes(q)) return false;
     if (activeTab==='of' && !p.hasOf) return false;
@@ -5609,7 +5609,7 @@ function exportPDF() {
   doc.text(`Généré le ${now}`, 280, 13, { align: 'right' });
 
   // Get current filtered list
-  const q = document.getElementById('searchInput').value.toLowerCase();
+  const q = document.getElementById('prospectHandleFilter').value.toLowerCase();
   let list = DATA.filter(p => {
     if (q && !p.handle.toLowerCase().includes(q)) return false;
     if (activeTab === 'of' && !p.hasOf) return false;
