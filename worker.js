@@ -515,6 +515,7 @@ export default {
         platform: 'ig',
         userId: String(u.pk || u.id || ''),
         profilePic: u.profile_pic_url_hd || u.profile_pic_url || u.hd_profile_pic_url_info?.url || '',
+        category: u.category || u.category_name || '',
       };
     }
 
@@ -873,8 +874,15 @@ export default {
         const name = (p.fullName || '').toLowerCase();
         if (filters.public_only && p.isPrivate) return false;
 
-        // Filtre célébrités : vérifié + > 1M followers → star mondiale, pas une model à prospecter
-        if (filters.no_celebrities !== false && p.isVerified && (p.followersCount || 0) > 1_000_000) return false;
+        // Filtre célébrités : exclure par catégorie (sportif, acteur, chanteur, politicien...)
+        const EXCL_CATEGORIES = ['athlete','footballer','basketball player','soccer player','tennis player','rugby','nfl','nba','fifa','sports','musician','musician/band','singer','rapper','band','actor','actress','director','filmmaker','movie','cinema','politician','senator','government','comedian','tv show','television','news','journalist','chef','cook','restaurant'];
+        const cat = (p.category || '').toLowerCase();
+        const bioLower = (p.biography || '').toLowerCase();
+        const EXCL_BIO_KW = ['footballer','soccer player','basketball player','nba player','nfl','official account of','official page','world cup','champion du monde','ballon d\'or','oscar','grammy','actor','acteur','actrice','chanteur','chanteuse','singer','rappeur','rappeure','politician','ministre','président','senator'];
+        if (filters.no_celebrities !== false) {
+          if (cat && EXCL_CATEGORIES.some(c => cat.includes(c))) return false;
+          if (EXCL_BIO_KW.some(k => bioLower.includes(k))) return false;
+        }
 
         // Filtre genre : exclure les hommes détectés
         if (filters.women_only !== false) {
