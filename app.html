@@ -1576,7 +1576,7 @@ function renderProspects() {
             <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             <span>Note</span>
           </div>
-          <div class="act-btn act-overflow" onclick="toggleActMenu(this)" title="Plus d'actions">
+          <div class="act-btn act-overflow" onclick="toggleActMenu(this,event)" title="Plus d'actions">
             <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
             <span>Plus</span>
             <div class="act-overflow-menu" onclick="event.stopPropagation()">
@@ -1678,7 +1678,8 @@ function toggleSave(id, el) {
   if (activeTab==='saved') renderProspects();
 }
 
-function toggleActMenu(btn) {
+function toggleActMenu(btn, event) {
+  event.stopPropagation();
   const menu = btn.querySelector('.act-overflow-menu');
   const isOpen = menu.classList.contains('open');
   document.querySelectorAll('.act-overflow-menu.open').forEach(m => m.classList.remove('open'));
@@ -3267,7 +3268,7 @@ function renderPrivate() {
                 <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 <span>Note</span>
               </div>
-              <div class="act-btn act-overflow" onclick="toggleActMenu(this)" title="Plus d'actions">
+              <div class="act-btn act-overflow" onclick="toggleActMenu(this,event)" title="Plus d'actions">
                 <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
                 <span>Plus</span>
                 <div class="act-overflow-menu" onclick="event.stopPropagation()">
