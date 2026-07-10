@@ -1422,19 +1422,18 @@ function setView(view, btn) {
 function fmt(n) { return n>=1e6?(n/1e6).toFixed(1)+'M':n>=1000?(n/1000).toFixed(0)+'K':String(n||0); }
 function sc(s) { return s>=80?'hi':s>=65?'md':'lo'; }
 function avatarLetter(handle) { return (handle||'?').replace('@','')[0].toUpperCase(); }
-function avatarHTML(handle, platform, size=40) {
+function avatarHTML(handle, platform, size=40, profilePic='') {
   const username = (handle||'').replace('@','');
-  const fallback = avatarLetter(handle);
-  const letter = fallback;
-  // Couleurs par lettre pour les avatars de fallback
+  const letter = avatarLetter(handle);
   const colors = ['7c5cfc','fc5c7c','2dfc8e','fcdc2d','fc5cdc','5cb8fc'];
   const color = colors[letter.charCodeAt(0) % colors.length];
   const fallbackUrl = `https://ui-avatars.com/api/?name=${letter}&background=${color}&color=fff&size=${size}&bold=true&font-size=0.5`;
-  // On essaie unavatar pour threads (ça marche bien), fallback coloré pour ig/tt
+  if (profilePic) {
+    return `<img src="${profilePic}" alt="${letter}" width="${size}" height="${size}" onerror="this.src='${fallbackUrl}'" style="border-radius:50%;object-fit:cover">`;
+  }
   if (platform === 'th') {
     return `<img src="https://unavatar.io/threads/${username}" alt="${letter}" width="${size}" height="${size}" onerror="this.src='${fallbackUrl}'" style="border-radius:50%;object-fit:cover">`;
   }
-  // Pour IG et TT on utilise directement l'avatar coloré avec la lettre
   return `<img src="${fallbackUrl}" alt="${letter}" width="${size}" height="${size}" style="border-radius:50%;object-fit:cover">`;
 }
 
@@ -1523,7 +1522,7 @@ function renderProspects() {
     el.innerHTML = list.map(p => {
       return `<div class="prospect-card" onclick="openProspect('${p.id}')">
         <div class="card-platform dot-${p.platform}" style="background:var(--accent2)"></div>
-        <div class="card-avatar">${avatarHTML(p.handle, p.platform, 72)}</div>
+        <div class="card-avatar">${avatarHTML(p.handle, p.platform, 72, p.profile_pic||'')}</div>
         <div class="card-handle">${esc(p.handle)}</div>
         <div class="card-name">${esc(p.name)}</div>
         <div class="card-stats">
@@ -1540,7 +1539,7 @@ function renderProspects() {
     const sv = savedSet.has(p.id);
     return `<div class="prospect-row row-enter" style="animation-delay:${(idx*0.025).toFixed(3)}s" onclick="openProspect('${p.id}')">
       <div class="profile-cell">
-        <div class="avatar">${avatarHTML(p.handle, p.platform)}</div>
+        <div class="avatar">${avatarHTML(p.handle, p.platform, 40, p.profile_pic||'')}</div>
         <div>
           <div class="profile-handle"><span class="platform-dot dot-${p.platform}"></span>${esc(p.handle)}</div>
           <div class="profile-name">${esc(p.name)}</div>
@@ -1672,7 +1671,7 @@ function openProspect(id) {
   currentProspect = p;
   document.getElementById('modalBody').innerHTML = `
     <div class="modal-profile">
-      <div class="modal-avatar">${avatarHTML(p.handle, p.platform, 60)}</div>
+      <div class="modal-avatar">${avatarHTML(p.handle, p.platform, 60, p.profile_pic||'')}</div>
       <div>
         <div class="modal-handle">${esc(p.handle)}</div>
         <div class="modal-meta">${esc(p.name)} · ${esc(p.niche)} · <span class="platform-dot dot-${p.platform}" style="margin-left:4px"></span>${p.platform.toUpperCase()}</div>
@@ -3148,7 +3147,7 @@ function renderSaved() {
         return `
         <div class="saved-card" onclick="openProspect('${p.id}')">
           <div class="saved-card-top">
-            <div class="saved-avatar">${avatarHTML(p.handle, p.platform, 48)}</div>
+            <div class="saved-avatar">${avatarHTML(p.handle, p.platform, 48, p.profile_pic||'')}</div>
             <div class="saved-info">
               <div class="saved-handle"><span class="platform-dot dot-${p.platform}"></span>${esc(p.handle)}</div>
               <div class="saved-name">${esc(p.name)}</div>
@@ -3217,7 +3216,7 @@ function renderPrivate() {
       ${list.sort((a,b) => relevanceScore(b) - relevanceScore(a)).map((p,idx) => `
         <div class="prospect-row row-enter" style="animation-delay:${(idx*0.025).toFixed(3)}s;grid-template-columns:2fr 1fr 1fr 1fr 1fr 1.3fr" onclick="openProspect('${p.id}')">
           <div class="profile-cell">
-            <div class="avatar">${avatarHTML(p.handle, p.platform)}</div>
+            <div class="avatar">${avatarHTML(p.handle, p.platform, 40, p.profile_pic||'')}</div>
             <div>
               <div class="profile-handle"><span class="platform-dot dot-${p.platform}"></span>${esc(p.handle)}</div>
               <div class="profile-name">${esc(p.name)}</div>
@@ -3322,7 +3321,7 @@ function renderContact() {
             ${colList.sort((a,b) => b.score - a.score).map(p => `
               <div class="pipeline-card" onclick="openProspect('${p.id}')">
                 <div class="pipeline-card-top">
-                  <div class="avatar" style="width:32px;height:32px;font-size:11px;flex-shrink:0">${avatarHTML(p.handle, p.platform, 32)}</div>
+                  <div class="avatar" style="width:32px;height:32px;font-size:11px;flex-shrink:0">${avatarHTML(p.handle, p.platform, 32, p.profile_pic||'')}</div>
                   <div style="flex:1;min-width:0">
                     <div class="profile-handle" style="font-size:12px"><span class="platform-dot dot-${p.platform}"></span>${esc(p.handle)}</div>
                     <div class="profile-name" style="font-size:11px">${esc(p.name)}</div>
@@ -3725,7 +3724,7 @@ function renderBlacklist() {
     <div class="table-wrap">
       ${list.map(p => `
         <div class="bl-row">
-          <div class="avatar" style="flex-shrink:0">${avatarHTML(p.handle, p.platform, 40)}</div>
+          <div class="avatar" style="flex-shrink:0">${avatarHTML(p.handle, p.platform, 40, p.profile_pic||'')}</div>
           <div style="flex:1;min-width:0">
             <div class="profile-handle" style="font-size:13px;font-weight:700"><span class="platform-dot dot-${p.platform}"></span>${esc(p.handle)}</div>
             <div class="profile-name">${esc(p.name)}</div>
@@ -4430,7 +4429,7 @@ function openReplyModal(prospectId) {
   modal.innerHTML = `
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:22px;padding:28px;max-width:440px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,0.12)">
       <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">
-        <div class="avatar" style="width:44px;height:44px;flex-shrink:0">${avatarHTML(p.handle, p.platform, 44)}</div>
+        <div class="avatar" style="width:44px;height:44px;flex-shrink:0">${avatarHTML(p.handle, p.platform, 44, p.profile_pic||'')}</div>
         <div>
           <div style="font-size:15px;font-weight:700">💬 A répondu</div>
           <div style="font-size:12px;color:var(--muted);margin-top:2px">${p.handle} · ${CHANNEL_LABELS[p.platform] || p.platform}</div>

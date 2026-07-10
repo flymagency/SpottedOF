@@ -247,12 +247,11 @@ async function saveProspects(env, profiles, scanSource) {
         bio: bio,
         has_of: hasOf,
         of_link: hasOf,
-        private_platform: privPlat ? privPlat.name : '',
-        private_platform_url: privPlat ? (privPlat.url || '') : '',
         score: score,
         status: 'nouveau',
         scan_source: scanSource || '',
         user_id: p.userId || '',
+        profile_pic: p.profilePic || '',
       }
     };
   });
@@ -515,6 +514,7 @@ export default {
         externalUrl: u.external_url || u.bio_links?.[0]?.url || '',
         platform: 'ig',
         userId: String(u.pk || u.id || ''),
+        profilePic: u.profile_pic_url_hd || u.profile_pic_url || '',
       };
     }
 
@@ -938,7 +938,7 @@ export default {
           if (!followingRes.ok) return json({ error: 'Impossible de récupérer les abonnements' }, 502);
           const followingData = await followingRes.json();
           if (followingData.error) return json({ error: followingData.error }, 502);
-          const followingUsers = (followingData.users || []).slice(0, resultsLimit);
+          const followingUsers = (followingData.response?.users || followingData.users || []).slice(0, resultsLimit);
           if (followingUsers.length === 0) return json({ error: `Aucun abonnement trouvé pour @${handle}. Compte privé ?` }, 400);
 
           const userIds = followingUsers.map(u => String(u.pk || u.id)).filter(Boolean);
@@ -1017,7 +1017,7 @@ export default {
             );
             if (res.ok) {
               const data = await res.json();
-              const p = normalizeHikerProfile(data);
+              const p = normalizeHikerProfile(data.user || data);
               if (p) newProfiles.push(p);
             }
           } catch {}
@@ -1040,7 +1040,15 @@ export default {
         }
 
         await env.RATE_LIMIT.delete(`hikscan:${runId}`).catch(() => {});
-        const { profiles, deduped, scored, saved, saveError } = await processAndSaveProfiles(env, newProfiles, stateHandle, 'ig', stateMinScore, stateFilters);
+        let pResult;
+        try {
+          pResult = await processAndSaveProfiles(env, newProfiles, stateHandle, 'ig', stateMinScore, stateFilters);
+        } catch(e) {
+          console.error('[hiker-poll-final] processAndSaveProfiles threw:', e.message);
+          return json({ done: true, error: `Erreur traitement: ${e.message}`, status: 'FAILED' });
+        }
+        const { profiles, deduped, scored, saved, saveError } = pResult;
+        console.log(`[hiker-poll-final] profiles=${profiles.length} scored=${scored.length} saved=${saved.length} saveError=${saveError}`);
         return json({
           status: 'SUCCEEDED',
           done: true,
