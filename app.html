@@ -231,13 +231,13 @@
     .act-btn.act-dm:hover { background: rgba(240,67,108,0.08); color: #F0436C; }
     .act-btn.act-dm:hover span { color: #F0436C; }
     .act-overflow { position: relative; }
-    .act-overflow-menu { display: none; position: absolute; right: 0; top: calc(100% + 4px); background: var(--surface); border: 1px solid var(--border); border-radius: 10px; min-width: 160px; z-index: 200; box-shadow: 0 8px 24px rgba(0,0,0,0.3); padding: 4px; }
+    .act-overflow-menu { display: none; position: fixed; background: #1a1a26; border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; min-width: 180px; z-index: 9999; box-shadow: 0 16px 48px rgba(0,0,0,0.7); padding: 6px; }
     .act-overflow-menu.open { display: block; }
-    .act-menu-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 7px; cursor: pointer; font-size: 12px; color: var(--text); transition: background 0.12s; }
-    .act-menu-item:hover { background: var(--surface2); }
+    .act-menu-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; font-size: 13px; color: #d4d4e8; transition: background 0.12s; }
+    .act-menu-item:hover { background: rgba(255,255,255,0.07); }
     .act-menu-item.danger { color: #F0436C; }
-    .act-menu-item.danger:hover { background: rgba(240,67,108,0.08); }
-    .act-menu-sep { height: 1px; background: var(--border); margin: 4px 0; }
+    .act-menu-item.danger:hover { background: rgba(240,67,108,0.1); }
+    .act-menu-sep { height: 1px; background: rgba(255,255,255,0.08); margin: 4px 0; }
 
     .empty-state { text-align: center; padding: 80px 24px; }
     .empty-icon { font-size: 52px; margin-bottom: 16px; }
@@ -1685,7 +1685,12 @@ function toggleActMenu(btn, event) {
   const menu = btn.querySelector('.act-overflow-menu');
   const isOpen = menu.classList.contains('open');
   document.querySelectorAll('.act-overflow-menu.open').forEach(m => m.classList.remove('open'));
-  if (!isOpen) menu.classList.add('open');
+  if (!isOpen) {
+    const rect = btn.getBoundingClientRect();
+    menu.style.top = (rect.bottom + 6) + 'px';
+    menu.style.right = (window.innerWidth - rect.right) + 'px';
+    menu.classList.add('open');
+  }
 }
 document.addEventListener('click', () => {
   document.querySelectorAll('.act-overflow-menu.open').forEach(m => m.classList.remove('open'));
