@@ -844,12 +844,28 @@ export default {
       const detectNiche2 = bio => { if (!bio) return ''; const b = bio.toLowerCase(); for (const [n, kws] of Object.entries(NICHE_KW)) { if (kws.some(k => b.includes(k))) return n; } return ''; };
       const OF_DET = ['onlyfans','only fans','fans.ly','fansly','mym.fans','mym content','mymfans','mym fans','fanvu','fanvue','reveal.co','revealapp','manyvids','loyalfans','patreon.com','admire.me','unlockd','findom','frenchfans','myfans','justforfans','🔞','lien privé','contenu privé','private content','content creator 18'];
 
-      // Dedupe
+      // Dedupe interne (même scan)
       const seen = new Set();
       const profiles = rawProfiles.filter(p => { if (!p.username || seen.has(p.username)) return false; seen.add(p.username); return true; });
       const deduped = profiles.filter(p => p.username.toLowerCase() !== handle.toLowerCase());
 
-      const filtered = deduped.filter(p => {
+      // Dedupe contre Airtable — récupère les handles déjà en base
+      let existingHandles = new Set();
+      try {
+        let offset = '';
+        do {
+          const qs = new URLSearchParams({ 'fields[]': 'handle', pageSize: '100' });
+          if (offset) qs.set('offset', offset);
+          const res = await airtableRequest(env, 'GET', `Prospects?${qs}`);
+          (res.records || []).forEach(r => { if (r.fields.handle) existingHandles.add(r.fields.handle.toLowerCase()); });
+          offset = res.offset || '';
+        } while (offset);
+      } catch(e) { /* si ça rate on continue sans filtrage doublon */ }
+
+      const alreadyInBase = deduped.filter(p => existingHandles.has(`@${p.username}`.toLowerCase()));
+      const newOnly = deduped.filter(p => !existingHandles.has(`@${p.username}`.toLowerCase()));
+
+      const filtered = newOnly.filter(p => {
         const bio = (p.biography || '').toLowerCase();
         if (filters.public_only && p.isPrivate) return false;
         const hasOf = OF_DET.some(k => bio.includes(k));
@@ -888,7 +904,7 @@ export default {
         try { saved = await saveProspects(env, scored, scanSource); }
         catch(e) { saveError = e.message; }
       }
-      return { profiles, deduped, scored, saved, saveError };
+      return { profiles, deduped, scored, saved, saveError, duplicates: alreadyInBase };
     }
 
     // POST /scan-similar
@@ -1047,8 +1063,9 @@ export default {
           console.error('[hiker-poll-final] processAndSaveProfiles threw:', e.message);
           return json({ done: true, error: `Erreur traitement: ${e.message}`, status: 'FAILED' });
         }
-        const { profiles, deduped, scored, saved, saveError } = pResult;
-        console.log(`[hiker-poll-final] profiles=${profiles.length} scored=${scored.length} saved=${saved.length} saveError=${saveError}`);
+        const { profiles, deduped, scored, saved, saveError, duplicates } = pResult;
+        console.log(`[hiker-poll-final] profiles=${profiles.length} scored=${scored.length} saved=${saved.length} duplicates=${duplicates.length} saveError=${saveError}`);
+        const dupCount = duplicates.length;
         return json({
           status: 'SUCCEEDED',
           done: true,
@@ -1057,8 +1074,9 @@ export default {
           unique_profiles: profiles.length,
           scored: scored.length,
           saved: saved.length,
+          duplicates: dupCount,
           filtered_out: deduped.length - scored.length,
-          message: saveError ? `Erreur sauvegarde: ${saveError}` : `${saved.length} prospects importés`,
+          message: saveError ? `Erreur sauvegarde: ${saveError}` : `${saved.length} prospects importés${dupCount > 0 ? ` · ${dupCount} déjà en base (ignorés)` : ''}`,
         });
       }
 
@@ -1099,7 +1117,8 @@ export default {
 
         // Tous les profils récupérés — score, filtre, sauvegarde
         await env.RATE_LIMIT.delete(`igscan:${runId}`).catch(() => {});
-        const { profiles, deduped, scored, saved, saveError } = await processAndSaveProfiles(env, newProfiles, stateHandle, statePlatform || 'ig', stateMinScore, stateFilters);
+        const { profiles, deduped, scored, saved, saveError, duplicates } = await processAndSaveProfiles(env, newProfiles, stateHandle, statePlatform || 'ig', stateMinScore, stateFilters);
+        const dupCount = duplicates.length;
         return json({
           status: 'SUCCEEDED',
           done: true,
@@ -1108,8 +1127,9 @@ export default {
           unique_profiles: profiles.length,
           scored: scored.length,
           saved: saved.length,
+          duplicates: dupCount,
           filtered_out: deduped.length - scored.length,
-          message: saveError ? `Erreur sauvegarde: ${saveError}` : `${saved.length} prospects importés`,
+          message: saveError ? `Erreur sauvegarde: ${saveError}` : `${saved.length} prospects importés${dupCount > 0 ? ` · ${dupCount} déjà en base (ignorés)` : ''}`,
         });
       }
 

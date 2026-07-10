@@ -1990,8 +1990,9 @@ async function launchScan() {
           <div style="font-size:16px;font-weight:800;margin-bottom:8px;">${pollData.saved} prospects importés !</div>
           <div style="font-size:12px;color:var(--muted);line-height:1.6;">
             ${pollData.unique_profiles || pollData.total_found} profils uniques analysés<br>
-            ${pollData.scored} avec score ≥ ${minScore}%<br>
-            ${pollData.filtered_out} filtrés (score trop bas)
+            ${pollData.scored} passent les filtres<br>
+            ${pollData.filtered_out} filtrés (critères trop stricts)
+            ${(pollData.duplicates > 0) ? `<br><span style="color:#f59e0b;font-weight:600">${pollData.duplicates} déjà dans ta base — ignorés</span>` : ''}
           </div>
           <button class="btn btn-primary" style="margin-top:18px;" onclick="closeModal('scanModal');loadProspects();">Voir les prospects</button>
         `;
