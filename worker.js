@@ -946,18 +946,26 @@ export default {
           const targetPk = String(profileUser.pk || profileUser.id || '');
           if (!targetPk) return json({ error: `Compte @${handle} introuvable` }, 400);
 
-          // 2. Récupérer la liste des abonnements du compte cible
-          const followingRes = await fetch(
-            `https://api.hikerapi.com/v2/user/following?user_id=${targetPk}&amount=${Math.min(resultsLimit, 200)}`,
-            { headers: { 'x-access-key': HIKER_KEY, 'accept': 'application/json' } }
-          );
-          if (!followingRes.ok) return json({ error: 'Impossible de récupérer les abonnements' }, 502);
-          const followingData = await followingRes.json();
-          if (followingData.error) return json({ error: followingData.error }, 502);
-          const followingUsers = (followingData.response?.users || followingData.users || []).slice(0, resultsLimit);
-          if (followingUsers.length === 0) return json({ error: `Aucun abonnement trouvé pour @${handle}. Compte privé ?` }, 400);
+          // 2. Récupérer la liste des abonnements du compte cible (paginé)
+          const followingUsers = [];
+          let nextMaxId = '';
+          while (followingUsers.length < resultsLimit) {
+            const need = Math.min(resultsLimit - followingUsers.length, 200);
+            const fUrl = `https://api.hikerapi.com/v2/user/following?user_id=${targetPk}&amount=${need}${nextMaxId ? `&next_max_id=${nextMaxId}` : ''}`;
+            const followingRes = await fetch(fUrl, { headers: { 'x-access-key': HIKER_KEY, 'accept': 'application/json' } });
+            if (!followingRes.ok) break;
+            const followingData = await followingRes.json();
+            if (followingData.error) return json({ error: followingData.error }, 502);
+            const page = followingData.response?.users || followingData.users || [];
+            followingUsers.push(...page);
+            const cursor = followingData.response?.next_max_id || followingData.next_max_id || '';
+            if (!cursor || page.length === 0) break;
+            nextMaxId = cursor;
+          }
+          const limitedUsers = followingUsers.slice(0, resultsLimit);
+          if (limitedUsers.length === 0) return json({ error: `Aucun abonnement trouvé pour @${handle}. Compte privé ?` }, 400);
 
-          const userIds = followingUsers.map(u => String(u.pk || u.id)).filter(Boolean);
+          const userIds = limitedUsers.map(u => String(u.pk || u.id)).filter(Boolean);
 
           // Stocker l'état du scan dans KV
           const scanId = crypto.randomUUID().replace(/-/g, '');
