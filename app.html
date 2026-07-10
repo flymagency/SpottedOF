@@ -1860,6 +1860,8 @@ async function launchScan() {
       engagement_min:      getFloat('filterEngagement'),
       has_external_url:    getChecked('filterHasExternalUrl'),
       no_business_account: getChecked('filterNoBusinessAccount'),
+      women_only:          true,
+      no_celebrities:      true,
     });
   } else if (platform === 'tt') {
     Object.assign(filters, {

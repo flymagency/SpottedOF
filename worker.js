@@ -514,7 +514,7 @@ export default {
         externalUrl: u.external_url || u.bio_links?.[0]?.url || '',
         platform: 'ig',
         userId: String(u.pk || u.id || ''),
-        profilePic: u.profile_pic_url_hd || u.profile_pic_url || '',
+        profilePic: u.profile_pic_url_hd || u.profile_pic_url || u.hd_profile_pic_url_info?.url || '',
       };
     }
 
@@ -865,9 +865,23 @@ export default {
       const alreadyInBase = deduped.filter(p => existingHandles.has(`@${p.username}`.toLowerCase()));
       const newOnly = deduped.filter(p => !existingHandles.has(`@${p.username}`.toLowerCase()));
 
+      const MALE_KW = ['he/him','he / him','👨','🧔','💪🏋','papa','père','son of','brother','fils de','homme','guy','man','boy','king 👑','king','monsieur','mr.','gars','mec','bro','dad','father','uncle','son','grandson','boyfriend','husband','mari '];
+      const FEMALE_KW = ['she/her','she / her','she/they','👩','👧','💅','🌸','🎀','💗','girl','woman','femme','fille','mama','maman','mère','queen','princesse','lady','miss','mrs','madame','tante','copine','fiancée','wife','daughter','sister','meuf','nana'];
+
       const filtered = newOnly.filter(p => {
         const bio = (p.biography || '').toLowerCase();
+        const name = (p.fullName || '').toLowerCase();
         if (filters.public_only && p.isPrivate) return false;
+
+        // Filtre célébrités : vérifié + > 1M followers → star mondiale, pas une model à prospecter
+        if (filters.no_celebrities !== false && p.isVerified && (p.followersCount || 0) > 1_000_000) return false;
+
+        // Filtre genre : exclure les hommes détectés
+        if (filters.women_only !== false) {
+          const hasMale = MALE_KW.some(k => bio.includes(k) || name.includes(k));
+          if (hasMale) return false;
+        }
+
         const hasOf = OF_DET.some(k => bio.includes(k));
         if (filters.no_of && hasOf) return false;
         if (filters.has_of && !hasOf) return false;
