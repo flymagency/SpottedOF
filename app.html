@@ -1625,6 +1625,26 @@ function togglePlatform(el, plat) {
   loadProspects();
 }
 
+async function refreshPicModal(id, handle, btn) {
+  btn.textContent = '⏳';
+  btn.disabled = true;
+  try {
+    const res = await wFetch(`${WORKER}/refresh-pic`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, username: handle }) });
+    const data = await res.json();
+    if (!data.profile_pic) throw new Error('no pic');
+    const p = DATA.find(x => x.id === id);
+    if (p) {
+      p.profile_pic = data.profile_pic;
+      const img = btn.previousElementSibling?.querySelector('img') || btn.closest('.modal-avatar')?.querySelector('img');
+      if (img) img.src = data.profile_pic;
+      btn.remove();
+    }
+  } catch(e) {
+    btn.textContent = '🔄';
+    btn.disabled = false;
+  }
+}
+
 async function refreshPic(id, handle, btn) {
   btn.textContent = '⏳';
   btn.disabled = true;
@@ -1696,11 +1716,17 @@ function openProspect(id) {
   currentProspect = p;
   document.getElementById('modalBody').innerHTML = `
     <div class="modal-profile">
-      <div class="modal-avatar">${avatarHTML(p.handle, p.platform, 60, p.profile_pic||'')}</div>
+      <div style="position:relative">
+        <div class="modal-avatar">${avatarHTML(p.handle, p.platform, 60, p.profile_pic||'')}</div>
+        ${!p.profile_pic ? `<button onclick="refreshPicModal('${p.id}','${p.handle}',this)" title="Charger la photo" style="position:absolute;inset:0;width:100%;height:100%;border-radius:50%;background:rgba(0,0,0,0.55);border:none;cursor:pointer;font-size:18px;color:#fff">🔄</button>` : ''}
+      </div>
       <div>
         <div class="modal-handle">${esc(p.handle)}</div>
         <div class="modal-meta">${esc(p.name)} · ${esc(p.niche)} · <span class="platform-dot dot-${p.platform}" style="margin-left:4px"></span>${p.platform.toUpperCase()}</div>
-        <div style="margin-top:8px">${p.hasOf ? privatePlatformBadge(p) : '<span class="badge badge-convert">À contacter</span>'}</div>
+        <div style="margin-top:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          ${p.hasOf ? privatePlatformBadge(p) : '<span class="badge badge-convert">À contacter</span>'}
+          ${p.platform === 'ig' ? `<a href="https://instagram.com/${(p.handle||'').replace('@','')}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--accent);text-decoration:none;border:1px solid var(--accent);border-radius:6px;padding:3px 9px;transition:background 0.15s" onmouseover="this.style.background='rgba(6,182,212,0.1)'" onmouseout="this.style.background='transparent'">↗ Voir le profil Instagram</a>` : ''}
+        </div>
       </div>
     </div>
     <div class="modal-bio">${p.bio ? esc(p.bio) : '<em style="color:var(--muted)">Pas de bio disponible</em>'}</div>
