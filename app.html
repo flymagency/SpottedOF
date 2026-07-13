@@ -1545,7 +1545,7 @@ function renderProspects() {
           ${!p.profile_pic ? `<button onclick="event.stopPropagation();refreshPic('${p.id}','${p.handle}',this)" title="Charger la photo" class="refresh-pic-btn" style="position:absolute;inset:0;width:100%;height:100%;border-radius:50%;background:rgba(0,0,0,0.55);border:none;cursor:pointer;display:none;align-items:center;justify-content:center;font-size:14px;color:#fff">🔄</button>` : ''}
         </div>
         <div>
-          <div class="profile-handle"><span class="platform-dot dot-${p.platform}"></span>${esc(p.handle)}</div>
+          <div class="profile-handle"><span class="platform-dot dot-${p.platform}"></span><a href="https://instagram.com/${(p.handle||'').replace('@','')}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:inherit;text-decoration:none" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${esc(p.handle)}</a></div>
           <div class="profile-name">${esc(p.name)}</div>
         </div>
       </div>
