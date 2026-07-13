@@ -501,7 +501,7 @@ export default {
     // ─── HIKERAPI HELPER ─────────────────────────────────────────────────────
     function normalizeHikerProfile(u) {
       if (!u || !u.username) return null;
-      return {
+return {
         username: u.username,
         fullName: u.full_name || '',
         biography: u.biography || '',
@@ -1636,6 +1636,27 @@ export default {
         return json({ error: geelarkData.msg || `Erreur Geelark (${geelarkRes.status})`, detail: geelarkData }, 502);
       }
       return json({ success: true, taskId: geelarkData.data?.taskId });
+    }
+
+    // POST /refresh-pic — rafraîchit la photo de profil d'un prospect
+    if (request.method === 'POST' && path === '/refresh-pic') {
+      let body;
+      try { body = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
+      const { id, username } = body;
+      if (!id || !username) return json({ error: 'id et username requis' }, 400);
+      const HIKER_KEY = env.HIKER_API_KEY;
+      if (!HIKER_KEY) return json({ error: 'HIKER_API_KEY non configuré' }, 500);
+      const hikerRes = await fetch(
+        `https://api.hikerapi.com/v2/user/by/username?username=${encodeURIComponent(username.replace('@', ''))}`,
+        { headers: { 'x-access-key': HIKER_KEY, 'accept': 'application/json' } }
+      );
+      if (!hikerRes.ok) return json({ error: 'HikerAPI error' }, 502);
+      const hikerData = await hikerRes.json();
+      const u = hikerData.user || hikerData;
+      const pic = u.profile_pic_url_hd || u.profile_pic_url || u.hd_profile_pic_url_info?.url || '';
+      if (!pic) return json({ error: 'Aucune photo trouvée' }, 404);
+      await airtableRequest(env, 'PATCH', `Prospects/${id}`, { fields: { profile_pic: pic } });
+      return json({ success: true, profile_pic: pic });
     }
 
     return json({ error: 'Route introuvable', routes: ['POST /score-profiles', 'GET /prospects', 'GET /stats', 'POST /update-status', 'POST /find-email', 'POST /scan-similar', 'GET /scan-poll', 'POST /delete-user', 'POST /send-dm'] }, 404);

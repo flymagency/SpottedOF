@@ -1540,7 +1540,10 @@ function renderProspects() {
     const sv = savedSet.has(p.id);
     return `<div class="prospect-row row-enter" style="animation-delay:${(idx*0.025).toFixed(3)}s" onclick="openProspect('${p.id}')">
       <div class="profile-cell">
-        <div class="avatar">${avatarHTML(p.handle, p.platform, 40, p.profile_pic||'')}</div>
+        <div class="avatar" style="position:relative" onmouseenter="this.querySelector('.refresh-pic-btn')&&(this.querySelector('.refresh-pic-btn').style.display='flex')" onmouseleave="this.querySelector('.refresh-pic-btn')&&(this.querySelector('.refresh-pic-btn').style.display='none')">
+          ${avatarHTML(p.handle, p.platform, 40, p.profile_pic||'')}
+          ${!p.profile_pic ? `<button onclick="event.stopPropagation();refreshPic('${p.id}','${p.handle}',this)" title="Charger la photo" class="refresh-pic-btn" style="position:absolute;inset:0;width:100%;height:100%;border-radius:50%;background:rgba(0,0,0,0.55);border:none;cursor:pointer;display:none;align-items:center;justify-content:center;font-size:14px;color:#fff">🔄</button>` : ''}
+        </div>
         <div>
           <div class="profile-handle"><span class="platform-dot dot-${p.platform}"></span>${esc(p.handle)}</div>
           <div class="profile-name">${esc(p.name)}</div>
@@ -1620,6 +1623,27 @@ function togglePlatform(el, plat) {
   if (activePlatforms.has(plat)) { activePlatforms.delete(plat); el.className='plat-btn'; }
   else { activePlatforms.add(plat); el.className=`plat-btn active-${plat}`; }
   loadProspects();
+}
+
+async function refreshPic(id, handle, btn) {
+  btn.textContent = '⏳';
+  btn.disabled = true;
+  try {
+    const res = await wFetch(`${WORKER}/refresh-pic`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, username: handle }) });
+    const data = await res.json();
+    if (!data.profile_pic) throw new Error('no pic');
+    const p = DATA.find(x => x.id === id);
+    if (p) {
+      p.profile_pic = data.profile_pic;
+      const avatarDiv = btn.closest('.avatar');
+      const img = avatarDiv.querySelector('img');
+      if (img) img.src = data.profile_pic;
+      btn.remove();
+    }
+  } catch(e) {
+    btn.textContent = '🔄';
+    btn.disabled = false;
+  }
 }
 
 async function deleteProspect(id, el) {
