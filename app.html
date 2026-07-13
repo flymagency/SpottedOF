@@ -1465,6 +1465,7 @@ async function loadProspects() {
       status: p.status || 'nouveau',
       note: p.note || '',
       email: p.email || '',
+      profile_pic: p.profile_pic || '',
     }));
     await loadStats();
   } catch(e) {
