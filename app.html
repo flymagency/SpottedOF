@@ -3584,7 +3584,7 @@ function glCopyJson(jsonStr, btn) {
   navigator.clipboard.writeText(jsonStr).then(() => { btn.textContent='✓ Copié !'; setTimeout(()=>btn.textContent='Copier',2000); });
 }
 
-function renderHome() {
+async function renderHome() {
   const el = document.getElementById('home-body');
 
   // Date en français
@@ -3592,13 +3592,22 @@ function renderHome() {
   const dateStr = now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   const dateCapitalized = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
 
-  // Stats 30 derniers jours depuis DATA
-  const since30 = new Date(now - 30 * 24 * 60 * 60 * 1000);
-  const recent = DATA.filter(p => new Date(p.created_at || 0) >= since30);
-  const total30 = recent.length || DATA.length; // fallback si pas de date
-
-  const withOf = DATA.filter(p => p.hasOf || p.has_of).length;
-  const toContact = DATA.filter(p => !(p.hasOf || p.has_of)).length;
+  // Stats depuis le worker (toujours à jour, propres à l'utilisateur)
+  let total30 = 0, avgScore = 0, withOf = 0, toContact = 0;
+  try {
+    const res = await wFetch(`${WORKER}/stats`);
+    const s = await res.json();
+    total30 = s.total || 0;
+    avgScore = s.avg_score || 0;
+    withOf = s.with_of || 0;
+    toContact = s.to_convert || 0;
+  } catch(e) {
+    // fallback sur DATA si le worker est KO
+    total30 = DATA.length;
+    withOf = DATA.filter(p => p.hasOf || p.has_of).length;
+    toContact = DATA.filter(p => !(p.hasOf || p.has_of)).length;
+    avgScore = DATA.length ? Math.round(DATA.reduce((s, p) => s + (p.score || 0), 0) / DATA.length) : 0;
+  }
 
   // Prénom ou nom d'agence
   const displayName = userFirstName || userAgencyName || '';
