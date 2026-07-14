@@ -3598,7 +3598,7 @@ async function renderHome() {
     const res = await wFetch(`${WORKER}/stats`);
     const s = await res.json();
     total30 = s.total || 0;
-    avgScore = s.avg_score || 0;
+    avgScore = s.scans_month || 0;
     withOf = s.with_of || 0;
     toContact = s.to_convert || 0;
   } catch(e) {
@@ -3637,9 +3637,9 @@ async function renderHome() {
         <div class="home-kpi-delta">total en base</div>
       </div>
       <div class="home-kpi">
-        <div class="home-kpi-label">Score moyen</div>
+        <div class="home-kpi-label">Scans ce mois</div>
         <div class="home-kpi-value" style="color:#fff" id="hkpi-score">0</div>
-        <div class="home-kpi-delta">sur 100</div>
+        <div class="home-kpi-delta">sessions lancées</div>
       </div>
       <div class="home-kpi">
         <div class="home-kpi-label">Avec plateforme privée</div>

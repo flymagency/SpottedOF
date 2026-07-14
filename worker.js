@@ -346,12 +346,17 @@ export default {
     if (request.method === 'GET' && path === '/stats') {
       const all = await getProspects(env, new URLSearchParams('min_score=0'));
       const withOf = all.filter(p => p.has_of);
-      const avgScore = all.length ? Math.round(all.reduce((s, p) => s + (p.score || 0), 0) / all.length) : 0;
+      // Compter les scans distincts ce mois (via scan_source unique sur les prospects du mois)
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const scansThisMonth = new Set(
+        all.filter(p => p.scan_source && p.created_at >= startOfMonth).map(p => p.scan_source)
+      ).size;
       return json({
         total: all.length,
         with_of: withOf.length,
         to_convert: all.length - withOf.length,
-        avg_score: avgScore,
+        scans_month: scansThisMonth,
       });
     }
 
